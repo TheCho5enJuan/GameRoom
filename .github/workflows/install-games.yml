@@ -30,7 +30,7 @@ jobs:
           cat .game-upload/blockforge.00 .game-upload/blockforge.01 .game-upload/blockforge.02 .game-upload/blockforge.03 | base64 -d | gzip -d > games/blockforge/index.html
 
           echo 'RECONSTRUCT rogue'
-          cat .game-upload/rogue.00 .game-upload/rogue.01 .game-upload/rogue.02 .game-upload/rogue.03 .game-upload/roguefix.00 .game-upload/roguefix.01 .game-upload/rogue.05 | base64 -d | gzip -d > games/rogue-quest/index.html
+          cat .game-upload/rogue.00 .game-upload/rogue.01 .game-upload/rogue.02 .game-upload/rogue.03 .game-upload/rogue.04 .game-upload/rogue.05 | base64 -d | gzip -d > games/rogue-quest/index.html
 
           echo 'RECONSTRUCT tide'
           cat .game-upload/tidexz.00 .game-upload/tidexz.01 .game-upload/tidexz.02 .game-upload/tidexz.03 .game-upload/tidexz.04 .game-upload/tidexz.05 .game-upload/tidexz.06 .game-upload/tidexz.07 .game-upload/tidexz.08 .game-upload/tidexz.09 .game-upload/tidexz.10 .game-upload/tidexz.11 | base64 -d | xz -d > games/tide-and-tranquility/index.html
