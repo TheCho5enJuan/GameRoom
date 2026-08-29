@@ -1,0 +1,58 @@
+name: Install uploaded game builds
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.game-upload/**'
+      - '.github/workflows/install-games.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify uploaded games
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p games/blockforge games/rogue-quest games/tide-and-tranquility
+
+          cat .game-upload/blockforge.00 .game-upload/blockforge.01 .game-upload/blockforge.02 .game-upload/blockforge.03 \
+            | base64 -d | gzip -d > games/blockforge/index.html
+
+          cat .game-upload/rogue.00 .game-upload/rogue.01 .game-upload/rogue.02 .game-upload/rogue.03 .game-upload/rogue.04 .game-upload/rogue.05 \
+            | base64 -d | gzip -d > games/rogue-quest/index.html
+
+          { cat .game-upload/tide.00 .game-upload/tide.01; head -c 74352 .game-upload/tide.02; } \
+            | base64 -d | gzip -d > games/tide-and-tranquility/index.html
+
+          echo '8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a  games/blockforge/index.html' | sha256sum -c -
+          echo '72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7  games/rogue-quest/index.html' | sha256sum -c -
+          echo '7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c  games/tide-and-tranquility/index.html' | sha256sum -c -
+
+          rm -rf .game-upload
+          rm -f games/blockforge/README.md
+          rm -f games/rogue-quest/README.md
+          rm -f games/tide-and-tranquility/README.md
+          rm -f games/mining-game/README.md
+          rmdir games/mining-game 2>/dev/null || true
+          rm -f .github/workflows/install-games.yml
+
+      - name: Commit installed games
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Install exact uploaded game builds'
+          git push
