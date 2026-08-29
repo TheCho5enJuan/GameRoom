@@ -24,7 +24,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p games/blockforge games/rogue-quest games/tide-and-tranquility
+          mkdir -p \
+            games/blockforge \
+            games/rogue-quest \
+            games/tide-and-tranquility \
+            games/space-sabotage \
+            games/deal-or-no-deal \
+            games/tic-tac-toe
 
           cat .game-upload/blockforge.00 .game-upload/blockforge.01 .game-upload/blockforge.02 .game-upload/blockforge.03 \
             | base64 -d | gzip -d > games/blockforge/index.html
@@ -38,9 +44,65 @@ jobs:
               .game-upload/tidexz.08 .game-upload/tidexz.09 .game-upload/tidexz.10 .game-upload/tidexz.11 \
             | base64 -d | xz -d > games/tide-and-tranquility/index.html
 
+          base64 -d < .game-upload/space.gz.b64 | gzip -d > games/space-sabotage/index.html
+          base64 -d < .game-upload/deal.gz.b64 | gzip -d > games/deal-or-no-deal/index.html
+          base64 -d < .game-upload/tictac.gz.b64 | gzip -d > games/tic-tac-toe/index.html
+
           echo '8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a  games/blockforge/index.html' | sha256sum -c -
           echo '72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7  games/rogue-quest/index.html' | sha256sum -c -
           echo '7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c  games/tide-and-tranquility/index.html' | sha256sum -c -
+          echo '0368f87a6844c47b4f7e6496ceb573a814bc85c19d798c17cc34a1136dbfd404  games/space-sabotage/index.html' | sha256sum -c -
+          echo 'e8f97cb613160d0c31e3277ca1ded1b1a8c3972d89aea9b51ac29870861543b3  games/deal-or-no-deal/index.html' | sha256sum -c -
+          echo 'f466e3ea19fd84343ed7b7555c25c581843829f42ff95e6c5092cb3c81d3f94f  games/tic-tac-toe/index.html' | sha256sum -c -
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          text = re.sub(
+              r'<div class="summary">.*?</div>',
+              '<div class="summary"><span class="pill"><strong>6</strong> games</span><span class="pill"><strong>6</strong> playable now</span></div>',
+              text,
+              count=1,
+              flags=re.S,
+          )
+          text = re.sub(
+              r'<div class="filters">.*?</div>',
+              '<div class="filters"><button class="filter active" data-filter="all">All Games</button><button class="filter" data-filter="live">Playable</button></div>',
+              text,
+              count=1,
+              flags=re.S,
+          )
+          text = text.replace('data-state="uploaded"', 'data-state="live"')
+          text = text.replace('<i class="dot uploaded"></i>Source uploaded', '<i class="dot live"></i>Playable')
+
+          launches = {
+              'Rogue Quest': ('./games/rogue-quest/', 'v3.1'),
+              'Tide &amp; Tranquility': ('./games/tide-and-tranquility/', 'v10.1'),
+              'Blockforge: Deep Mine': ('./games/blockforge/', 'v5 · 3D'),
+          }
+          for title, (href, version) in launches.items():
+              pattern = re.compile(
+                  rf'(<article class="card"[^>]*>.*?<h2>{re.escape(title)}</h2>.*?<div class="actions">)(.*?)(</div></div></article>)',
+                  re.S,
+              )
+              text, count = pattern.subn(
+                  lambda m: m.group(1) + f'<a class="play" href="{href}">Play now</a><span class="version">{version}</span>' + m.group(3),
+                  text,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit(f'Could not update GameRoom card: {title}')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          grep -q '<strong>6</strong> playable now' index.html
+          grep -q 'href="./games/rogue-quest/"' index.html
+          grep -q 'href="./games/tide-and-tranquility/"' index.html
+          grep -q 'href="./games/blockforge/"' index.html
 
           rm -rf .game-upload
           rm -f games/blockforge/README.md
