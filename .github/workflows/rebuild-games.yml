@@ -81,10 +81,7 @@ jobs:
               if str(script.get('src', '')).startswith('./'):
                   script.extract()
 
-          css = '\n'.join([
-              show('games/rogue-quest/css/core.css'),
-              show('games/rogue-quest/css/v3.css'),
-          ])
+          css = show('games/rogue-quest/css/game.css')
           js_parts = []
           for number in range(1, 5):
               text = show(f'games/rogue-quest/js/game-{number:02d}.js')
