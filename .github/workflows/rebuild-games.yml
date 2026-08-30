@@ -56,6 +56,7 @@ jobs:
           echo 'e8f97cb613160d0c31e3277ca1ded1b1a8c3972d89aea9b51ac29870861543b3  .rebuild/work/source/dealornodeal.txt' | sha256sum -c -
           echo 'f466e3ea19fd84343ed7b7555c25c581843829f42ff95e6c5092cb3c81d3f94f  .rebuild/work/source/ticktacktoe.html' | sha256sum -c -
 
+          python -m pip install --disable-pip-version-check beautifulsoup4
           git fetch origin modular-game-builds:refs/remotes/origin/modular-game-builds
           python - <<'PY'
           from bs4 import BeautifulSoup
@@ -104,7 +105,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check beautifulsoup4
           python .rebuild/work/build_projects.py
           cp .rebuild/work/smoke.mjs .rebuild/work/site/tests/smoke.mjs
           python - <<'PY'
