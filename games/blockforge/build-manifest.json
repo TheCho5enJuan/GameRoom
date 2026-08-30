@@ -1,0 +1,17 @@
+{
+  "name": "Blockforge: Deep Mine",
+  "version": "v5 · 3D",
+  "sourceSha256": "8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a",
+  "generatedFrom": "Exact uploaded single-file browser build",
+  "stylesheet": "css/game.css",
+  "scripts": [
+    "js/game-01.js",
+    "js/game-02.js",
+    "js/game-03.js"
+  ],
+  "validation": {
+    "scriptBodySha256": "2a5d9d7b3498f7df8bb8b9197523222dfc8562a6f799f0d90fb8728242133fbb",
+    "reassembledScriptSha256": "2a5d9d7b3498f7df8bb8b9197523222dfc8562a6f799f0d90fb8728242133fbb",
+    "scriptBodyPreserved": true
+  }
+}

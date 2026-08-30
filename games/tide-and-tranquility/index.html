@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Tide & Tranquility: Expeditions</title>
+<link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+<div id="app">
+ <header class="top">
+  <div class="brand"><b>TIDE &amp; TRANQUILITY</b><small>Expedition Edition 10.1 · Offline</small></div>
+  <button class="captain-chip" id="captainOpen" type="button" aria-label="Open captain progression"><small>CAPTAIN</small><b>LV <span id="captainLevelTop">1</span></b></button>
+  <div class="currency"><div class="pill coin">G <b id="goldTxt">0</b></div><div class="pill pearl">◇ <b id="pearlTxt">0</b></div></div>
+ </header>
+ <main>
+  <section class="screen active" id="screen-sea">
+   <div class="sea-wrap">
+    <div class="sea-head">
+     <div class="region-info"><small id="regionKicker">REGION 1</small><h2 id="regionName">Quiet Cove</h2><div class="depthline" id="regionDepth">Reach 240m</div></div>
+     <div class="weatherbadge" id="weatherBadge">CLEAR</div>
+     <button class="iconbtn" id="huntBtn" type="button" title="Legendary Hunt">★</button>
+     <button class="iconbtn" id="sonarBtn" type="button" title="Sonar">◎</button>
+    </div>
+    <div class="canvas-shell">
+     <canvas id="game" width="450" height="600" aria-label="Fishing scene"></canvas>
+     <div class="ocean-hud" id="oceanHud" aria-live="polite">
+      <span><small>TIME</small><b id="oceanTime">MORNING</b></span>
+      <span><small>CURRENT</small><b id="oceanCurrent">CALM</b></span>
+      <span class="ocean-event-chip" id="oceanEvent">OPEN WATER</span>
+     </div>
+     <div class="lure-action-chip" id="lureActionChip">LURE STILL</div>
+     <div class="cast-aim-note" id="castAimNote">Tap water or drag CAST to aim</div>
+     <div class="depth-scale"><span style="top:31%">50m</span><span style="top:47%">150m</span><span style="top:64%">300m</span><span style="top:81%">600m</span></div>
+     <div class="tension" id="tension"><div class="tension-top"><span id="fightName">LINE TENSION</span><span id="tensionText">SAFE</span></div><div class="tensionbar"><i class="needle" id="needle"></i></div><div class="staminabar"><span id="staminaFill"></span></div><div class="fighttag" id="fightTag"></div></div>
+     <div class="castbar">
+      <button class="control" id="steerBtn" type="button">STEER</button>
+      <div class="powerbox"><small id="powerTitle">CAST POWER</small><div class="gauge"><span id="powerFill"></span></div><div class="hint" id="seaHint">Hold CAST, release to throw.</div></div>
+      <button class="control primary" id="castBtn" type="button">CAST</button>
+     </div>
+    </div>
+    <div class="sea-panel tackle-panel">
+     <button class="tackle-loadout" id="tackleOpen" type="button" aria-label="Open tackle loadout">
+      <span class="tackle-slot"><small>HOOK</small><b id="hookLoadoutName">Standard</b></span>
+      <span class="tackle-slot"><small>LURE</small><b id="lureLoadoutName">Feather Fly</b></span>
+      <span class="tackle-slot"><small>BAIT</small><b id="baitLoadoutName">None</b></span>
+      <span class="tackle-change">TACKLE</span>
+     </button>
+     <div class="tackle-readout" id="tackleReadout"></div>
+     <select id="lureSelect" aria-label="Lure" hidden></select><select id="baitSelect" aria-label="Bait" hidden></select>
+     <div class="status" id="status"></div>
+    </div>
+   </div>
+  </section>
+
+  <section class="screen" id="screen-map">
+   <div class="map-workspace">
+    <div class="workspace-head"><div><b>EXPEDITION CHART</b><small>Discover hidden waters and chart new routes.</small></div><button class="chart-progress-btn" id="chartProgressBtn" type="button"><small>CHARTED</small><b id="chartProgressText">0%</b></button></div>
+    <div class="map-story-strip" id="storyCard"></div>
+    <div class="pirate-map-frame" id="worldMapWrap"><div class="worldmap-canvas" id="worldMapCanvas"></div></div>
+    <div class="map-bottom-strip"><div id="forecastText">The sea is calm.</div><div id="mapLegend"></div></div>
+   </div>
+  </section>
+
+  <section class="screen" id="screen-dock">
+   <div class="dock-workspace">
+    <div class="workspace-head"><div><b>DOCKYARD</b><small id="dockSubtitle">Build your boat and fishing gear.</small></div><div class="dock-head-actions"><button class="harbor-pulse" id="harborPulse" type="button"><small>HARBOR</small><b id="harborTrend">MARKET</b></button><b id="dockGold" hidden>0</b></div></div>
+    <div class="dock-mode-tabs" id="dockModeTabs"><button type="button" data-mode="boat">BOAT</button><button type="button" data-mode="rod">ROD</button><button type="button" data-mode="sell">MARKET</button></div>
+    <div class="builder-stage" id="dockBuildStage"><div id="dockBuildVisual"></div><div class="builder-help" id="dockHint">Tap the boat to edit a part.</div></div>
+    <div class="builder-parts" id="dockPartBar"></div>
+    <div class="builder-options-head"><b id="dockTrayTitle">Hull</b><div class="dock-pager" id="dockPager"></div></div>
+    <div class="builder-options" id="dockTray"></div>
+    <div class="dock-materials"><span>Wood <b id="woodTxt">0</b></span><span>Shells <b id="shellTxt">0</b></span><span>Coral <b id="coralTxt">0</b></span></div>
+   </div>
+  </section>
+
+  <section class="screen" id="screen-aquarium">
+   <div class="aqua-page" id="aquaPage">
+    <div class="aqua-titlebar">
+     <div><b>MY AQUARIUM</b><small id="aquaModeText">Living display</small></div>
+     <button class="aqua-icon" id="aquaCareOpen" type="button" aria-label="Aquarium care">♥</button>
+    </div>
+    <div class="aqua-stage" id="aquaStage">
+     <div class="aqua-view theme-reef" id="aquaView"></div>
+     <div class="aqua-hud aqua-hud-left">
+      <button class="aqua-hud-chip" id="aquaFishOpen" type="button"><b id="aquaCount">0/8</b><span>FISH</span></button>
+      <button class="aqua-hud-chip" id="aquaHappyChip" type="button"><b id="aquaHappy">100%</b><span>HAPPY</span></button>
+     </div>
+     <button class="aqua-income" id="claimAqua" type="button"><b id="aquaStored">0</b><span>COLLECT</span></button>
+     <div class="aqua-rate"><b id="aquaRate">0</b><span>G / HR</span></div>
+     <div class="aqua-edit-tools" id="aquaEditTools">
+      <div class="edit-selected"><b id="aquaEditName">Select an item</b><small id="aquaEditHint">Drag it anywhere in the tank.</small></div>
+      <input id="aquaSizeRange" type="range" min="0.55" max="2.6" step="0.05" value="1" aria-label="Decoration size">
+      <button id="deleteDecorBtn" type="button">REMOVE</button>
+     </div>
+     <div class="aqua-edit-label" id="aquaEditLabel">EDIT MODE · drag items to arrange</div>
+    </div>
+    <div class="aqua-mainbar">
+     <button id="aquaEditBtn" type="button"><span>✎</span><b>EDIT</b></button>
+     <button class="primary" id="aquaInventoryBtn" type="button"><span>＋</span><b>ADD</b></button>
+     <button id="aquaHatchOpen" type="button"><span>◉</span><b>HATCHERY</b></button>
+    </div>
+    <div class="aqua-sheet" id="aquaSheet" aria-hidden="true">
+     <div class="aqua-sheet-head"><div><b id="aquaSheetTitle">Aquarium</b><small id="aquaSheetSub"></small></div><button id="aquaSheetClose" type="button">×</button></div>
+     <div class="aqua-sheet-tabs" id="aquaSheetTabs"></div>
+     <div class="aqua-sheet-body" id="aquaSheetBody"></div>
+     <div class="aqua-sheet-pager" id="aquaSheetPager"></div>
+    </div>
+    <div class="aqua-hidden-actions" aria-hidden="true">
+     <button id="feedAqua" type="button"></button><button id="cleanAqua" type="button"></button><button id="slotUpgrade" type="button"></button><button id="tankUpgrade" type="button"></button>
+     <div id="hatchDisplay"></div><button id="breedBtn" type="button"></button><button id="hatchNowBtn" type="button"></button>
+    </div>
+   </div>
+  </section>
+
+  <section class="screen" id="screen-journal">
+   <div class="logbook-page">
+    <div class="workspace-head captain-head"><div><b>CAPTAIN'S LOG</b><small>Contracts, hunts, relics, and discoveries.</small></div><b id="journalGold" hidden>0</b></div>
+    <div class="logbook-tabs" id="logTabs">
+      <button type="button" data-logtab="missions" class="active">ORDERS</button>
+      <button type="button" data-logtab="hunts">HUNTS</button>
+      <button type="button" data-logtab="relics">RELICS</button>
+      <button type="button" data-logtab="atlas">ATLAS</button>
+      <button type="button" data-logtab="data">DATA</button>
+    </div>
+    <div class="logbook-stage">
+      <div class="logpanel active" data-logpanel="missions">
+        <div class="logcard hero"><h3>Story & Contracts</h3><p id="missionHeroCopy">Build your pirate reputation by finishing contracts and unlocking new waters.</p></div>
+        <div class="list compact" id="missionList" style="margin-top:8px"></div>
+      </div>
+      <div class="logpanel" data-logpanel="hunts">
+        <div class="logcard hero"><h3>Legendary Hunts</h3><p>Track major targets and launch hunts from here.</p></div>
+        <div class="list compact" id="huntList" style="margin-top:8px"></div>
+      </div>
+      <div class="logpanel" data-logpanel="relics">
+        <div class="logcard hero"><h3>Relics & Secrets</h3><p id="relicSummary">No relics recovered yet.</p></div>
+        <div class="list compact" id="relicList" style="margin-top:8px"></div>
+      </div>
+      <div class="logpanel" data-logpanel="atlas">
+        <div class="logcard hero"><h3>Fish Atlas</h3><p id="bookSummary">0 species discovered.</p></div>
+        <div class="fishgrid compact-grid" id="bookGrid"></div>
+      </div>
+      <div class="logpanel" data-logpanel="data">
+        <div class="logcard hero"><h3>Experience</h3><p>Peaceful audio, haptics, motion, and offline data.</p></div>
+        <div class="experience-settings" id="experienceSettings">
+         <button class="setting-card" id="soundToggle" type="button" aria-pressed="true"><span class="setting-icon">≈</span><span class="setting-copy"><b>Soundscape</b><small>Ocean and weather</small></span><span class="setting-state" id="soundState">ON</span></button>
+         <button class="setting-card" id="musicToggle" type="button" aria-pressed="true"><span class="setting-icon">♪</span><span class="setting-copy"><b>Music</b><small>Soft generative notes</small></span><span class="setting-state" id="musicState">ON</span></button>
+         <button class="setting-card" id="hapticToggle" type="button" aria-pressed="true"><span class="setting-icon">⌁</span><span class="setting-copy"><b>Haptics</b><small>Gentle touch feedback</small></span><span class="setting-state" id="hapticState">ON</span></button>
+         <button class="setting-card" id="motionToggle" type="button" aria-pressed="true"><span class="setting-icon">◌</span><span class="setting-copy"><b>Motion</b><small>Water and atmosphere</small></span><span class="setting-state" id="motionState">ON</span></button>
+        </div>
+        <label class="volume-card" for="audioVolume"><span><b>Volume</b><small>Soundscape, music, and effects</small></span><input id="audioVolume" type="range" min="0" max="1" step="0.05" value="0.55"></label>
+        <div class="logdata-actions"><button id="exportBtn" type="button">EXPORT</button><button id="importBtn" type="button">IMPORT</button><button class="danger" id="resetBtn" type="button">RESET</button></div>
+      </div>
+      <div class="logbook-pager" id="logPager"></div>
+    </div>
+   </div>
+  </section>
+ </main>
+ <nav class="bottom" aria-label="Main navigation">
+  <button class="nav active" data-screen="sea" type="button" aria-label="Sea" aria-current="page"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v15M8 6h8M5 12a7 7 0 0 0 14 0M4 16l4-2M20 16l-4-2"/></svg></span><span class="nav-label">SEA</span></button>
+  <button class="nav" data-screen="map" type="button" aria-label="Chart"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l5-2 8 3 5-2v13l-5 2-8-3-5 2V6zM8 4v13M16 7v13"/></svg></span><span class="nav-label">CHART</span></button>
+  <button class="nav" data-screen="dock" type="button" aria-label="Dock"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15h16l-3 5H7l-3-5zM12 3v12M12 4l5 6h-5"/></svg></span><span class="nav-label">DOCK</span></button>
+  <button class="nav" data-screen="aquarium" type="button" aria-label="Aquarium"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c3-5 9-5 14 0-5 5-11 5-14 0zM17 12l4-3v6l-4-3zM8 10.5h.01"/></svg></span><span class="nav-label">TANK</span></button>
+  <button class="nav" data-screen="journal" type="button" aria-label="Captain's log"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16zM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16z"/></svg></span><span class="nav-label">LOG</span></button>
+ </nav>
+
+
+ <div class="modalwrap" id="captainModal"><div class="modal captain-modal">
+  <div class="modalhead"><div class="captain-modal-title"><small>CAPTAIN PROGRESSION</small><h3>Master the Water</h3></div><button class="close" data-close="captainModal" type="button">×</button></div>
+  <div class="captain-level-card"><div><small>CAPTAIN LEVEL</small><b id="captainLevelBig">1</b></div><div class="captain-xp-copy"><b id="captainXpText">0 / 100 XP</b><div class="captain-xpbar"><span id="captainXpFill"></span></div><small id="captainPointsText">0 skill points available</small></div></div>
+  <div class="captain-skill-grid" id="captainSkillGrid"></div>
+  <div class="captain-bonus-strip" id="captainBonusStrip"></div>
+ </div></div>
+ <div class="modalwrap" id="catchModal"><div class="modal"><div class="modalhead"><h3>Catch Landed</h3><button class="close" data-close="catchModal" type="button">×</button></div><div class="catch-art" id="catchArt"></div><div class="catch-name" id="catchName">Fish</div><div class="catch-meta" id="catchMeta"></div><div class="actions"><button id="sellCatch" type="button">SELL</button><button id="aquaCatch" type="button">AQUARIUM</button><button id="baitCatch" type="button">PREP BAIT</button></div></div></div>
+ <div class="modalwrap" id="specialModal"><div class="modal"><div class="modalhead"><h3 id="specialTitle">Treasure</h3><button class="close" data-close="specialModal" type="button">×</button></div><div class="catch-art" id="specialArt" style="font-size:64px">▣</div><div class="catch-name" id="specialName">Recovered Cache</div><div class="catch-meta" id="specialMeta"></div><button class="widebtn good" data-close="specialModal" type="button">CONTINUE</button></div></div>
+ <div class="modalwrap" id="huntModal"><div class="modal"><div class="modalhead"><h3>Legendary Hunt</h3><button class="close" data-close="huntModal" type="button">×</button></div><div id="huntModalBody"></div></div></div>
+
+ <div class="modalwrap" id="expeditionModal"><div class="modal expedition-modal">
+  <div class="modalhead"><div style="min-width:0;flex:1"><div class="expedition-kicker" id="expeditionKicker">EXPEDITION</div><h3 id="expeditionTitle" style="margin:1px 0 0">Chart a Course</h3></div><button class="close" id="expeditionClose" type="button">×</button></div>
+  <div class="voyage-visual" id="voyageVisual"><span class="voyage-port from" id="voyageFrom">Quiet Cove</span><span class="voyage-weather" id="voyageWeather">☀</span><span class="voyage-port to" id="voyageTo">Open Sea</span><div class="voyage-route"></div><div class="voyage-boat">⛵</div></div>
+  <div class="expedition-body" id="expeditionBody"></div>
+  <div class="expedition-actions" id="expeditionActions"><button class="secondary" id="expeditionSecondary" type="button">CLOSE</button><button class="primary" id="expeditionPrimary" type="button">SAIL</button></div>
+ </div></div>
+ <div class="modalwrap" id="saveModal"><div class="modal"><div class="modalhead"><h3 id="saveTitle">Save</h3><button class="close" data-close="saveModal" type="button">×</button></div><textarea class="selectable" id="saveText" style="width:100%;height:230px;border-radius:12px;border:1px solid var(--line);background:#081421;color:white;padding:10px;font-size:10px"></textarea><button class="widebtn" id="saveAction" type="button">APPLY</button></div></div>
+ <div class="modalwrap" id="tackleModal"><div class="modal tackle-modal">
+  <div class="modalhead"><h3>Fishing Tackle</h3><button class="close" data-close="tackleModal" type="button">×</button></div>
+  <div class="tackle-tabs" id="tackleTabs"><button type="button" data-tackle-tab="hook">HOOK</button><button type="button" data-tackle-tab="lure">LURE</button><button type="button" data-tackle-tab="bait">BAIT</button></div>
+  <div class="tackle-modal-summary" id="tackleModalSummary"></div>
+  <div class="tackle-grid" id="tackleGrid"></div>
+  <div class="tackle-pager" id="tacklePager"></div>
+ </div></div>
+ <div class="system-notice" id="systemNotice" role="status" aria-live="polite"></div><div class="toast" id="toast"></div>
+</div>
+<script src="./js/game-01.js"></script>
+<script src="./js/game-02.js"></script>
+<script src="./js/game-03.js"></script>
+<script src="./js/game-04.js"></script>
+<script src="./js/game-05.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Rogue Quest",
+  "version": "v3.1",
+  "sourceSha256": "72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7",
+  "generatedFrom": "Exact uploaded single-file browser build",
+  "stylesheet": "css/game.css",
+  "scripts": [
+    "js/game-01.js",
+    "js/game-02.js",
+    "js/game-03.js",
+    "js/game-04.js"
+  ],
+  "validation": {
+    "scriptBodySha256": "14289b5556761b065264c2c732a0be10da5e374a8cc11c60a68035b955f69fd4",
+    "reassembledScriptSha256": "14289b5556761b065264c2c732a0be10da5e374a8cc11c60a68035b955f69fd4",
+    "scriptBodyPreserved": true
+  }
+}

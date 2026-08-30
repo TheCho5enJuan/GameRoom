@@ -20,6 +20,7 @@
         }
         canvas { display: block; touch-action: none; width: 100%; height: 100%; }
 
+        /* UI Overlays */
         #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
 
         #career-header {
@@ -113,6 +114,7 @@
 <canvas id="gameCanvas"></canvas>
 
 <script>
+    // --- Persistence System ---
     const Ranks = ["Intern", "Assistant", "Contestant", "Pro", "Star", "Idol", "Mogul", "Tycoon", "Legend", "Billionaire"];
     let career = { earnings: 0, level: 1, xp: 0 };
     
@@ -142,6 +144,7 @@
         document.getElementById('xp-bar-inner').style.width = xpPerc + '%';
     }
 
+    // --- Audio Engine ---
     class AudioSystem {
         constructor() { this.ctx = null; this.master = null; }
         init() {
@@ -166,6 +169,7 @@
             g.gain.setValueAtTime(0.12, this.ctx.currentTime);
             g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.12);
             o.connect(g); g.connect(this.master); o.start(); o.stop(this.ctx.currentTime + 0.12);
+            
             const tempo = state ? 1200 - (state.round * 110) : 1200;
             setTimeout(() => this.heartbeat(), Math.max(tempo, 400));
         }
@@ -180,6 +184,7 @@
         }
     }
 
+    // --- Core Renderer ---
     const audio = new AudioSystem();
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -196,19 +201,25 @@
         canvas.width = window.innerWidth * state.dpr;
         canvas.height = window.innerHeight * state.dpr;
         ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
         const w = window.innerWidth; const h = window.innerHeight;
-        const boardY = 100;
+        
+        // Pushing everything down to clear the 60px header
+        const boardY = 100; // Increased to clear header and instruction text
         const boardH = h * 0.20;
         const gridY = boardY + boardH + 20; 
         const gridH = h * 0.44;
         const podiumY = gridY + gridH + 12;
+
         const cols = 4; const rows = 7;
         const cellW = (w * 0.94) / cols; const cellH = gridH / rows;
+        
         state.cases.forEach((c, i) => {
             c.w = cellW * 0.88; c.h = cellH * 0.84;
             c.x = (w * 0.03) + (i % cols * cellW) + (cellW / 2);
             c.y = gridY + (Math.floor(i / cols) * cellH) + (cellH / 2);
         });
+        
         state.layout = { boardY, boardH, gridY, gridH, podiumY };
     }
 
@@ -251,16 +262,21 @@
         const w = window.innerWidth; const h = window.innerHeight;
         ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
+        
         if (state.shake > 0) {
             ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
             state.shake *= 0.92; if(state.shake < 0.1) state.shake = 0;
         }
+
         const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, h);
         bg.addColorStop(0, '#1e293b'); bg.addColorStop(1, '#020617');
         ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
         drawValueBoard(w, h);
         state.cases.forEach(c => c.draw());
         if(state.playerCase) drawPodium(w, h);
+        
+        // DRAW INSTRUCTIONS - Pushed down to clear the 60px header
         ctx.save(); ctx.beginPath();
         ctx.textAlign = 'center'; ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 20px sans-serif';
         let txt = "";
@@ -270,6 +286,7 @@
             txt = `OPEN ${rem} MORE ${rem === 1 ? 'CASE' : 'CASES'}`;
         } else if(state.phase === 'BANKER') txt = "INCOMING BANKER CALL...";
         ctx.fillText(txt, w/2, 90); ctx.restore();
+
         window.requestAnimationFrame(loop);
     }
 

@@ -1,0 +1,19 @@
+{
+  "name": "Tide & Tranquility",
+  "version": "v10.1",
+  "sourceSha256": "7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c",
+  "generatedFrom": "Exact uploaded single-file browser build",
+  "stylesheet": "css/game.css",
+  "scripts": [
+    "js/game-01.js",
+    "js/game-02.js",
+    "js/game-03.js",
+    "js/game-04.js",
+    "js/game-05.js"
+  ],
+  "validation": {
+    "scriptBodySha256": "19a8c1411e776d81d0e5f373c9c773ad25460c5ab126af9ff94f17abe567a31b",
+    "reassembledScriptSha256": "19a8c1411e776d81d0e5f373c9c773ad25460c5ab126af9ff94f17abe567a31b",
+    "scriptBodyPreserved": true
+  }
+}

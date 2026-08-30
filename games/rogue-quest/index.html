@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07101f">
+<title>Rogue Quest: Ascendant V3</title>
+<link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+<div id="app" class="safe">
+<header class="topbar">
+  <div class="brand"><div class="crest">⚔</div><div><div class="brandtitle">ROGUE QUEST</div><div class="brandsub">ASCENDANT · OFFLINE</div></div></div>
+  <div class="currencies">
+    <button class="pill pill-btn energy" id="energyPill" type="button">⚡ <b id="energyTxt">36</b></button>
+    <div class="pill gold">● <b id="goldTxt">0</b></div>
+    <div class="pill gems">◆ <b id="gemsTxt">0</b></div>
+  </div>
+</header>
+<main class="main">
+<section id="screen-adventure" class="screen active">
+  <div class="hero-strip">
+    <div class="avatar"></div>
+    <div class="hero-meta"><div class="hero-name" id="heroName">Storm Knight</div><div class="hero-level">LV. <span id="levelTxt">1</span> · <span id="xpTxt">0 / 100 XP</span></div><div class="xpbar"><span id="xpFill"></span></div></div>
+    <div class="power"><span>POWER</span><b id="powerTxt">128</b></div>
+  </div>
+  <div class="adventure-head">
+    <button class="arrow-btn" id="chapterPrev" type="button">‹</button>
+    <div class="chapter-info"><div class="chapter-kicker" id="chapterKicker">CHAPTER 1</div><div class="chapter-title" id="chapterTitle">Whisperwood</div><div class="stage-badge" id="stageTxt">Stage 1-1</div></div>
+    <button class="arrow-btn" id="chapterNext" type="button">›</button>
+  </div>
+  <div class="game-frame">
+    <canvas id="gameCanvas" width="900" height="990"></canvas>
+    <div class="scene-ui">
+      <div class="run-hud" id="runHud" style="display:none">
+        <div class="hpbox"><div class="hp-label"><span>HP</span><span id="hpTxt">100/100</span></div><div class="hpbar"><span id="hpFill"></span></div><div class="shieldbar"><span id="shieldFill"></span></div><div class="ultbar"><span id="ultFill"></span></div></div>
+        <div class="runbuff" id="buffCount">✦0</div><div class="runbuff" id="comboTxt">×0</div>
+      </div>
+      <div class="center-banner" id="banner">Battle!</div>
+      <div class="v3-hud" id="v3Hud"><div class="objective-pill" id="objectiveTxt">Objective</div><div class="break-wrap">BREAK <span id="breakTxt">0%</span><div class="breakbar"><span id="breakFill"></span></div></div></div>
+      <div class="arena-controls" id="arenaControls">
+        <div class="joy-base" id="joyBase"><div class="joy-knob" id="joyKnob"></div></div>
+        <div class="arena-action-stack">
+          <button class="arena-btn" id="dashBtn" type="button"><span>💨</span>DASH</button>
+          <button class="arena-btn" id="signatureBtn" type="button"><span>✦</span>SIGNATURE</button>
+          <button class="arena-btn" id="petCommandBtn" type="button"><span>🐾</span>ATTACK</button>
+          <button class="arena-btn" id="petUltBtn" type="button"><span>🌠</span>PET ULT</button>
+        </div>
+      </div>
+
+      <div class="skill-tray" id="skillTray">
+        <button class="skill" data-skill="strike" type="button"><span class="si">⚔️</span><span class="sn">POWER STRIKE</span><span class="cd"></span></button>
+        <button class="skill" data-skill="guard" type="button"><span class="si">🛡️</span><span class="sn">GUARD</span><span class="cd"></span></button>
+        <button class="skill" data-skill="arc" type="button"><span class="si">⚡</span><span class="sn">ARC BURST</span><span class="cd"></span></button>
+        <button class="skill ultimate" data-skill="ultimate" type="button"><span class="si">🌟</span><span class="sn">ULTIMATE</span><span class="cd"></span></button>
+      </div>
+    </div>
+  </div>
+  <div class="action-panel">
+    <div class="run-info"><span id="runStatus">Ready for adventure.</span><span><b id="nodeTxt">0</b>/18</span></div>
+    <button class="big-action" id="primaryBtn" type="button">START ADVENTURE · 3 ⚡</button>
+    <div class="secondary-row"><button class="small-action" id="fateBtn" type="button" disabled>🎲 FATE DICE</button><button class="small-action" id="campBtn" type="button" disabled>🍖 FIELD CAMP</button><button class="small-action" id="speedBtn" type="button">⏩ 1.25× SPEED</button></div>
+
+    <div class="mode-strip"><button id="modeBtn" type="button">⚔ GAME MODES</button><button id="loadoutBtn" type="button">🧬 HEROES & WEAPONS</button><button id="sweepBtn" type="button">⚡ RAPID CLEAR</button></div>
+  </div>
+</section>
+<section id="screen-hero" class="screen"><div class="section">
+  <div class="section-title">Hero</div><div class="section-sub">Customize your class and build permanent power.</div>
+  <div class="hero-preview"><div class="hero-doll"><div class="doll-head"></div><div class="doll-helm"></div><div class="doll-body"></div><div class="doll-leg l"></div><div class="doll-leg r"></div><div class="doll-sword"></div><div class="doll-shield"></div></div></div>
+  <div class="card grid2"><div class="stat-card"><span>HP</span><b id="heroHpStat">240</b></div><div class="stat-card"><span>ATK</span><b id="heroAtkStat">34</b></div><div class="stat-card"><span>DEF</span><b id="heroDefStat">8</b></div><div class="stat-card"><span>CRIT</span><b id="heroCritStat">8%</b></div></div>
+  <div class="card controls"><label>Armor color</label><input id="hueSlider" type="range" min="0" max="360" value="210"><label>Hero class</label><div class="choice-row" id="classChoices"><button class="chip selected" data-class="knight">🛡️ Knight</button><button class="chip" data-class="ranger">🏹 Ranger</button><button class="chip" data-class="mystic">🔮 Mystic</button></div><div id="classDesc" class="section-sub" style="margin:8px 0 0"></div><div class="v3-inline-row"><button id="heroRosterBtn" type="button">🧬 HERO ROSTER</button><button id="weaponMasteryBtn" type="button">⚔ WEAPON MASTERY</button></div></div>
+</div></section>
+<section id="screen-pets" class="screen"><div class="section"><div class="section-title">Pets</div><div class="section-sub">Each companion has a personality, passive behavior, levels, affinity and evolution.</div><div class="v3-inline-row"><button id="petOpsBtn" type="button">🐾 SQUAD · BREEDING · EXPEDITIONS</button></div><div class="material-row"><span class="material">🍖 Treats <b id="treatsTxt">0</b></span><span class="material">✨ Essence <b id="essenceTxt">0</b></span></div><div class="pet-grid" id="petGrid"></div></div></section>
+<section id="screen-gear" class="screen"><div class="section"><div class="section-title">Gear & Forge</div><div class="section-sub">Equip, level, salvage and merge equipment.</div><div class="material-row"><span class="material">⛏ Ore <b id="oreTxt">0</b></span><span class="material">✨ Essence <b id="gearEssenceTxt">0</b></span><span class="material">🎒 <b id="inventoryTxt">0</b>/80</span></div><div class="toolbar"><button id="autoEquipBtn" type="button">⚡ AUTO EQUIP</button><button id="mergeBtn" type="button">⚒ MERGE ×3</button><button id="salvageBtn" type="button">♻ SALVAGE COMMON</button></div><div class="gear-grid" id="gearGrid"></div></div></section>
+<section id="screen-more" class="screen"><div class="section">
+  <div class="section-title">Kingdom</div><div class="section-sub">Permanent systems, rewards, collections and game controls.</div>
+  <div class="system-grid">
+    <div class="system-card"><div class="bigico">⚡</div><h3>Energy</h3><p id="energyCardText">Recharge, daily supplies and upgrades.</p><button data-open="energy" type="button">OPEN ENERGY</button></div>
+    <div class="system-card"><div class="bigico">🏕️</div><h3>Patrol</h3><p id="patrolCardText">Your squad gathers loot while you are away.</p><button id="claimPatrolBtn" type="button">CLAIM PATROL</button></div>
+    <div class="system-card"><div class="bigico">🌳</div><h3>Talents</h3><p id="talentCardText">Permanent account-wide upgrades.</p><button data-open="talents" type="button">OPEN TALENTS</button></div>
+    <div class="system-card"><div class="bigico">🏺</div><h3>Artifacts</h3><p id="artifactCardText">Ancient relics dropped by bosses.</p><button data-open="artifacts" type="button">OPEN ARTIFACTS</button></div>
+    <div class="system-card"><div class="bigico">📜</div><h3>Quests</h3><p id="questCardText">Milestones and daily objectives.</p><button data-open="quests" type="button">OPEN QUESTS</button></div>
+    <div class="system-card"><div class="bigico">🏆</div><h3>Achievements</h3><p id="achievementCardText">Long-term challenges with gem rewards.</p><button data-open="achievements" type="button">OPEN ACHIEVEMENTS</button></div>
+    <div class="system-card"><div class="bigico">📖</div><h3>Bestiary</h3><p id="codexCardText">Discover monsters across every realm.</p><button data-open="codex" type="button">OPEN CODEX</button></div>
+    <div class="system-card"><div class="bigico">📊</div><h3>Statistics</h3><p id="statsCardText">Lifetime combat and progression data.</p><button data-open="stats" type="button">VIEW STATS</button></div>
+    <div class="system-card"><div class="bigico">⚙️</div><h3>Settings</h3><p>Language, sound, animation, save tools and developer mode.</p><button data-open="settings" type="button">OPEN SETTINGS</button></div>
+    <div class="system-card"><div class="bigico">🎁</div><h3>Daily Supply</h3><p id="dailyCardText">A free cache every calendar day.</p><button id="dailyBtn" type="button">CLAIM DAILY</button></div>
+
+    <div class="system-card"><div class="bigico">⚔️</div><h3>Game Modes</h3><p>Survival, Endless, Tower, Boss Rush, Rogue Maze and weekly seeded runs.</p><button id="kingdomModesBtn" type="button">OPEN MODES</button></div>
+    <div class="system-card"><div class="bigico">🧬</div><h3>Heroes</h3><p>12 heroes, awakenings, support passives and hero trials.</p><button id="kingdomHeroesBtn" type="button">OPEN ROSTER</button></div>
+    <div class="system-card"><div class="bigico">🏘️</div><h3>Home Base</h3><p>Forge, alchemy, garden, fishing and resident relationships.</p><button id="baseBtn" type="button">OPEN BASE</button></div>
+    <div class="system-card"><div class="bigico">📚</div><h3>Collections</h3><p>Sets, titles, bounties and rotating world modifiers.</p><button id="collectionsBtn" type="button">OPEN COLLECTIONS</button></div>
+  </div>
+</div></section>
+</main>
+<nav class="bottomnav" aria-label="Main navigation">
+  <button class="navbtn active" data-screen="adventure"><span class="ico">🗺️</span><span>Adventure</span></button>
+  <button class="navbtn" data-screen="hero"><span class="ico">🛡️</span><span>Hero</span></button>
+  <button class="navbtn" data-screen="pets"><span class="ico">🐾</span><span>Pets</span></button>
+  <button class="navbtn" data-screen="gear"><span class="ico">🎒</span><span>Gear</span></button>
+  <button class="navbtn" data-screen="more"><span class="ico">🏰</span><span>Kingdom</span></button>
+</nav>
+
+<div class="modal-wrap" id="upgradeModal"><div class="modal"><div class="modal-head"><h3>Choose a Power</h3><button class="xbtn" id="upgradeClose" type="button">×</button></div><div class="modal-desc">Your choice changes the rest of this run. Stack matching powers to unlock evolved builds.</div><div class="upgrade-grid" id="upgradeGrid"></div><div class="upgrade-tools"><button class="inline-btn" id="rerollUpgradeBtn" type="button">🎲 REROLL</button><button class="inline-btn" id="clearUpgradeLockBtn" type="button">🔓 CLEAR LOCK</button></div></div></div>
+<div class="modal-wrap" id="choiceModal"><div class="modal"><div class="modal-head"><h3 id="choiceTitle">Event</h3><button class="xbtn" id="choiceClose" type="button">×</button></div><div class="modal-desc" id="choiceDesc"></div><div class="choice-list" id="choiceList"></div></div></div>
+<div class="modal-wrap" id="energyModal"><div class="modal"><div class="modal-head"><h3>Energy Core</h3><button class="xbtn" data-close="energyModal" type="button">×</button></div><div class="energy-panel"><div class="energy-orb">⚡</div><h2><span id="energyNow">0</span> / <span id="energyMax">0</span></h2><p id="energyTimer">Next energy in --:--</p></div><div class="energy-actions"><button id="wellBtn" type="button">💧 ENERGY WELL<span id="wellSub">+8 energy</span></button><button id="gemEnergyBtn" type="button">◆ CONVERT GEMS<span>5 gems → 10 energy</span></button><button id="energyUpgradeBtn" type="button">⬆ CAPACITY<span id="energyUpgradeSub">Talent-based</span></button><button id="dailyEnergyBtn" type="button">🎁 DAILY CACHE<span>Energy + resources</span></button></div><div class="card" style="margin-top:10px"><div class="card-title">How energy works</div><div class="card-sub" style="line-height:1.5;margin-top:5px">+1 every 2 minutes. Adventures cost 3. Boss clears, treasure, daily supplies, level-ups and the Energy Well can also restore it.</div></div></div></div>
+<div class="modal-wrap" id="talentsModal"><div class="modal"><div class="modal-head"><h3>Talent Tree · <span id="talentPointsTxt">0</span> points</h3><button class="xbtn" data-close="talentsModal" type="button">×</button></div><div id="talentList"></div></div></div>
+<div class="modal-wrap" id="artifactsModal"><div class="modal"><div class="modal-head"><h3>Artifacts · <span id="dustTxt">0</span> dust</h3><button class="xbtn" data-close="artifactsModal" type="button">×</button></div><div id="artifactList"></div></div></div>
+<div class="modal-wrap" id="questsModal"><div class="modal"><div class="modal-head"><h3>Quests</h3><button class="xbtn" data-close="questsModal" type="button">×</button></div><div class="card-title" style="margin-bottom:7px">Daily</div><div class="list" id="dailyQuestList"></div><div class="card-title" style="margin:12px 0 7px">Milestones</div><div class="list" id="questList"></div></div></div>
+<div class="modal-wrap" id="achievementsModal"><div class="modal"><div class="modal-head"><h3>Achievements</h3><button class="xbtn" data-close="achievementsModal" type="button">×</button></div><div class="list" id="achievementList"></div></div></div>
+<div class="modal-wrap" id="codexModal"><div class="modal"><div class="modal-head"><h3>Bestiary</h3><button class="xbtn" data-close="codexModal" type="button">×</button></div><div class="list" id="codexList"></div></div></div>
+<div class="modal-wrap" id="statsModal"><div class="modal"><div class="modal-head"><h3>Lifetime Statistics</h3><button class="xbtn" data-close="statsModal" type="button">×</button></div><div class="grid2" id="statsGrid"></div></div></div>
+<div class="modal-wrap" id="settingsModal"><div class="modal"><div class="modal-head"><h3>Settings</h3><button class="xbtn" data-close="settingsModal" type="button">×</button></div><div class="settings-list">
+  <div class="setting"><span>Language</span><select id="languageSelect"><option value="en">English</option><option value="es">Español</option></select></div>
+  <div class="setting"><span>Sound</span><button class="toggle on" id="soundToggle" type="button"></button></div>
+  <div class="setting"><span>Animations</span><button class="toggle on" id="motionToggle" type="button"></button></div>
+  <div class="setting"><span>2.5D visuals</span><button class="toggle on" id="depthToggle" type="button"></button></div>
+  <div class="setting"><span>Auto-cast combat skills</span><button class="toggle" id="autoSkillToggle" type="button"></button></div>
+  <div class="setting"><span>Save game</span><button id="saveBtn" type="button">Save</button></div>
+  <div class="setting"><span>Export save</span><button id="exportBtn" type="button">Export</button></div>
+  <div class="setting"><span>Import save</span><button id="importBtn" type="button">Import</button></div>
+  <div class="setting factory-reset-row"><span><b>Factory Reset</b><small>Erase all Rogue Quest progress and settings.</small></span><button id="factoryResetBtn" class="factory-reset-btn" type="button">FACTORY RESET</button></div>
+</div><div class="devbox"><h4>Developer / Test Panel</h4><div class="devgrid"><button data-dev="gold">+50K Gold</button><button data-dev="gems">+5K Gems</button><button data-dev="energy">Max Energy</button><button data-dev="materials">Max Materials</button><button data-dev="talents">+25 Talent Pts</button><button data-dev="chapters">Unlock Chapters</button><button data-dev="gear">Mythic Gear</button><button data-dev="artifacts">Unlock Artifacts</button><button data-dev="offline">Simulate 8h Patrol</button><button data-dev="win">Complete Run</button><button data-dev="level">Level 99</button><button data-dev="reset">RESET SAVE</button></div></div></div></div>
+<div class="modal-wrap" id="saveModal"><div class="modal"><div class="modal-head"><h3 id="saveModalTitle">Save Data</h3><button class="xbtn" data-close="saveModal" type="button">×</button></div><textarea id="saveText" style="width:100%;min-height:190px;border-radius:13px;background:#081322;color:#dce7fb;border:1px solid var(--line);padding:9px;font-size:10px"></textarea><button class="big-action" id="saveTextAction" type="button" style="margin-top:10px;min-height:46px">Apply</button></div></div>
+
+<div class="modal-wrap" id="modesModal"><div class="modal"><div class="modal-head"><h3>Game Modes & Difficulty</h3><button class="xbtn" data-close="modesModal" type="button">×</button></div><div class="weekly-banner"><b id="weeklyTitle">Weekly Seed</b><p id="weeklyDesc"></p></div><div class="card-title" style="margin-bottom:7px">Choose Mode</div><div class="mode-grid" id="modeGrid"></div><div class="card-title" style="margin:12px 0 7px">Difficulty</div><div class="difficulty-row" id="difficultyRow"></div><div class="card-title" style="margin:12px 0 7px">World Modifier</div><div class="modifier-row"><span id="modifierTxt"></span></div><div class="v3-inline-row"><button id="weeklyStartBtn" type="button">🗓 START WEEKLY CHALLENGE</button><button id="rapidClearModalBtn" type="button">⚡ RAPID CLEAR</button></div></div></div>
+<div class="modal-wrap" id="heroesModal"><div class="modal"><div class="modal-head"><h3>Hero Roster</h3><button class="xbtn" data-close="heroesModal" type="button">×</button></div><div class="modal-desc">Each hero has a signature ability. Awaken heroes for permanent bonuses and assign one support hero.</div><div class="roster-grid" id="heroRosterGrid"></div></div></div>
+<div class="modal-wrap" id="weaponsModal"><div class="modal"><div class="modal-head"><h3>Weapons & Mastery</h3><button class="xbtn" data-close="weaponsModal" type="button">×</button></div><div class="modal-desc">Weapon family changes range, speed, targeting and the upgrade pool. Mastery rises by using that family.</div><div class="weapon-list" id="weaponListV3"></div><div class="card" style="margin-top:9px"><div class="card-title">Legendary Blueprints</div><div class="card-sub" id="blueprintTxt">Bosses can drop blueprints. Matching sets unlock bonuses.</div></div></div></div>
+<div class="modal-wrap" id="petOpsModal"><div class="modal"><div class="modal-head"><h3>Pet Squad</h3><button class="xbtn" data-close="petOpsModal" type="button">×</button></div><div class="card-title">Squad Slots</div><div class="pet-squad" id="petSquadGrid"></div><div class="card" style="margin-top:9px"><div class="card-title">Breeding</div><div class="card-sub">Breed two unlocked pets. Offspring inherit randomized traits that provide a support bonus.</div><div class="v3-inline-row"><button id="breedBtn" type="button">🧬 BREED · 8 TREATS + 3 ESSENCE</button></div><div id="offspringList"></div></div><div class="card" style="margin-top:9px"><div class="card-title">Expeditions</div><div class="card-sub">Send unused pets away for resources while you keep playing.</div><div id="petExpeditionList"></div></div></div></div>
+<div class="modal-wrap" id="baseModal"><div class="modal"><div class="modal-head"><h3>Home Base</h3><button class="xbtn" data-close="baseModal" type="button">×</button></div><div class="base-grid" id="buildingGrid"></div><div class="card" style="margin-top:9px"><div class="card-title">Alchemy Lab</div><div class="v3-inline-row"><button data-potion="power" type="button">🧪 POWER TONIC</button><button data-potion="ward" type="button">🧪 WARD TONIC</button><button data-potion="haste" type="button">🧪 HASTE TONIC</button></div><div class="card-sub" id="potionTxt" style="margin-top:6px"></div></div><div class="card" style="margin-top:9px"><div class="card-title">Garden</div><div class="card-sub">Seeds drop during adventures. Plant and harvest resources.</div><div class="garden-grid" id="gardenGrid" style="margin-top:7px"></div></div><div class="card" style="margin-top:9px"><div class="card-title">Fishing Pond</div><div class="card-sub">Tap CAST, then REEL while the white marker is inside the green zone.</div><div class="fish-bar"><div class="fish-target" id="fishTarget"></div><div class="fish-cursor" id="fishCursor"></div></div><button class="big-action" id="fishBtn" type="button" style="min-height:40px">🎣 CAST</button><div class="card-sub" id="fishText" style="margin-top:6px"></div></div><div class="card" style="margin-top:9px"><div class="card-title">Residents</div><div class="npc-list" id="npcList"></div></div></div></div>
+<div class="modal-wrap" id="collectionsModal"><div class="modal"><div class="modal-head"><h3>Collections & Contracts</h3><button class="xbtn" data-close="collectionsModal" type="button">×</button></div><div class="collection-grid" id="collectionGrid"></div><div class="card" style="margin-top:9px"><div class="card-title">Titles</div><div class="title-row" id="titleRow" style="margin-top:7px"></div></div><div class="card" style="margin-top:9px"><div class="card-title">Bounty Board</div><div id="bountyList"></div></div></div></div>
+<div class="modal-wrap" id="recapModal"><div class="modal"><div class="modal-head"><h3>Run Recap</h3><button class="xbtn" data-close="recapModal" type="button">×</button></div><div id="recapContent"></div></div></div>
+
+<div class="loot-pop" id="lootPop"><div class="loot-icon" id="lootIcon">🎁</div><h3 id="lootTitle">Treasure</h3><p id="lootDesc">+100 Gold</p></div>
+<div class="toast" id="toast">Saved</div>
+</div>
+<script src="./js/game-01.js"></script>
+<script src="./js/game-02.js"></script>
+<script src="./js/game-03.js"></script>
+<script src="./js/game-04.js"></script>
+</body>
+</html>
