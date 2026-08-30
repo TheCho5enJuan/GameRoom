@@ -1,0 +1,13 @@
+{
+  "game": "Space Sabotage",
+  "sourceFile": "Space Sabotage.html",
+  "sourceSha256": "29f304f28c69dcb7225c3bef0680f0fd367134aba4778b3174b4645d192be44d",
+  "architecture": [
+    "audio",
+    "state",
+    "flow",
+    "ui",
+    "input",
+    "startup"
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "game": "Blockforge Clicker: Deep Mine V5 3D",
+  "sourceFile": "blockforge_clicker_v5_3d.html",
+  "sourceSha256": "8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a",
+  "architecture": "named classic-script modules sharing one isolated game page",
+  "javascript": [
+    {
+      "file": "js/i18n.js",
+      "units": [
+        0,
+        19
+      ],
+      "sha256": "21bf090bd842d8ec1f8c641c2249f903680d26defeeeb87b7104ab8b84ed3a12"
+    },
+    {
+      "file": "js/data.js",
+      "units": [
+        19,
+        33
+      ],
+      "sha256": "e088835879ba41eacefe67b564b17a730f03281cc916c36b19d0fd4229e88cac"
+    },
+    {
+      "file": "js/runtime.js",
+      "units": [
+        33,
+        41
+      ],
+      "sha256": "1a81ff66a62f0211ebcd1a1f40b14078b7449b355b80f963d65d18635587918c"
+    },
+    {
+      "file": "js/systems/progression.js",
+      "units": [
+        41,
+        81
+      ],
+      "sha256": "6eba4838b3eb836f2abaf6df07fc9ef60ccb49f4cdd23526f7e364ae4ffd54aa"
+    },
+    {
+      "file": "js/world/grid.js",
+      "units": [
+        81,
+        88
+      ],
+      "sha256": "2fe3e2602eb1e9eea5aeb5318d25736eb2cf392e3e3b901fdc377a040e21ec91"
+    },
+    {
+      "file": "js/state/persistence.js",
+      "units": [
+        88,
+        94
+      ],
+      "sha256": "4dec1ddd4540dee5238ff59acd72eb3340866eea1a4c4ec68d24152c5a882017"
+    },
+    {
+      "file": "js/audio.js",
+      "units": [
+        94,
+        98
+      ],
+      "sha256": "016d5bd87cb703db82602310f94a274cdbfaf962be22158da86dd0346eeebbe6"
+    },
+    {
+      "file": "js/pets.js",
+      "units": [
+        98,
+        101
+      ],
+      "sha256": "2b8c893a6a46315d4c550737bd664d2ee48fadaaa00441bac0cdccac7992d337"
+    },
+    {
+      "file": "js/world/mining.js",
+      "units": [
+        101,
+        125
+      ],
+      "sha256": "431ef9e733972dfc59124387ffc62d50d0912e48c2d7d851224f8544881aee03"
+    },
+    {
+      "file": "js/systems/contracts.js",
+      "units": [
+        125,
+        136
+      ],
+      "sha256": "632f36454843e111bb28d4c5632e951f92525c3ff1e4a1dd7a594fccd3e92fa2"
+    },
+    {
+      "file": "js/ui/menus.js",
+      "units": [
+        136,
+        172
+      ],
+      "sha256": "52203d09acad8ddd10180e4eb3a18ea8b5c7dd07946dde402887ed9a0c224943"
+    },
+    {
+      "file": "js/rendering/scene.js",
+      "units": [
+        172,
+        196
+      ],
+      "sha256": "07e2efd39a7efe29751dc06a5123ca8f8e814a930de716cea857f100ce424393"
+    },
+    {
+      "file": "js/input.js",
+      "units": [
+        196,
+        235
+      ],
+      "sha256": "01682ac1cf8ecf279ae2c003fbb45c803bfcafae2203ba5f8c967f0e65968fa2"
+    },
+    {
+      "file": "js/main.js",
+      "units": [
+        235,
+        244
+      ],
+      "sha256": "fb16791ef660437184befb82b00f0c7d0909d6e789db9a4f622d6e0133ad2005"
+    }
+  ],
+  "stylesheets": [
+    {
+      "file": "css/core.css",
+      "sha256": "7d197b5867ba76ba49e29bff5891e2fc5fe4b70225ddb0805dfee4c2b5cb3f83"
+    },
+    {
+      "file": "css/studio.css",
+      "sha256": "8aea6949125a21d9536789439877441fbfc7e6ac0c61222e05bbd1aa8922c379"
+    }
+  ]
+}

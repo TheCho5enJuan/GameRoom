@@ -1,0 +1,250 @@
+/* Space Sabotage interface */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-green: #00ff66;
+            --neon-orange: #ff9d00;
+            --neon-purple: #b700ff;
+            --bg-black: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            font-family: 'Share Tech Mono', monospace;
+            touch-action: none; 
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--neon-blue);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Center Console */
+        #center-console {
+            width: 340px;
+            min-height: 340px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 20px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.15), inset 0 0 20px rgba(0, 243, 255, 0.15);
+            position: relative;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.85);
+            padding: 25px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .neon-text { text-shadow: 0 0 5px currentColor; }
+        .neon-text-red { color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+        .neon-text-blue { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+
+        .btn-main {
+            border: 1px solid var(--neon-blue);
+            background: rgba(0, 243, 255, 0.05);
+            color: var(--neon-blue);
+            padding: 12px 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        .btn-main:active { background: var(--neon-blue); color: black; }
+        .btn-danger { border-color: var(--neon-red); color: var(--neon-red); background: rgba(255, 0, 60, 0.05); }
+        .btn-danger:active { background: var(--neon-red); color: black; }
+
+        /* Quadrants (Tabletop Mode) */
+        .quadrant {
+            position: absolute;
+            width: 50vw;
+            height: 50vh;
+            pointer-events: none; 
+            display: flex;
+            padding: 25px; 
+        }
+
+        .q-tl { top: 0; left: 0; justify-content: flex-start; align-items: flex-start; }
+        .q-tr { top: 0; right: 0; justify-content: flex-end; align-items: flex-start; }
+        .q-bl { bottom: 0; left: 0; justify-content: flex-start; align-items: flex-end; }
+        .q-br { bottom: 0; right: 0; justify-content: flex-end; align-items: flex-end; }
+
+        .anchor-wrapper {
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: color 0.2s;
+        }
+
+        .anchor-zone {
+            width: 65px;
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .anchor-icon {
+            width: 60px;
+            height: 60px;
+            border: 2px dashed rgba(255,255,255,0.4); 
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            transition: all 0.2s;
+            color: rgba(255,255,255,0.5); 
+        }
+
+        /* Active States */
+        .anchor-wrapper.active .anchor-icon { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); transform: scale(0.9); }
+        .anchor-wrapper.active .player-label { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+        .anchor-wrapper.locked .anchor-icon { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.1); }
+        .anchor-wrapper.locked .player-label { color: rgba(255,255,255,0.2); }
+        .anchor-wrapper.benched .anchor-icon { border-color: var(--neon-red); color: var(--neon-red); opacity: 0.3; }
+        .anchor-wrapper.benched .player-label { color: var(--neon-red); opacity: 0.5; }
+
+        /* End Game Alien Glow */
+        .anchor-wrapper.alien-origin .anchor-icon {
+            border: 2px solid var(--neon-red) !important;
+            color: var(--neon-red) !important;
+            transform: scale(1.3) !important;
+            opacity: 1 !important;
+            background: radial-gradient(circle, rgba(255,0,60,0.4) 0%, rgba(255,0,60,0) 70%);
+            animation: pulse-red-zone 0.5s infinite;
+        }
+        .anchor-wrapper.alien-origin .player-label { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); opacity: 1; }
+
+        @keyframes pulse-red-zone {
+            0%, 100% { box-shadow: 0 0 30px var(--neon-red), inset 0 0 15px var(--neon-red); }
+            50% { box-shadow: 0 0 50px var(--neon-red), inset 0 0 25px var(--neon-red); }
+        }
+
+        /* Hidden Menus */
+        .hidden-menu {
+            position: absolute;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: opacity 0.1s;
+            z-index: 20;
+        }
+
+        .hidden-menu.visible { opacity: 1; visibility: visible; pointer-events: auto; }
+
+        .q-tl .hidden-menu { top: 120px; left: 25px; }
+        .q-tr .hidden-menu { top: 120px; right: 25px; align-items: flex-end; }
+        .q-bl .hidden-menu { bottom: 120px; left: 25px; flex-direction: column-reverse; }
+        .q-br .hidden-menu { bottom: 120px; right: 25px; align-items: flex-end; flex-direction: column-reverse; }
+
+        /* --- PASS & PLAY SPECIFIC UI --- */
+        .top-center-menu {
+            position: absolute;
+            top: 7vh; /* Top of screen */
+            left: 50%;
+            transform: translateX(-50%);
+            align-items: center;
+            z-index: 100;
+            width: 90vw;
+        }
+
+        .bottom-center-scanner {
+            position: absolute;
+            bottom: 5vh; /* Bottom of screen */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .action-btn {
+            border: 1px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.95);
+            color: rgba(255,255,255,0.9);
+            padding: 18px 25px; /* Larger hit area */
+            font-size: 15px;
+            text-align: center;
+            border-radius: 8px;
+            width: 160px;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.8);
+        }
+
+        .action-btn:active { background: rgba(255,255,255,0.2); }
+
+        .role-text { font-size: 24px; font-weight: bold; padding: 10px 20px; text-align: center; letter-spacing: 2px; background: rgba(0,0,0,0.9); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);}
+
+        /* Animations */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-fast { animation: pulse 1s infinite; }
+        
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-anim { animation: glitch 0.2s 3; }
+
+        @keyframes glitch-anim-heavy {
+            0% { transform: translate(0) skew(0deg); }
+            20% { transform: translate(-4px, 4px) skew(-5deg); }
+            40% { transform: translate(-4px, -4px) skew(5deg); }
+            60% { transform: translate(4px, 4px) skew(-2deg); }
+            80% { transform: translate(4px, -4px) skew(2deg); }
+            100% { transform: translate(0) skew(0deg); }
+        }
+        .severe-glitch { animation: glitch-anim-heavy 0.15s infinite; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
+        
+        .celebrate { animation: pulse-green 1.5s infinite; color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
+        @keyframes pulse-green {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 10px var(--neon-green); }
+            50% { transform: scale(1.05); text-shadow: 0 0 25px var(--neon-green); }
+        }
+
+        .health-pip {
+            width: 18px;
+            height: 18px;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            margin: 0 6px;
+            border-radius: 2px;
+        }
+        .health-pip.lost {
+            background: transparent;
+            border: 1px solid var(--neon-red);
+            box-shadow: none;
+        }

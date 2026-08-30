@@ -1,0 +1,125 @@
+/* Tide unified responsive design */
+/* Serenity 6.0 — one coherent responsive design layer */
+:root{
+  --app-height:100dvh;
+  --nav-height:64px;
+  --screen-pad:clamp(6px,1.6vw,10px);
+  --gap:clamp(6px,1.5vw,10px);
+  --touch:44px;
+  --blue:#0a84ff;
+  --blue-press:#0071e3;
+  --ink:#1d1d1f;
+  --white:#fff;
+  --paper:#f5f5f7;
+  --dark:#000;
+  --tile:#1c1c1e;
+  --tile-2:#2c2c2e;
+  --tile-3:#3a3a3c;
+  --muted:#a1a1a6;
+  --hairline:rgba(255,255,255,.12);
+  --hairline-light:rgba(0,0,0,.08);
+  --danger:#ff453a;
+  --success:#30d158;
+  --gold:#ffd60a;
+  --r-sm:10px;
+  --r-md:14px;
+  --r-lg:20px;
+  --art-shadow:0 12px 30px rgba(0,0,0,.22);
+  --title-size:clamp(18px,4.5vw,22px);
+  --body-size:clamp(12px,3vw,14px);
+  --caption-size:clamp(10px,2.45vw,12px);
+}
+html,body{height:var(--app-height);max-height:var(--app-height);overflow:hidden}
+body{position:fixed;inset:0;width:100%}
+#app{height:var(--app-height);min-height:var(--app-height);max-height:var(--app-height);contain:layout paint}
+main,.screen,.screen>*,.sea-wrap,.map-workspace,.dock-workspace,.aqua-page,.logbook-page{min-width:0;min-height:0;max-width:100%}
+.screen{padding:var(--screen-pad)}
+.sea-wrap,.map-workspace,.dock-workspace,.aqua-page,.logbook-page{gap:var(--gap);grid-template-columns:minmax(0,1fr)}
+button{transition:transform .12s ease,background-color .16s ease,color .16s ease,opacity .16s ease}
+button:not(:disabled):active{transform:scale(.97)}
+.top,.bottom,.sea-head,.workspace-head,.aqua-titlebar,.sea-panel,.dock-mode-tabs button,.logbook-tabs button,.aqua-mainbar button,.builder-parts button,.builder-option,.dock-materials span,.logbook-stage,.aqua-sheet{box-shadow:none!important}
+.sea-head,.workspace-head,.aqua-titlebar,.sea-panel,.builder-option,.dock-materials span{border:1px solid var(--hairline)}
+.region-info h2,.workspace-head b,.aqua-titlebar b{font-size:var(--title-size)}
+.workspace-head small,.region-info small,.aqua-titlebar small,.depthline,.status,.builder-help,.builder-option small,.row-copy small,.map-bottom-strip,.dock-materials,.brand small{font-size:var(--caption-size)}
+.setup-row select,.control,.dock-mode-tabs button,.logbook-tabs button,.aqua-mainbar button,.builder-parts button,.builder-option button,.row button{font-size:var(--body-size)}
+.iconbtn,.aqua-icon{min-width:var(--touch);min-height:var(--touch)}
+.setup-row select{height:44px}
+.control{min-height:48px}.dock-mode-tabs button,.logbook-tabs button{min-height:42px}.builder-parts button{min-height:48px}.builder-option button,.row button,.map-story-strip button,.dock-pager button,.logbook-pager button,.aqua-sheet-pager button,.aqua-sheet-tabs button{min-height:36px}.aqua-mainbar button{min-height:50px}
+/* Sea: artwork owns the available space. */
+.sea-wrap{grid-template-rows:auto minmax(0,1fr) auto}
+.canvas-shell,#game,.castbar,.castbar>*{min-width:0!important;max-width:100%!important}
+.canvas-shell{width:100%;height:100%;contain:layout paint;isolation:isolate}
+#game{width:100%!important;height:100%!important;image-rendering:auto}
+.castbar{grid-template-columns:72px minmax(0,1fr) 72px}
+/* Map: markers are real 44px controls; labels only surface where useful. */
+.map-workspace{grid-template-rows:auto auto minmax(0,1fr) 68px}
+.pirate-map-frame{height:100%;min-height:130px;aspect-ratio:auto}
+.map-story-strip{box-shadow:none!important;border:1px solid var(--hairline-light)}
+.worldmap-canvas{inset:0;width:100%;height:100%;transform:none!important}
+.worldmap-node{position:absolute;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;transform:translate(-50%,-50%);display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.9);color:var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.2);z-index:6}
+.worldmap-node.active{background:var(--blue);color:#fff}.worldmap-node.next{outline:2px solid rgba(10,132,255,.5);outline-offset:2px}.worldmap-node.locked{opacity:.4;filter:grayscale(.72)}
+.worldmap-node .marker-glyph{font-size:12px;font-weight:700}.worldmap-node .marker-name{position:absolute;left:50%;top:48px;transform:translateX(-50%);display:none;width:104px;padding:5px 7px;border-radius:9px;background:rgba(255,255,255,.94);color:var(--ink);font-size:10px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 7px rgba(0,0,0,.14);pointer-events:none}.worldmap-node.active .marker-name,.worldmap-node.next .marker-name{display:block}
+.map-bottom-strip{height:68px;min-height:68px;max-height:68px;align-self:end;overflow:hidden}.map-bottom-strip>div{min-width:0;height:100%;padding:10px;display:flex;flex-direction:column;justify-content:center}.map-bottom-strip b{font-size:13px}
+/* Dock: fixed controls and flexible product artwork. */
+.dock-workspace{grid-template-rows:auto 42px minmax(112px,1fr) 52px 40px 136px 30px}
+.builder-stage,.builder-options,.builder-option{min-width:0;min-height:0}
+.builder-parts{grid-template-columns:repeat(6,minmax(0,1fr))}
+.builder-options-head{min-height:40px}
+.dock-pager button,.logbook-pager button{width:40px;min-width:40px;height:36px}
+.builder-options{overflow:hidden}
+.builder-option{grid-template-rows:minmax(28px,32px) auto minmax(20px,auto) 36px}
+.builder-option .art{min-width:0;max-width:100%}.builder-option b,.builder-option small{max-width:100%}
+/* Aquarium */
+.aqua-page{position:relative}.aqua-stage,.aqua-view,.aqua-layer{min-width:0;max-width:100%}
+.aqua-action-handle{width:40px;height:40px;font-size:17px}.aqua-delete-handle{right:-16px;top:-16px}.aqua-size-handle{left:-17px;top:-17px}.aqua-rotate-handle{right:-17px;bottom:-17px}
+.aqua-sheet{visibility:hidden;max-width:calc(100% - 16px);overflow:hidden}.aqua-sheet.open{visibility:visible}.aqua-sheet-body,.aqua-inventory-grid,.aqua-care-grid,.aqua-fish-grid,.aqua-theme-grid{min-width:0;min-height:0;overflow:hidden}
+/* Log: deliberately paged, never vertically scrolling. */
+.logbook-stage,.logpanel,.list.compact,.fishgrid.compact-grid{min-height:0;overflow:hidden}
+.logpanel.active{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px}
+.list.compact{align-content:start}.row,.row-copy{min-width:0}.row-copy b,.row-copy small{overflow:hidden;text-overflow:ellipsis}.row button{min-width:64px;min-height:44px}
+.logbook-pager{min-height:40px}.logbook-pager button{min-height:36px}
+/* Settings */
+.experience-settings{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0}
+.setting-card{min-width:0;min-height:68px;padding:10px;display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px;border-radius:16px;background:#fff;color:var(--ink);border:1px solid var(--hairline-light);text-align:left}
+.setting-card[aria-pressed="true"] .setting-state{background:var(--blue);color:#fff}.setting-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:var(--paper);font-size:17px}.setting-copy{min-width:0}.setting-copy b,.setting-copy small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.setting-copy b{font-size:12px;font-weight:600}.setting-copy small{margin-top:2px;font-size:10px;color:#6e6e73}.setting-state{padding:5px 8px;border-radius:999px;background:#e5e5ea;color:#636366;font-size:9px;font-weight:600}
+.volume-card{min-height:50px;padding:9px 11px;display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,42%);align-items:center;gap:10px;border-radius:16px;background:#fff;color:var(--ink);border:1px solid var(--hairline-light)}.volume-card span b,.volume-card span small{display:block}.volume-card span b{font-size:12px}.volume-card span small{margin-top:2px;font-size:10px;color:#6e6e73}.volume-card input{width:100%;accent-color:var(--blue)}
+.logpanel[data-logpanel="data"].active{grid-template-rows:auto auto auto auto!important}.logdata-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}.logdata-actions button{min-height:44px}
+/* Calm motion controls */
+.reduced-motion *,html.reduced-motion *:before,html.reduced-motion *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+@media(max-height:720px){
+  :root{--nav-height:58px;--touch:40px;--gap:5px;--screen-pad:6px}
+  .top{min-height:48px;padding-block:5px}.brand small{display:none}.nav{height:42px}.nav-icon{width:18px;height:18px}
+  .sea-head,.workspace-head,.aqua-titlebar{min-height:44px;padding:7px 10px}.canvas-shell:before{padding:4px 8px;font-size:9px}.castbar{left:7px;right:7px;bottom:7px;grid-template-columns:64px minmax(0,1fr) 64px;gap:5px}.control,.powerbox{height:44px}.hint{display:none}.sea-panel{padding:6px}.setup-row select{height:38px}.status{display:none}
+  .map-workspace{grid-template-rows:auto auto minmax(0,1fr) 56px}.map-bottom-strip{height:56px;min-height:56px;max-height:56px}.map-story-strip{min-height:50px;padding:7px 10px}.map-story-strip p{white-space:nowrap;display:block;text-overflow:ellipsis}
+  .dock-workspace{grid-template-rows:auto 38px minmax(94px,1fr) 46px 36px 112px 26px}.builder-parts button{min-height:42px;height:42px}.builder-parts button span{font-size:14px}.builder-options{gap:6px}.builder-option{padding:6px;grid-template-rows:24px auto auto 34px}.builder-option .art{height:24px}.builder-option button{min-height:34px}
+  .aqua-page{grid-template-rows:40px minmax(0,1fr) 50px}.aqua-mainbar button{min-height:44px;height:44px}
+  .logbook-page{grid-template-rows:auto 38px minmax(0,1fr)}.logbook-tabs button{height:38px;min-height:38px}.logbook-stage{padding:7px}.experience-settings{gap:6px}.setting-card{min-height:58px;padding:7px}.volume-card{min-height:44px;padding:6px 9px}
+}
+@media(max-width:370px){
+  :root{--body-size:11px;--caption-size:9px;--title-size:18px}
+  .screen{padding:6px}.top{padding-inline:9px}.pill{min-width:46px;padding-inline:7px}.castbar{grid-template-columns:60px minmax(0,1fr) 60px}
+  .worldmap-node .marker-name{width:82px;font-size:9px}.builder-parts{gap:4px}.builder-parts button{font-size:8px}.builder-option{padding:6px}.logbook-tabs{gap:4px}.logbook-tabs button{font-size:9px;padding-inline:1px}.setting-card{grid-template-columns:30px minmax(0,1fr) auto;padding:7px;gap:6px}.setting-icon{width:30px;height:30px}.setting-copy small{display:none}
+}
+@media(max-width:330px){
+  .brand b{font-size:12px}.currency{gap:3px}.pill{min-width:42px;padding-inline:5px;font-size:10px}.nav-label{font-size:8px}.screen{padding:5px}.castbar{left:5px;right:5px;grid-template-columns:56px minmax(0,1fr) 56px;gap:4px}.control{font-size:10px}.map-bottom-strip{grid-template-columns:1fr}.map-bottom-strip>div:last-child{display:none}.builder-parts button span{font-size:13px}.builder-parts button{font-size:8px}.experience-settings{grid-template-columns:1fr}.setting-card{min-height:48px}
+}
+@media(orientation:landscape) and (max-height:600px){
+  :root{--nav-height:0px;--screen-pad:6px;--gap:5px}
+  #app{grid-template-rows:46px minmax(0,1fr)}.top{min-height:46px;padding:5px 9px}.brand small{display:none}
+  .bottom{top:46px;bottom:0;left:0;right:auto;width:68px;min-height:0;padding:6px;grid-template-columns:1fr;grid-template-rows:repeat(5,minmax(0,1fr));border-top:0;border-right:1px solid var(--hairline)}
+  .nav{width:56px;height:auto;min-height:46px}.screen{inset:0 0 0 68px;padding:6px}.screen.active{display:block}
+  .sea-wrap{grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:auto minmax(0,1fr)}.sea-head{grid-column:1/3}.canvas-shell{grid-column:1;grid-row:2}.sea-panel{grid-column:2;grid-row:2;align-self:stretch;display:flex;flex-direction:column;justify-content:center}.setup-row{grid-template-columns:1fr}.status{display:block;white-space:normal}
+  .map-workspace{grid-template-columns:minmax(0,1fr) 220px;grid-template-rows:auto minmax(0,1fr)}.map-workspace .workspace-head{grid-column:1/3}.map-story-strip{grid-column:2;grid-row:2;align-self:start}.pirate-map-frame{grid-column:1;grid-row:2}.map-bottom-strip{grid-column:2;grid-row:2;align-self:end;height:96px;min-height:96px;max-height:96px;grid-template-columns:1fr}
+  .dock-workspace{grid-template-columns:minmax(0,1fr) 280px;grid-template-rows:auto 42px minmax(0,1fr) 30px}.dock-workspace .workspace-head{grid-column:1/3}.dock-mode-tabs{grid-column:2;grid-row:2}.builder-stage{grid-column:1;grid-row:2/4}.builder-parts{grid-column:2;grid-row:3;align-self:start}.builder-options-head{grid-column:2;grid-row:3;align-self:center}.builder-options{grid-column:2;grid-row:3;align-self:end;height:112px}.dock-materials{grid-column:1/3;grid-row:4}
+  .aqua-page{grid-template-columns:minmax(0,1fr) 190px;grid-template-rows:auto minmax(0,1fr)}.aqua-titlebar{grid-column:1/3}.aqua-stage{grid-column:1;grid-row:2}.aqua-mainbar{grid-column:2;grid-row:2;grid-template-columns:1fr;align-content:center}.aqua-sheet{left:auto;right:6px;top:56px;bottom:6px;width:min(380px,45%);max-width:none;height:auto}
+  .logbook-page{grid-template-columns:110px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}.logbook-page .workspace-head{grid-column:1/3}.logbook-tabs{grid-column:1;grid-row:2;grid-template-columns:1fr;grid-template-rows:repeat(5,1fr)}.logbook-stage{grid-column:2;grid-row:2}.list.compact{grid-auto-rows:58px}.experience-settings{grid-template-columns:1fr 1fr}.setting-card{min-height:52px}
+}
+
+/* Final control-size and hidden-drawer hardening */
+.aqua-hud-chip{min-width:44px}
+.aqua-sheet{display:none}
+.aqua-sheet.open{display:grid;visibility:visible}
+.aqua-sheet-head button{width:40px;height:40px;min-width:40px;min-height:40px}
+@media(max-height:720px){.builder-option button{min-height:36px}}
+@media(orientation:landscape) and (max-height:600px){.builder-parts button span{display:none}.builder-parts button{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

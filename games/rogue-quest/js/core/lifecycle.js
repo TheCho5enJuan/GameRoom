@@ -1,0 +1,4 @@
+/* Rogue Quest lifecycle, autosave, and timers */
+'use strict';
+function hydrate(){state=migrate(state);if(state.currentChapter>state.unlockedChapter)state.currentChapter=state.unlockedChapter;if(state.run&&!Array.isArray(state.run.board))state.run=null;$('#hueSlider').value=state.heroHue;$('#app').style.setProperty('--heroHue',state.heroHue);applySettings();regenEnergy();buildBoard();let resumeCombat=state.run&&state.run.inCombat?Object.assign({},state.run.inCombat):null;if(state.run){sceneMode='board';combat=null}renderAll();applyLanguageUI();if(resumeCombat)setTimeout(()=>startCombat(resumeCombat.elite,resumeCombat.boss,true),50)}
+window.addEventListener('pagehide',saveState);document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();else{regenEnergy();renderAll()}});setInterval(()=>{regenEnergy();renderTop();renderEnergy()},1000);setInterval(saveState,30000);

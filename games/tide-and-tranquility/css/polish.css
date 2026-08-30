@@ -1,0 +1,21 @@
+/* Tide V10.1 navigation and casting polish */
+/* ===== V10.1 Navigation & Casting Polish ===== */
+.canvas-shell:before{display:none!important;content:none!important}
+.ocean-hud{
+  left:10px!important;top:10px!important;gap:0!important;
+  max-width:calc(100% - 20px)!important;padding:3px!important;
+  border:1px solid rgba(255,255,255,.13);border-radius:14px;
+  background:rgba(5,14,24,.54);backdrop-filter:blur(12px);
+  box-shadow:0 5px 18px rgba(0,0,0,.16)
+}
+.ocean-hud>span{
+  padding:5px 8px!important;border:0!important;border-radius:10px!important;
+  background:transparent!important;backdrop-filter:none!important
+}
+.ocean-hud>span+span{border-left:1px solid rgba(255,255,255,.10)!important;border-radius:0!important}
+.ocean-hud small{font-size:6px!important;letter-spacing:.08em!important;opacity:.8}
+.ocean-hud b{font-size:8px!important;margin-top:2px!important}
+.ocean-hud .ocean-event-chip{max-width:120px!important;font-size:8px!important;padding:7px 9px!important}
+.ocean-hud .ocean-event-chip.live{background:rgba(10,132,255,.74)!important;border-left:0!important;border-radius:10px!important}
+.cast-aim-note{position:absolute;z-index:10;left:50%;bottom:67px;transform:translateX(-50%);pointer-events:none;color:rgba(255,255,255,.8);font-size:7px;font-weight:650;letter-spacing:.03em;text-shadow:0 1px 4px rgba(0,0,0,.5);opacity:.88;white-space:nowrap}
+@media(max-height:700px){.ocean-hud{left:7px!important;top:7px!important;max-width:calc(100% - 14px)!important}.ocean-hud>span{padding:4px 6px!important}.ocean-hud .ocean-event-chip{max-width:96px!important}.cast-aim-note{display:none}}

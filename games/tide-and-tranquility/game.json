@@ -1,0 +1,158 @@
+{
+  "game": "Tide & Tranquility: Expeditions V10.1",
+  "sourceFile": "TideAndTranquility_Professional_v10_1.html",
+  "sourceSha256": "7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c",
+  "architecture": "named classic-script modules sharing one isolated game page",
+  "javascript": [
+    {
+      "file": "js/core/runtime.js",
+      "units": [
+        0,
+        21
+      ],
+      "sha256": "941befe85d436c5a199f5896d65a99a432085c780abf673d15c090724711ef7f"
+    },
+    {
+      "file": "js/data/catalog.js",
+      "units": [
+        21,
+        35
+      ],
+      "sha256": "b59dbca2e1b695589af4c4f1796cc3247381605a046c43ea42b2fb3c5408dae2"
+    },
+    {
+      "file": "js/state/storage.js",
+      "units": [
+        35,
+        58
+      ],
+      "sha256": "97a8ac9d8a88ea322a19cf3bea0b8c6f7111a095bcb0fd1665c1e4c977ed2810"
+    },
+    {
+      "file": "js/fishing/tackle.js",
+      "units": [
+        58,
+        75
+      ],
+      "sha256": "7751ddb5997236537c9e5c2b629b1d2c06249037035431066cf64126ac7fe68f"
+    },
+    {
+      "file": "js/world/ocean.js",
+      "units": [
+        75,
+        100
+      ],
+      "sha256": "bf9506d9f678c65421fd2970269a354bf0539afbff466e63016e01db9e0425f9"
+    },
+    {
+      "file": "js/fishing/gameplay.js",
+      "units": [
+        100,
+        110
+      ],
+      "sha256": "bdc3b589d004ca96a3d2b187e7019e16e5a019c3f891373dc10e905bf60b40a0"
+    },
+    {
+      "file": "js/rendering/scene.js",
+      "units": [
+        110,
+        129
+      ],
+      "sha256": "5077415e347efcab33cf258844e6c4ddcef2fac3f49c3a6f171b0cb9a82bcb99"
+    },
+    {
+      "file": "js/ui/status.js",
+      "units": [
+        129,
+        161
+      ],
+      "sha256": "ddb0c8cf7bb473dc49396a5c66685c8eaefaadeeff094ce998987348184888c4"
+    },
+    {
+      "file": "js/ui/input.js",
+      "units": [
+        161,
+        210
+      ],
+      "sha256": "bc60d0fda6d92171d5cae8ce364b736ce08c9ff16b7c9b23e567dfa118ae64d0"
+    },
+    {
+      "file": "js/aquarium/studio.js",
+      "units": [
+        210,
+        243
+      ],
+      "sha256": "477e0197924e07e9bccd4572b4f0604ed98c647bc233a980d04b8e8cdbf11749"
+    },
+    {
+      "file": "js/harbor/navigation.js",
+      "units": [
+        243,
+        287
+      ],
+      "sha256": "8d98e4d7078b51a0f4cc100567b106f2f69636f22037a9fe2932f19a2076fea9"
+    },
+    {
+      "file": "js/harbor/input.js",
+      "units": [
+        287,
+        304
+      ],
+      "sha256": "c083af15beda651148ff61c47bf1fcc20df6abe082a80640577264ae5ae7ff5c"
+    },
+    {
+      "file": "js/captain/system.js",
+      "units": [
+        304,
+        392
+      ],
+      "sha256": "73f13db710ba47642e598551e43a0faa7c4f64d3f320d3f4d836a1e1d8cf6754"
+    },
+    {
+      "file": "js/expeditions/system.js",
+      "units": [
+        392,
+        463
+      ],
+      "sha256": "f4965c8acd23b0a02e993aaff1725abc0eabcc86a8c5d327a971272d3820ef68"
+    },
+    {
+      "file": "js/main.js",
+      "units": [
+        463,
+        486
+      ],
+      "sha256": "32f4cdc80377d8af4746a82c6fadc157b854c58bff4c2cc40f5f1c650938b421"
+    }
+  ],
+  "stylesheets": [
+    {
+      "file": "css/base.css",
+      "sha256": "69eea687b7c8b7f1a47f1536bb4e2bda639cfa942c5ddb109cae712f7e24dc82"
+    },
+    {
+      "file": "css/responsive.css",
+      "sha256": "09d93e0d419b1fceb5676cf61c974ea9eb1b118bda0a9dd5aab20cb6bf0ce0ee"
+    },
+    {
+      "file": "css/tackle.css",
+      "sha256": "fc18827d92a61696313cb6ec0bad17be7c914c662a33591dce4edfd59b31d993"
+    },
+    {
+      "file": "css/ocean.css",
+      "sha256": "ff80951933f9df407df6c542e098642c65e2080fa382ada13b281ecc4834417b"
+    },
+    {
+      "file": "css/captain.css",
+      "sha256": "ada527511bb6122f4691a89e3ae9c3993d83e4f04b4d33c04117441c55a1ad1c"
+    },
+    {
+      "file": "css/expeditions.css",
+      "sha256": "6289e97e2dbd660eda37b52fe85e2f14765d15d207a3af3c97c824a0948dfafb"
+    },
+    {
+      "file": "css/polish.css",
+      "sha256": "b7370ce9fba071433169a9aba8de611bc41e0e4cd5ac0427ffc8f2b666b5397e"
+    }
+  ]
+}

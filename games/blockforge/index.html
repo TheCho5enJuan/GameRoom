@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" name="viewport"/>
+<meta content="#0c1020" name="theme-color"/>
+<title>Blockforge Clicker: Deep Mine — 3D + MOD Build</title>
+
+<link href="./css/core.css" rel="stylesheet"/><link href="./css/studio.css" rel="stylesheet"/></head>
+<body>
+<div id="app">
+<canvas id="game"></canvas>
+<div class="hud">
+<div class="hudRow">
+<div class="statCard"><div class="statLabel" data-i18n="coins">Coins</div><div class="statValue" id="coinsText">0</div></div>
+<div class="pill centerHud"><div class="zoneName" id="zoneText">Dirtworks · Zone 1</div><div class="subtle" id="powerText">4 damage · 1 pickaxe</div></div>
+<div class="statCard right"><div class="statLabel" data-i18n="gems">Gems</div><div class="statValue" id="gemsText">0</div></div>
+</div>
+<div class="secondaryHud">
+<div class="pill eventPill" id="eventText">Normal Mine</div>
+<div class="pill frenzyShell"><div class="frenzyLabel" id="frenzyLabel">FRENZY</div><div class="frenzyTrack"><div class="frenzyFill" id="frenzyFill"></div></div></div>
+</div>
+<div id="bossBarWrap"><div id="bossBar"><div id="bossFill"></div></div><div id="bossText">Boss</div></div>
+</div>
+<div class="toastStack" id="toastStack"></div>
+<button class="devQuick hidden" id="devQuickBtn">DEV</button>
+<div class="hint" data-i18n="hint" id="hint">Drag to move in any direction · Tap to swing</div>
+<div class="abilityDock">
+<button class="abilityBtn" id="dashBtn"><div class="abilityIcon">💨</div><div class="abilityName" data-i18n="dash">DASH</div><div class="abilityCd" id="dashCd">Ready</div></button>
+<button class="abilityBtn" id="frenzyBtn"><div class="abilityIcon">⚡</div><div class="abilityName" data-i18n="frenzy">FRENZY</div><div class="abilityCd" id="frenzyCd">0%</div></button>
+<button class="abilityBtn" id="petAbilityBtn"><div class="abilityIcon" id="petAbilityIcon">🐹</div><div class="abilityName" data-i18n="pet">PET</div><div class="abilityCd" id="petAbilityCd">Ready</div></button>
+</div>
+<div class="bottomUI">
+<div class="progressShell"><div class="progressTop"><span id="progressLabel">Layer 1 / 8</span><span id="comboText">Combo x1.0</span></div><div class="progressTrack"><div class="progressFill" id="progressFill"></div></div></div>
+<div class="actionBar">
+<button class="actionBtn" id="shopBtn"><div class="icon">⛏️</div><strong data-i18n="forge">Forge</strong><span id="nextUpgradeText">Power up</span></button>
+<button class="actionBtn" id="petsBtn"><div class="icon">🐾</div><strong data-i18n="pets">Pets</strong><span id="petText">Pebble Mole</span></button>
+<button class="actionBtn" id="forgeBtn"><div class="icon">🌟</div><strong data-i18n="mastery">Mastery</strong><span id="forgeText">Locked</span></button>
+<button class="actionBtn" id="menuBtn"><div class="icon">📋</div><strong data-i18n="more">More</strong><span data-i18n="questsSave">Quests &amp; save</span><span class="badge hidden" id="dailyBadge">!</span></button>
+</div>
+</div>
+<div class="modalBackdrop" id="shopModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="forgeEquipment">Forge &amp; Equipment</div><div class="modalSub" data-i18n="forgeEquipmentSub">Upgrade your tools and equip relic pickaxe heads found in the mine.</div></div><button class="closeBtn" data-close="shopModal">×</button></div>
+<div class="modalBody"><div class="sectionTitle" data-i18n="permanentUpgrades">Permanent Upgrades</div><div class="upgradeGrid" id="upgradeGrid"></div><div class="sectionTitle" data-i18n="relicHeads">Relic Pickaxe Heads</div><div id="relicSummary"></div><div class="relicGrid" id="relicGrid"></div></div>
+</div></div>
+<div class="modalBackdrop" id="petsModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="companionDen">Companion Den</div><div class="modalSub" data-i18n="companionDenSub">Pets level up, gain affection, talk to you, and have active abilities.</div></div><button class="closeBtn" data-close="petsModal">×</button></div>
+<div class="modalBody"><div id="petHero"></div><div class="sectionTitle" data-i18n="companions">Companions</div><div class="petGrid" id="petGrid"></div></div>
+</div></div>
+<div class="modalBackdrop" id="forgeModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="masteryReforge">Mastery &amp; Ancient Reforge</div><div class="modalSub" data-i18n="masteryReforgeSub">Bosses award Mastery Points. Reforge for permanent Ancient Core multipliers.</div></div><button class="closeBtn" data-close="forgeModal">×</button></div>
+<div class="modalBody" id="forgeBody"></div>
+</div></div>
+<div class="modalBackdrop" id="menuModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="mineOperations">Mine Operations</div><div class="modalSub" data-i18n="mineOperationsSub">Contracts, rewards, stats, settings, and save tools.</div></div><button class="closeBtn" data-close="menuModal">×</button></div>
+<div class="modalBody">
+<div id="dailyContainer"></div>
+<div class="sectionTitle" data-i18n="dailyContracts">Daily Contracts</div><div class="contractGrid" id="contractGrid"></div>
+<div class="sectionTitle" data-i18n="careerStats">Career Stats</div><div class="statsGrid" id="statsGrid"></div>
+<div class="sectionTitle" data-i18n="achievements">Achievements</div><div class="achievementList" id="achievementList"></div>
+<div class="sectionTitle" data-i18n="settingsSave">Settings &amp; Save</div>
+<div class="settingCard"><div class="rowBtns" style="margin-bottom:9px"><button class="smallBtn" id="soundBtn">Sound: On</button><button class="smallBtn" id="hapticBtn">Haptics: On</button><button class="smallBtn" id="motionBtn">Motion: Full</button><button class="smallBtn" id="numbersBtn">Numbers: On</button></div><div class="rowBtns"><button class="smallBtn" id="saveBtn">Save Now</button><button class="smallBtn" id="exportBtn">Export Save</button><button class="smallBtn" id="importBtn">Import Save</button><button class="smallBtn" id="resetBtn">Reset Game</button></div><div class="modalSub" id="saveStatus" style="margin-top:9px">Autosave active.</div></div>
+<div class="sectionTitle" data-i18n="language">Language</div>
+<div class="settingCard"><div class="langSelector"><button class="smallBtn langBtn" id="langEnBtn">English</button><button class="smallBtn langBtn" id="langEsBtn">Español</button></div></div>
+<div class="sectionTitle" data-i18n="displayMode">Display Mode</div>
+<div class="settingCard"><div class="upgradeTop"><div><div class="upgradeName" data-i18n="visualStyle">Mine View</div><div class="modalSub" data-i18n="threeDExplain">Switch between the classic flat view and a dimensional view with cube depth, perspective lighting, shadows, and an extruded mine.</div></div></div><div class="rowBtns" style="margin-top:9px"><button class="smallBtn" id="viewModeBtn">View: 2D</button></div></div>
+<div class="sectionTitle" data-i18n="characterCustomization">Character Customization</div>
+<div class="settingCard"><div class="upgradeTop"><div><div class="upgradeName" data-i18n="characterStudio">Character Studio</div><div class="modalSub" data-i18n="characterStudioSub">Change body shape, visual style, headgear, face and colors. Changes apply live.</div></div></div><div class="rowBtns" style="margin-top:9px"><button class="smallBtn" data-i18n="openCharacterStudio" id="openCharacterBtn">Open Character Studio</button><button class="smallBtn" id="textureBtn">Textures: Detailed</button></div><div class="textureDemo"><div class="textureChip" style="background:#8b5e3c"></div><div class="textureChip" style="background:#657180"></div><div class="textureChip" style="background:#b4892b"></div><div class="textureChip" style="background:#654ea3"></div><div class="textureChip" style="background:#9d3c2d"></div></div></div>
+<div class="sectionTitle" data-i18n="developerMode">Developer Mode</div>
+<div class="settingCard devGate" id="devGate"><div class="upgradeTop"><div><div class="upgradeName" data-i18n="testingConsole">Testing Console</div><div class="modalSub" data-i18n="testingConsoleSub">Directly edit progression and trigger game states. Developer changes are included in autosaves and exports.</div></div></div><div class="rowBtns" style="margin-top:9px"><button class="smallBtn" id="devModeBtn">Developer Mode: Off</button><button class="smallBtn" disabled="" id="openDevBtn">Open Dev Console</button></div></div>
+<div class="sectionTitle" data-i18n="controls">Controls</div><div class="settingCard"><div class="modalSub" style="line-height:1.6">Mobile: drag anywhere on the mine to move in 360°, tap to power-swing. Use the right-side buttons for Dash, Frenzy, and your pet ability. Desktop: WASD/arrow keys move, Space swings, Shift dashes, F activates Frenzy, E uses the pet ability.</div></div>
+</div>
+</div></div>
+<div class="modalBackdrop" id="characterModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="characterStudio">Character Studio</div><div class="modalSub" data-i18n="characterStudioLong">Build a distinct miner. Shape, outfit style, headgear, face and palette are saved with your game.</div></div><button class="closeBtn" data-close="characterModal">×</button></div>
+<div class="modalBody"><div class="charStudioGrid"><div class="charPreviewCard"><canvas class="charPreviewCanvas" height="250" id="characterPreview" width="360"></canvas><div class="charSummary" id="characterSummary"></div><div class="rowBtns" style="margin-top:9px"><button class="smallBtn" data-i18n="randomize" id="randomCharacterBtn">Randomize</button><button class="smallBtn" data-i18n="resetCharacter" id="resetCharacterBtn">Reset Character</button></div></div><div class="charControls" id="characterControls"></div></div></div>
+</div></div>
+<div class="modalBackdrop" id="devModal"><div class="modal">
+<div class="modalHeader"><div><div class="modalTitle" data-i18n="developerConsole">Developer Console</div><div class="modalSub" data-i18n="developerConsoleSub">Live test controls for Blockforge. Values update immediately and save locally.</div></div><button class="closeBtn" data-close="devModal">×</button></div>
+<div class="modalBody">
+<div class="devWarning"><b>Developer Mode bypasses normal progression limits.</b> Extreme pickaxe counts are virtualized above the visual/simulation budget so you can test huge values without locking up the browser.</div>
+<div class="devToolbar"><button class="smallBtn" id="devSnapshotBtn">Save Test Snapshot</button><button class="smallBtn" id="devRestoreBtn">Restore Snapshot</button><button class="smallBtn" id="devNormalizeBtn">Normalize Production Caps</button><button class="smallBtn" id="devDisableBtn">Disable Dev Mode</button></div>
+<div id="modPanel"></div>
+<div id="devConsole"></div>
+</div>
+</div></div>
+</div>
+
+<script src="./js/i18n.js"></script><script src="./js/data.js"></script><script src="./js/systems/progression.js"></script><script src="./js/world/grid.js"></script><script src="./js/state/persistence.js"></script><script src="./js/audio.js"></script><script src="./js/pets.js"></script><script src="./js/runtime.js"></script><script src="./js/world/mining.js"></script><script src="./js/systems/contracts.js"></script><script src="./js/ui/menus.js"></script><script src="./js/rendering/scene.js"></script><script src="./js/input.js"></script><script src="./js/main.js"></script></body>
+</html>

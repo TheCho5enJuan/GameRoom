@@ -1,0 +1,122 @@
+{
+  "game": "Rogue Quest: Ascendant V3.1",
+  "sourceFile": "RogueQuest_Production_v3_1.html",
+  "sourceSha256": "b98d145e9db0b7cb56970bc6ae8cc074e4ae9cdc50e52203a4b7df2ced368d7b",
+  "architecture": "named classic-script modules sharing one isolated game page",
+  "javascript": [
+    {
+      "file": "js/core/config.js",
+      "units": [
+        0,
+        14
+      ],
+      "sha256": "10951d63da65637b955ccc23a6ed09acf2c4bc4132efec49e8e28b7f1872d104"
+    },
+    {
+      "file": "js/core/state.js",
+      "units": [
+        14,
+        38
+      ],
+      "sha256": "1a16aacf754884b8bb07c2617ffe166d2e890d5444f25b4bb3745b8c92788fce"
+    },
+    {
+      "file": "js/core/progression.js",
+      "units": [
+        38,
+        74
+      ],
+      "sha256": "fd2870a5c19b335c88b7c2595d424a7053847a94d91a28c4c3ea724b44999ee2"
+    },
+    {
+      "file": "js/core/adventure.js",
+      "units": [
+        74,
+        95
+      ],
+      "sha256": "a76acf8e27b125509a045600196ba2a85c805cc7462c7c1e75c2bda7aca2d214"
+    },
+    {
+      "file": "js/core/combat.js",
+      "units": [
+        95,
+        113
+      ],
+      "sha256": "fee02a94961c93e25cc24ecf6c6c6a65f5da50ae0bdf84f8ce612530f68216c6"
+    },
+    {
+      "file": "js/core/rendering.js",
+      "units": [
+        113,
+        129
+      ],
+      "sha256": "e1e1bf0d2bf6c7dafa31beee383fe9bc9815cf85b86d4356e2dd6b1fb770fe19"
+    },
+    {
+      "file": "js/core/ui.js",
+      "units": [
+        129,
+        170
+      ],
+      "sha256": "74f19339233be3146dd9e51c1512be129a46817d1494e50c08174278609d652b"
+    },
+    {
+      "file": "js/core/lifecycle.js",
+      "units": [
+        170,
+        175
+      ],
+      "sha256": "d0103d240c0b8b11a32c7614be0d37b37052b9a880eaf86fb642711eeeecdd4e"
+    },
+    {
+      "file": "js/v3/config.js",
+      "units": [
+        175,
+        194
+      ],
+      "sha256": "a6085ce33b6328d642832ec48e54b6d61a142664c5a542186ee9433c10bcc331"
+    },
+    {
+      "file": "js/v3/arena.js",
+      "units": [
+        194,
+        240
+      ],
+      "sha256": "3063f75ea4bb4ff868ee4f69d4f5fa3bc12ae66e469036974e96305837e7faff"
+    },
+    {
+      "file": "js/v3/progression.js",
+      "units": [
+        240,
+        263
+      ],
+      "sha256": "33d108280a45074dce288282b9052c1e01897a7933fc1c87de1b65a19fe1b0cc"
+    },
+    {
+      "file": "js/v3/ui.js",
+      "units": [
+        263,
+        287
+      ],
+      "sha256": "3d122d0462bf52749ae9b124f317ff54a9f50c0e098d6ca5d1697eb8c52382b5"
+    },
+    {
+      "file": "js/main.js",
+      "units": [
+        287,
+        289
+      ],
+      "sha256": "8c1fd5a803be8db0f408c580f5be8a8b3fe919a7b07df1525c986d01034b05a1"
+    }
+  ],
+  "stylesheets": [
+    {
+      "file": "css/core.css",
+      "sha256": "43b144a118e524038c94a3f17de8b6688a0f5b3566deb22c5b711a46d690c4bb"
+    },
+    {
+      "file": "css/v3.css",
+      "sha256": "f4cf9b3233a0791103e6fc785b9b2444d4ef89ed1b03a405121d2235c015cb20"
+    }
+  ]
+}
