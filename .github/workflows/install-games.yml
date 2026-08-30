@@ -1,8 +1,8 @@
-name: Install uploaded game builds
+name: Build modular game projects
 
 on:
   push:
-    branches: [main]
+    branches: [main, modular-game-builds]
     paths:
       - '.game-upload/**'
       - '.github/workflows/install-games.yml'
@@ -20,41 +20,196 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct and verify uploaded games
+      - name: Reconstruct exact uploaded sources
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p \
-            games/blockforge \
-            games/rogue-quest \
-            games/tide-and-tranquility \
-            games/space-sabotage \
-            games/deal-or-no-deal \
-            games/tic-tac-toe
+          mkdir -p /tmp/gameroom-source
+
+          cat .game-upload/rogue-mod.00 .game-upload/rogue-mod.01 .game-upload/rogue-mod.02 .game-upload/rogue-mod.03 \
+              .game-upload/rogue-mod.04 .game-upload/rogue-mod.05 .game-upload/rogue-mod.06 .game-upload/rogue-mod.07 \
+              .game-upload/rogue-mod.08 .game-upload/rogue-mod.09 .game-upload/rogue-mod.10 .game-upload/rogue-mod.11 \
+            | base64 -d | xz -d > /tmp/gameroom-source/rogue.html
 
           cat .game-upload/blockforge.00 .game-upload/blockforge.01 .game-upload/blockforge.02 .game-upload/blockforge.03 \
-            | base64 -d | gzip -d > games/blockforge/index.html
-
-          cat .game-upload/rogue.00 .game-upload/rogue.01 .game-upload/rogue.02 .game-upload/rogue.03 \
-              .game-upload/roguefix.00 .game-upload/roguefix.01 .game-upload/rogue.05 \
-            | base64 -d | gzip -d > games/rogue-quest/index.html
+            | base64 -d | gzip -d > /tmp/gameroom-source/blockforge.html
 
           cat .game-upload/tidexz.00 .game-upload/tidexz.01 .game-upload/tidexz.02 .game-upload/tidexz.03 \
               .game-upload/tidexz.04 .game-upload/tidexz.05 .game-upload/tidexz.06 .game-upload/tidexz.07 \
               .game-upload/tidexz.08 .game-upload/tidexz.09 .game-upload/tidexz.10 .game-upload/tidexz.11 \
-            | base64 -d | xz -d > games/tide-and-tranquility/index.html
+            | base64 -d | xz -d > /tmp/gameroom-source/tide.html
 
-          base64 -d < .game-upload/space.gz.b64 | gzip -d > games/space-sabotage/index.html
-          base64 -d < .game-upload/deal.gz.b64 | gzip -d > games/deal-or-no-deal/index.html
-          base64 -d < .game-upload/tictac.gz.b64 | gzip -d > games/tic-tac-toe/index.html
+          base64 -d < .game-upload/space.gz.b64 | gzip -d > /tmp/gameroom-source/space.html
+          base64 -d < .game-upload/deal.gz.b64 | gzip -d > /tmp/gameroom-source/deal.html
+          base64 -d < .game-upload/tictac.gz.b64 | gzip -d > /tmp/gameroom-source/tictac.html
 
-          echo '8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a  games/blockforge/index.html' | sha256sum -c -
-          echo '72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7  games/rogue-quest/index.html' | sha256sum -c -
-          echo '7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c  games/tide-and-tranquility/index.html' | sha256sum -c -
+          echo '72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7  /tmp/gameroom-source/rogue.html' | sha256sum -c -
+          echo '8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a  /tmp/gameroom-source/blockforge.html' | sha256sum -c -
+          echo '7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c  /tmp/gameroom-source/tide.html' | sha256sum -c -
+          echo '0368f87a6844c47b4f7e6496ceb573a814bc85c19d798c17cc34a1136dbfd404  /tmp/gameroom-source/space.html' | sha256sum -c -
+          echo 'e8f97cb613160d0c31e3277ca1ded1b1a8c3972d89aea9b51ac29870861543b3  /tmp/gameroom-source/deal.html' | sha256sum -c -
+          echo 'f466e3ea19fd84343ed7b7555c25c581843829f42ff95e6c5092cb3c81d3f94f  /tmp/gameroom-source/tictac.html' | sha256sum -c -
+
+      - name: Split large games into maintainable files
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const vm = require('vm');
+          const crypto = require('crypto');
+
+          const builds = [
+            { input: '/tmp/gameroom-source/rogue.html', out: 'games/rogue-quest', name: 'Rogue Quest', version: 'v3.1', sourceSha256: '72f45e4828750ae80ba3e6cb09db70ce3f154504d8f7e0e56a614bc3bd8a0ab7' },
+            { input: '/tmp/gameroom-source/tide.html', out: 'games/tide-and-tranquility', name: 'Tide & Tranquility', version: 'v10.1', sourceSha256: '7f7ebbb7062b6b0318393df69a9894230403de9548b1472793ea953d6880137c' },
+            { input: '/tmp/gameroom-source/blockforge.html', out: 'games/blockforge', name: 'Blockforge: Deep Mine', version: 'v5 · 3D', sourceSha256: '8f38f85d9cf8b770a511879757921e529cba70a03c25b48393a9fcc4294f016a' },
+          ];
+
+          function sha256(value) {
+            return crypto.createHash('sha256').update(value).digest('hex');
+          }
+
+          function validScript(source) {
+            try {
+              new vm.Script(source, { filename: 'chunk.js' });
+              return true;
+            } catch {
+              return false;
+            }
+          }
+
+          function unwrapIife(source) {
+            let value = source;
+            const starts = [/^\s*\(function\(\)\{\s*/, /^\s*\(\(\)\s*=>\s*\{\s*/];
+            let matched = false;
+            for (const start of starts) {
+              if (start.test(value)) {
+                value = value.replace(start, '');
+                matched = true;
+                break;
+              }
+            }
+            if (!matched || !/\}\)\(\);\s*$/.test(value)) {
+              throw new Error('Unsupported outer script wrapper');
+            }
+            return value.replace(/\}\)\(\);\s*$/, '');
+          }
+
+          function splitScript(source, targetBytes = 45000, minBytes = 12000) {
+            const chunks = [];
+            let rest = source;
+            while (Buffer.byteLength(rest, 'utf8') > targetBytes * 1.35) {
+              const candidates = [];
+              for (let i = 0; i < rest.length; i += 1) {
+                if (rest[i] !== '\n') continue;
+                const position = i + 1;
+                const bytes = Buffer.byteLength(rest.slice(0, position), 'utf8');
+                if (bytes >= minBytes && bytes <= targetBytes * 1.45) candidates.push({ position, bytes });
+              }
+              candidates.sort((a, b) => Math.abs(a.bytes - targetBytes) - Math.abs(b.bytes - targetBytes));
+              let cut = null;
+              for (const candidate of candidates) {
+                const before = rest.slice(0, candidate.position);
+                const after = rest.slice(candidate.position);
+                if (validScript(before) && validScript(after)) {
+                  cut = candidate.position;
+                  break;
+                }
+              }
+              if (cut === null) throw new Error('Could not find a safe JavaScript split point');
+              chunks.push(rest.slice(0, cut));
+              rest = rest.slice(cut);
+            }
+            chunks.push(rest);
+            if (!chunks.every(validScript)) throw new Error('Generated an invalid JavaScript chunk');
+            return chunks;
+          }
+
+          function splitBuild(build) {
+            const original = fs.readFileSync(build.input, 'utf8');
+            if (sha256(original) !== build.sourceSha256) throw new Error(`${build.name}: source hash changed`);
+
+            const styleStart = original.indexOf('<style>');
+            const styleEnd = original.indexOf('</style>', styleStart);
+            const scriptStart = original.indexOf('<script>', styleEnd);
+            const scriptEnd = original.lastIndexOf('</script>');
+            if ([styleStart, styleEnd, scriptStart, scriptEnd].some(index => index < 0)) {
+              throw new Error(`${build.name}: expected one inline style and script build`);
+            }
+
+            const css = original.slice(styleStart + 7, styleEnd);
+            const wrappedScript = original.slice(scriptStart + 8, scriptEnd);
+            const scriptBody = unwrapIife(wrappedScript);
+            const chunks = splitScript(scriptBody);
+
+            fs.rmSync(build.out, { recursive: true, force: true });
+            fs.mkdirSync(path.join(build.out, 'css'), { recursive: true });
+            fs.mkdirSync(path.join(build.out, 'js'), { recursive: true });
+            fs.writeFileSync(path.join(build.out, 'css', 'game.css'), css);
+
+            const scriptFiles = [];
+            chunks.forEach((chunk, index) => {
+              const filename = `game-${String(index + 1).padStart(2, '0')}.js`;
+              scriptFiles.push(`js/${filename}`);
+              fs.writeFileSync(path.join(build.out, 'js', filename), chunk);
+            });
+
+            const stylesheet = '<link rel="stylesheet" href="./css/game.css">';
+            const scripts = scriptFiles.map(file => `<script src="./${file}"></script>`).join('\n');
+            const html = original.slice(0, styleStart) + stylesheet + original.slice(styleEnd + 8, scriptStart) + scripts + original.slice(scriptEnd + 9);
+            fs.writeFileSync(path.join(build.out, 'index.html'), html);
+
+            const reassembled = chunks.join('');
+            if (reassembled !== scriptBody) throw new Error(`${build.name}: script changed during split`);
+
+            const manifest = {
+              name: build.name,
+              version: build.version,
+              sourceSha256: build.sourceSha256,
+              generatedFrom: 'Exact uploaded single-file browser build',
+              stylesheet: 'css/game.css',
+              scripts: scriptFiles,
+              validation: {
+                scriptBodySha256: sha256(scriptBody),
+                reassembledScriptSha256: sha256(reassembled),
+                scriptBodyPreserved: true,
+              },
+            };
+            fs.writeFileSync(path.join(build.out, 'build-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+
+            console.log(`${build.name}: ${scriptFiles.length} JS files; HTML ${Buffer.byteLength(html)} bytes; CSS ${Buffer.byteLength(css)} bytes`);
+          }
+
+          builds.forEach(splitBuild);
+          NODE
+
+          for game in rogue-quest tide-and-tranquility blockforge; do
+            test -f "games/$game/index.html"
+            test -f "games/$game/css/game.css"
+            test -f "games/$game/build-manifest.json"
+            for script in games/$game/js/*.js; do node --check "$script"; done
+            grep -q 'href="./css/game.css"' "games/$game/index.html"
+            grep -q 'src="./js/game-01.js"' "games/$game/index.html"
+          done
+
+      - name: Install smaller uploaded games
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p games/space-sabotage games/deal-or-no-deal games/tic-tac-toe
+          cp /tmp/gameroom-source/space.html games/space-sabotage/index.html
+          cp /tmp/gameroom-source/deal.html games/deal-or-no-deal/index.html
+          cp /tmp/gameroom-source/tictac.html games/tic-tac-toe/index.html
+
           echo '0368f87a6844c47b4f7e6496ceb573a814bc85c19d798c17cc34a1136dbfd404  games/space-sabotage/index.html' | sha256sum -c -
           echo 'e8f97cb613160d0c31e3277ca1ded1b1a8c3972d89aea9b51ac29870861543b3  games/deal-or-no-deal/index.html' | sha256sum -c -
           echo 'f466e3ea19fd84343ed7b7555c25c581843829f42ff95e6c5092cb3c81d3f94f  games/tic-tac-toe/index.html' | sha256sum -c -
 
+      - name: Update GameRoom launcher
+        shell: bash
+        run: |
+          set -euo pipefail
           python - <<'PY'
           from pathlib import Path
           import re
@@ -104,20 +259,21 @@ jobs:
           grep -q 'href="./games/tide-and-tranquility/"' index.html
           grep -q 'href="./games/blockforge/"' index.html
 
+      - name: Remove temporary upload machinery
+        shell: bash
+        run: |
+          set -euo pipefail
           rm -rf .game-upload
-          rm -f games/blockforge/README.md
-          rm -f games/rogue-quest/README.md
-          rm -f games/tide-and-tranquility/README.md
           rm -f games/mining-game/README.md
           rmdir games/mining-game 2>/dev/null || true
           rm -f .github/workflows/install-games.yml
 
-      - name: Commit installed games
+      - name: Commit modular game builds
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Install exact uploaded game builds'
+          git commit -m 'Install modular browser game builds'
           git push
