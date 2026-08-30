@@ -1,336 +1,48 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SPACE SABOTAGE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>SPACE SABOTAGE</title>
+<script src="https://cdn.tailwindcss.com"></script>
 
-        :root {
-            --neon-blue: #00f3ff;
-            --neon-red: #ff003c;
-            --neon-green: #00ff66;
-            --neon-orange: #ff9d00;
-            --neon-purple: #b700ff;
-            --bg-black: #000000;
-        }
-
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            font-family: 'Share Tech Mono', monospace;
-            touch-action: none; 
-        }
-
-        body {
-            background-color: var(--bg-black);
-            color: var(--neon-blue);
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #center-console {
-            width: 340px;
-            min-height: 340px;
-            border: 2px solid var(--neon-blue);
-            border-radius: 20px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.15), inset 0 0 20px rgba(0, 243, 255, 0.15);
-            position: relative;
-            z-index: 10;
-            background-color: rgba(0,0,0,0.85);
-            padding: 25px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .neon-text { text-shadow: 0 0 5px currentColor; }
-        .neon-text-red { color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
-        .neon-text-blue { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
-
-        .btn-main {
-            border: 1px solid var(--neon-blue);
-            background: rgba(0, 243, 255, 0.05);
-            color: var(--neon-blue);
-            padding: 12px 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: all 0.2s;
-            font-size: 12px;
-            border-radius: 4px;
-        }
-
-        .btn-main:active { background: var(--neon-blue); color: black; }
-        .btn-danger { border-color: var(--neon-red); color: var(--neon-red); background: rgba(255, 0, 60, 0.05); }
-        .btn-danger:active { background: var(--neon-red); color: black; }
-
-        .quadrant {
-            position: absolute;
-            width: 50vw;
-            height: 50vh;
-            pointer-events: none; 
-            display: flex;
-            padding: 25px; 
-        }
-
-        .q-tl { top: 0; left: 0; justify-content: flex-start; align-items: flex-start; }
-        .q-tr { top: 0; right: 0; justify-content: flex-end; align-items: flex-start; }
-        .q-bl { bottom: 0; left: 0; justify-content: flex-start; align-items: flex-end; }
-        .q-br { bottom: 0; right: 0; justify-content: flex-end; align-items: flex-end; }
-
-        .anchor-wrapper {
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .player-label {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 14px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            transition: color 0.2s;
-        }
-
-        .anchor-zone {
-            width: 65px;
-            height: 65px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .anchor-icon {
-            width: 60px;
-            height: 60px;
-            border: 2px dashed rgba(255,255,255,0.4); 
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none;
-            transition: all 0.2s;
-            color: rgba(255,255,255,0.5); 
-        }
-
-        .anchor-wrapper.active .anchor-icon { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); transform: scale(0.9); }
-        .anchor-wrapper.active .player-label { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
-        .anchor-wrapper.locked .anchor-icon { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.1); }
-        .anchor-wrapper.locked .player-label { color: rgba(255,255,255,0.2); }
-        .anchor-wrapper.benched .anchor-icon { border-color: var(--neon-red); color: var(--neon-red); opacity: 0.3; }
-        .anchor-wrapper.benched .player-label { color: var(--neon-red); opacity: 0.5; }
-
-        .anchor-wrapper.alien-origin .anchor-icon {
-            border: 2px solid var(--neon-red) !important;
-            color: var(--neon-red) !important;
-            transform: scale(1.3) !important;
-            opacity: 1 !important;
-            background: radial-gradient(circle, rgba(255,0,60,0.4) 0%, rgba(255,0,60,0) 70%);
-            animation: pulse-red-zone 0.5s infinite;
-        }
-        .anchor-wrapper.alien-origin .player-label { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); opacity: 1; }
-
-        @keyframes pulse-red-zone {
-            0%, 100% { box-shadow: 0 0 30px var(--neon-red), inset 0 0 15px var(--neon-red); }
-            50% { box-shadow: 0 0 50px var(--neon-red), inset 0 0 25px var(--neon-red); }
-        }
-
-        .hidden-menu {
-            position: absolute;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            transition: opacity 0.1s;
-            z-index: 20;
-        }
-
-        .hidden-menu.visible { opacity: 1; visibility: visible; pointer-events: auto; }
-
-        .q-tl .hidden-menu { top: 120px; left: 25px; }
-        .q-tr .hidden-menu { top: 120px; right: 25px; align-items: flex-end; }
-        .q-bl .hidden-menu { bottom: 120px; left: 25px; flex-direction: column-reverse; }
-        .q-br .hidden-menu { bottom: 120px; right: 25px; align-items: flex-end; flex-direction: column-reverse; }
-
-        .top-center-menu {
-            position: absolute;
-            top: 7vh;
-            left: 50%;
-            transform: translateX(-50%);
-            align-items: center;
-            z-index: 100;
-            width: 90vw;
-        }
-
-        .bottom-center-scanner {
-            position: absolute;
-            bottom: 5vh;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-        }
-
-        .action-btn {
-            border: 1px solid rgba(255,255,255,0.5);
-            background: rgba(0,0,0,0.95);
-            color: rgba(255,255,255,0.9);
-            padding: 18px 25px;
-            font-size: 15px;
-            text-align: center;
-            border-radius: 8px;
-            width: 160px;
-            letter-spacing: 1px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.8);
-        }
-
-        .action-btn:active { background: rgba(255,255,255,0.2); }
-
-        .role-text { font-size: 24px; font-weight: bold; padding: 10px 20px; text-align: center; letter-spacing: 2px; background: rgba(0,0,0,0.9); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);}
-
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse-fast { animation: pulse 1s infinite; }
-        @keyframes glitch { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
-        .glitch-anim { animation: glitch 0.2s 3; }
-        @keyframes glitch-anim-heavy { 0% { transform: translate(0) skew(0deg); } 20% { transform: translate(-4px, 4px) skew(-5deg); } 40% { transform: translate(-4px, -4px) skew(5deg); } 60% { transform: translate(4px, 4px) skew(-2deg); } 80% { transform: translate(4px, -4px) skew(2deg); } 100% { transform: translate(0) skew(0deg); } }
-        .severe-glitch { animation: glitch-anim-heavy 0.15s infinite; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
-        .celebrate { animation: pulse-green 1.5s infinite; color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
-        @keyframes pulse-green { 0%, 100% { transform: scale(1); text-shadow: 0 0 10px var(--neon-green); } 50% { transform: scale(1.05); text-shadow: 0 0 25px var(--neon-green); } }
-
-        .health-pip { width: 18px; height: 18px; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); margin: 0 6px; border-radius: 2px; }
-        .health-pip.lost { background: transparent; border: 1px solid var(--neon-red); box-shadow: none; }
-    </style>
-</head>
+<link href="./css/game.css" rel="stylesheet"/></head>
 <body>
+<!-- SVG Fingerprint -->
+<svg fill="none" height="36" id="fingerprint-template" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" style="display:none;" viewbox="0 0 24 24" width="36" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+<path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"></path>
+<path d="M8.5 19.5c.3-1.5.5-4 .5-7.5a3 3 0 0 1 5.34-2"></path>
+<path d="M12 19.5c.2-1.5.5-4 .5-7.5"></path>
+<path d="M15.5 19.5c.1-1.5.2-3 .2-4.5"></path>
+<path d="M19 19.5c0-1.5-.5-5-2-7.5"></path>
+<path d="M12 22v-2"></path>
+<path d="M8 22v-2"></path>
+<path d="M16 22v-2"></path>
+<path d="M5 4.5a10 10 0 0 1 14 0"></path>
+<path d="M8.5 7a7 7 0 0 1 7 0"></path>
+</svg>
+<!-- Quadrants (Tabletop Mode) -->
+<div class="quadrant q-tl" id="quad-0"><div class="anchor-wrapper" data-q="0"><div class="player-label">P1</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-0"></div></div>
+<div class="quadrant q-tr" id="quad-1"><div class="anchor-wrapper" data-q="1"><div class="player-label">P2</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-1"></div></div>
+<div class="quadrant q-bl" id="quad-2"><div class="anchor-wrapper flex-col-reverse" data-q="2"><div class="player-label">P3</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-2"></div></div>
+<div class="quadrant q-br" id="quad-3"><div class="anchor-wrapper flex-col-reverse" data-q="3"><div class="player-label">P4</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-3"></div></div>
+<!-- Center Console -->
+<div id="center-console">
+<div class="w-full flex flex-col items-center justify-center" id="ui-content"></div>
+</div>
+<!-- Pass & Play UI (Outside Center Console) -->
+<div id="pass-play-ui" style="display: none;">
+<!-- Menu pops up at the TOP of the screen -->
+<div class="hidden-menu top-center-menu" id="pass-menu"></div>
+<!-- Scanner sits at the BOTTOM of the screen -->
+<div class="anchor-wrapper pass-mode-anchor bottom-center-scanner" data-q="0" id="pass-anchor">
+<div class="player-label mb-2 text-xl" id="pass-player-label">P1</div>
+<div class="anchor-zone" style="width: 80px; height: 80px;">
+<div class="anchor-icon" style="width: 75px; height: 75px; border-color: rgba(0,243,255,0.6); color: rgba(0,243,255,0.6); box-shadow: inset 0 0 10px rgba(0,243,255,0.2);"></div>
+</div>
+</div>
+</div>
 
-    <svg id="fingerprint-template" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-        <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
-        <path d="M8.5 19.5c.3-1.5.5-4 .5-7.5a3 3 0 0 1 5.34-2"/>
-        <path d="M12 19.5c.2-1.5.5-4 .5-7.5"/>
-        <path d="M15.5 19.5c.1-1.5.2-3 .2-4.5"/>
-        <path d="M19 19.5c0-1.5-.5-5-2-7.5"/>
-        <path d="M12 22v-2"/><path d="M8 22v-2"/><path d="M16 22v-2"/>
-        <path d="M5 4.5a10 10 0 0 1 14 0"/><path d="M8.5 7a7 7 0 0 1 7 0"/>
-    </svg>
-
-    <div id="quad-0" class="quadrant q-tl"><div class="anchor-wrapper" data-q="0"><div class="player-label">P1</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-0"></div></div>
-    <div id="quad-1" class="quadrant q-tr"><div class="anchor-wrapper" data-q="1"><div class="player-label">P2</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-1"></div></div>
-    <div id="quad-2" class="quadrant q-bl"><div class="anchor-wrapper flex-col-reverse" data-q="2"><div class="player-label">P3</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-2"></div></div>
-    <div id="quad-3" class="quadrant q-br"><div class="anchor-wrapper flex-col-reverse" data-q="3"><div class="player-label">P4</div><div class="anchor-zone"><div class="anchor-icon"></div></div></div><div class="hidden-menu" id="menu-3"></div></div>
-
-    <div id="center-console"><div id="ui-content" class="w-full flex flex-col items-center justify-center"></div></div>
-
-    <div id="pass-play-ui" style="display: none;">
-        <div class="hidden-menu top-center-menu" id="pass-menu"></div>
-        <div class="anchor-wrapper pass-mode-anchor bottom-center-scanner" data-q="0" id="pass-anchor">
-            <div class="player-label mb-2 text-xl" id="pass-player-label">P1</div>
-            <div class="anchor-zone" style="width: 80px; height: 80px;"><div class="anchor-icon" style="width: 75px; height: 75px; border-color: rgba(0,243,255,0.6); color: rgba(0,243,255,0.6); box-shadow: inset 0 0 10px rgba(0,243,255,0.2);"></div></div>
-        </div>
-    </div>
-
-<script>
-    document.querySelectorAll('.anchor-icon').forEach(icon => { icon.innerHTML = document.getElementById('fingerprint-template').innerHTML; });
-
-    const AudioSys = {
-        ctx: null,
-        init: function() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
-        beep: function(freq, type, duration, vol = 0.1) { if (!this.ctx) return; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime); gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration); },
-        playThud: (vol=0.5) => AudioSys.beep(90, 'sine', 0.4, vol),
-        playConfirm: () => AudioSys.beep(800, 'square', 0.1, 0.05),
-        playAlarm: () => AudioSys.beep(300, 'sawtooth', 0.3, 0.2),
-        playSuccess: () => { AudioSys.beep(400, 'square', 0.1, 0.05); setTimeout(() => AudioSys.beep(600, 'square', 0.2, 0.05), 100); }
-    };
-
-    const Haptics = { tap: () => { if(navigator.vibrate) navigator.vibrate(15); }, thud: () => { if(navigator.vibrate) navigator.vibrate(40); }, alarm: () => { if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]); } };
-
-    const Game = {
-        state: 'INIT', gameMode: 'TABLETOP', currentPlayerIndex: 0, players: [], hull: 3, maxHull: 3, round: 1, maxRounds: 5, timeLeft: 45, timerPaused: false, timerInt: null, hbTimeout: null, captainId: 0, benchedId: null, silenceEnforced: false,
-        crisesDeck: [
-            { name: "OXYGEN LEAK", dmg: 1, effect: "Standard" }, { name: "REACTOR MELTDOWN", dmg: 2, effect: "High Damage" }, { name: "COMMS BLACKOUT", dmg: 1, effect: "Silence Enforced" }, { name: "NAV FAILURE", dmg: 1, effect: "Standard" }, { name: "HULL BREACH", dmg: 1, effect: "Standard" }
-        ], currentCrisis: null,
-
-        init: function() {
-            AudioSys.init(); this.stateData = null;
-            document.getElementById('center-console').style.removeProperty('border-color'); document.getElementById('center-console').style.removeProperty('box-shadow');
-            document.querySelectorAll('.anchor-wrapper').forEach(aw => aw.classList.remove('alien-origin', 'locked', 'active', 'benched'));
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e => console.log("Fullscreen ignored"));
-            let roles = ['ENGINEER', 'SECURITY', 'MEDIC', 'ALIEN']; roles.sort(() => Math.random() - 0.5);
-            this.players = [0,1,2,3].map((id)=>({ id, role: roles[id], state: 'IDLE', action: null, anchorTouch: null, seenRole: false, abilityUsed: false, scanResult: null }));
-            this.crisesDeck.sort(() => Math.random() - 0.5); this.hull = 3; this.round = 1; this.captainId = Math.floor(Math.random() * 4); this.benchedId = null; this.silenceEnforced = false; this.setState('ROLES');
-        },
-
-        advancePassTurn: function() { this.currentPlayerIndex++; if (this.state === 'ROLES') { if (this.currentPlayerIndex >= 4) this.checkAllLocked(); else this.updateCenterUI(); } else if (this.state === 'ACTION') { while(this.currentPlayerIndex === this.benchedId && this.currentPlayerIndex < 4) this.currentPlayerIndex++; if (this.currentPlayerIndex >= 4) this.checkAllLocked(); else this.updateCenterUI(); } },
-        setState: function(newState) {
-            this.state = newState;
-            if (newState === 'ROLES' || newState === 'CAPTAIN' || newState === 'ACTION' || newState === 'RESULT') { this.players.forEach(p => { p.state = 'IDLE'; p.action = null; const aw = document.querySelector(`.anchor-wrapper[data-q="${p.id}"]`); if(aw) { aw.classList.remove('locked', 'active'); if (newState !== 'ACTION') aw.classList.remove('benched'); } let m = document.getElementById(`menu-${p.id}`); if(m) m.classList.remove('visible'); }); } else { this.players.forEach(p => { const aw = document.querySelector(`.anchor-wrapper[data-q="${p.id}"]`); if(aw) aw.classList.remove('active'); let m = document.getElementById(`menu-${p.id}`); if(m) m.classList.remove('visible'); }); }
-            if (newState === 'CAPTAIN') this.currentCrisis = this.crisesDeck[this.round - 1]; if (newState === 'ROLES') this.currentPlayerIndex = 0; this.updateCenterUI();
-            if (newState === 'ACTION') { if (this.gameMode === 'TABLETOP') { this.timeLeft = 45; this.startTimer(() => this.setState('PROCESSING')); this.playHeartbeat(); } else { this.currentPlayerIndex = 0; if (this.benchedId === 0) this.currentPlayerIndex = 1; this.updateCenterUI(); } } else if (newState === 'PROCESSING') { this.processActions(); setTimeout(() => this.setState('RESULT'), 3000); }
-        },
-        startTimer: function(callback) { document.getElementById('timer-text').innerHTML = this.timeLeft; clearInterval(this.timerInt); this.timerInt = setInterval(() => { this.timerPaused = this.players.some(p => p.state === 'ANCHORED'); if (this.timerPaused) { const tEl = document.getElementById('timer-text'); if(tEl) tEl.innerHTML = `<span class="text-xl text-gray-500 animate-pulse-fast">// PAUSED</span>`; return; } this.timeLeft--; const tEl = document.getElementById('timer-text'); if(tEl) tEl.innerHTML = this.timeLeft; if(this.timeLeft <= 3 && this.timeLeft > 0) { AudioSys.playConfirm(); Haptics.tap(); } if (this.timeLeft <= 0) { clearInterval(this.timerInt); callback(); } }, 1000); },
-        playHeartbeat: function() { if (this.state !== 'ACTION' || this.timeLeft <= 0) return; if (!this.timerPaused) { Haptics.tap(); AudioSys.playThud(0.08); } let delay = 1000; if (this.timeLeft <= 15) delay = 500; if (this.timeLeft <= 5) delay = 250; clearTimeout(this.hbTimeout); this.hbTimeout = setTimeout(() => this.playHeartbeat(), delay); },
-        checkAllLocked: function() { if (this.state === 'ROLES') { if (this.players.every(p => p.seenRole && p.state === 'IDLE')) this.setState('CAPTAIN'); } else if (this.state === 'ACTION') { let activePlayers = this.players.filter(p => p.id !== this.benchedId); if (activePlayers.every(p => p.state === 'LOCKED')) { clearInterval(this.timerInt); this.setState('PROCESSING'); } } },
-        processActions: function() { let sabs = this.players.filter(p => p.action === 'SABOTAGE').length, overrides = this.players.filter(p => p.action === 'OVERRIDE').length, heals = this.players.filter(p => p.action === 'HEAL').length, scans = this.players.filter(p => p.action === 'SCAN').length; this.players.forEach(p => { if(p.action === 'OVERRIDE' || p.action === 'HEAL') p.abilityUsed = true; }); this.roundSabs=sabs; this.roundOverrides=overrides; this.roundHeals=heals; if (scans > 0) { let sec = this.players.find(p => p.role === 'SECURITY'); sec.scanResult = `BENCHED P${this.benchedId + 1} IS ${this.players[this.benchedId].role}`; } let netSabs=Math.max(0,sabs-overrides); this.silenceEnforced=false; let dmg=0; if(netSabs>0){dmg=this.currentCrisis.dmg;if(this.currentCrisis.effect==='Silence Enforced')this.silenceEnforced=true} this.hull=Math.min(this.maxHull,this.hull-dmg+heals); },
-        renderHealth: function() { let html='<div class="flex mt-3 mb-4">'; for(let i=0;i<this.maxHull;i++) html += `<div class="health-pip ${i >= this.hull ? 'lost' : ''}"></div>`; return html+'</div>'; },
-
-        updateCenterUI: function() {
-            document.querySelectorAll('.quadrant').forEach(q => { if (this.gameMode === 'PASS' && !['RESULT', 'GAMEOVER', 'INIT'].includes(this.state)) q.style.display = 'none'; else q.style.display = 'flex'; });
-            let passUI=document.getElementById('pass-play-ui'); if(this.gameMode==='PASS'&&['ROLES','ACTION'].includes(this.state)){passUI.style.display='block';document.getElementById('pass-anchor').dataset.q=this.currentPlayerIndex;document.getElementById('pass-player-label').innerText=`P${this.currentPlayerIndex+1}`;document.getElementById('pass-anchor').classList.remove('active','locked','benched');document.getElementById('pass-menu').classList.remove('visible')}else passUI.style.display='none';
-            const ui=document.getElementById('ui-content');ui.innerHTML='';let silenceBanner=this.silenceEnforced?`<div class="text-xs font-bold bg-red-600 text-white px-2 py-1 mb-2 animate-pulse rounded">STRICT SILENCE ENFORCED</div>`:'';
-            switch(this.state){
-                case 'INIT': ui.innerHTML=`<h1 class="text-3xl neon-text mb-2 tracking-widest">SPACE<br>SABOTAGE</h1><p class="text-[10px] text-gray-400 mb-5 px-2 leading-relaxed">ALIEN: Destroy ship.<br>ENGINEER: Blocks Sabotage.<br>SECURITY: Scans Benched.<br>MEDIC: Restores Hull.</p><div class="flex flex-col gap-3 w-full px-4"><button id="btn-start-table" class="btn-main text-[11px] py-3">TABLETOP MODE (FLAT)</button><button id="btn-start-pass" class="btn-main text-[11px] py-3">PASS & PLAY (1 PHONE)</button></div>`;break;
-                case 'ROLES': ui.innerHTML=this.gameMode==='TABLETOP'?`<div class="text-lg neon-text mb-3 tracking-widest">SYSTEM BOOT</div><p class="text-sm text-gray-400 mb-4 px-4 leading-relaxed">Cup hand over corner.<br>Hold fingerprint to view your Role and Ability.</p><div class="text-xs text-gray-500 mt-6">(Waiting for 4 players...)</div>`:`<div class="text-2xl neon-text-blue mb-4 tracking-widest animate-pulse-fast">PASS TO P${this.currentPlayerIndex+1}</div><p class="text-[11px] text-gray-400 px-4 leading-relaxed">P${this.currentPlayerIndex+1}: Hold the thumb scanner at the bottom of the screen to view role.</p>`;break;
-                case 'CAPTAIN': ui.innerHTML=`${silenceBanner}<div class="text-sm text-gray-400 tracking-widest">ROUND ${this.round} / ${this.maxRounds}</div>${this.renderHealth()}<div class="text-xs text-orange-400 mb-2">CRISIS: ${this.currentCrisis.name} (DMG: ${this.currentCrisis.dmg})</div><div class="text-sm neon-text-blue mt-2 mb-3 tracking-widest">> P${this.captainId+1} IS CAPTAIN <</div><div class="grid grid-cols-2 gap-3 w-full px-2"><button class="btn-bench-target btn-main text-[10px]" data-target="0">BENCH P1</button><button class="btn-bench-target btn-main text-[10px]" data-target="1">BENCH P2</button><button class="btn-bench-target btn-main text-[10px]" data-target="2">BENCH P3</button><button class="btn-bench-target btn-main text-[10px]" data-target="3">BENCH P4</button></div>`;break;
-                case 'ACTION': ui.innerHTML=this.gameMode==='TABLETOP'?`${silenceBanner}<div class="text-sm neon-text mb-3 tracking-widest">CRISIS: ${this.currentCrisis.name}</div><div id="timer-text" class="text-5xl neon-text mb-4 min-h-[60px] flex items-center justify-center">45</div><p class="text-[10px] text-gray-400 px-4 leading-relaxed">Active players: Input actions.<br>Hold scanner to pause timer.</p>`:`${silenceBanner}<div class="text-xs text-gray-400 mb-2 tracking-widest">CRISIS: ${this.currentCrisis.name}</div><div class="text-2xl neon-text-blue mb-4 tracking-widest animate-pulse-fast">PASS TO P${this.currentPlayerIndex+1}</div><p class="text-[11px] text-gray-400 px-4 leading-relaxed">P${this.currentPlayerIndex+1}: Hold scanner at bottom of screen. Tap menu at top to input.</p>`;break;
-                case 'PROCESSING': ui.innerHTML=`<div class="text-xl neon-text mb-3 glitch-anim tracking-widest">PROCESSING...</div><p class="text-sm text-gray-400">Compiling multi-touch inputs</p>`;break;
-                case 'RESULT': { let resHtml=`<div class="text-xs text-gray-400 mb-3 tracking-widest">CRISIS: ${this.currentCrisis.name}</div>`;if(this.roundSabs>0){resHtml+=`<div class="text-xl neon-text-red glitch-anim tracking-widest">SABOTAGE DETECTED</div>`;if(this.roundOverrides>0)resHtml+=`<div class="text-xs text-orange-400 my-2 bg-orange-900/30 px-2 py-1 rounded">ENGINEER DEPLOYED OVERRIDE:<br>1 SABOTAGE BLOCKED</div>`}else resHtml+=`<div class="text-xl text-green-400 tracking-widest">SYSTEMS SECURE</div>`;let netSabs=Math.max(0,this.roundSabs-this.roundOverrides);if(netSabs>0){resHtml+=`<div class="text-sm font-bold text-red-500 my-2">HULL TOOK ${this.currentCrisis.dmg} DAMAGE</div>`;Haptics.alarm();AudioSys.playAlarm()}else AudioSys.playSuccess();if(this.roundHeals>0)resHtml+=`<div class="text-xs text-green-300 my-2 bg-green-900/30 px-2 py-1 rounded">MEDIC DEPLOYED HEAL:<br>RESTORED 1 HULL</div>`;resHtml+=this.renderHealth();resHtml+=(this.hull<=0||this.round>=this.maxRounds)?`<button id="btn-continue" class="btn-main mt-4 px-6 py-3">VIEW FATE</button>`:`<p class="text-[10px] text-gray-500 mb-2">Security: Hold scanner to view scan results.</p><div class="flex flex-col gap-3 w-full px-4 mt-1"><button id="btn-continue" class="btn-main text-xs">NEXT ROUND</button><button id="btn-vote" class="btn-main btn-danger text-xs">EMERGENCY VOTE</button></div>`;ui.innerHTML=resHtml;break; }
-                case 'VOTE': ui.innerHTML=`<div class="text-base neon-text-red mb-3 tracking-widest">EMERGENCY EJECTION</div><p class="text-[10px] text-gray-400 px-2 mb-4 leading-relaxed">Discuss. Tap to permanently eject a player. Ejecting an innocent gives the Alien an instant win.</p><div class="grid grid-cols-2 gap-3 w-full px-2"><button class="btn-vote-target btn-main text-xs" data-target="0">EJECT P1</button><button class="btn-vote-target btn-main text-xs" data-target="1">EJECT P2</button><button class="btn-vote-target btn-main text-xs" data-target="2">EJECT P3</button><button class="btn-vote-target btn-main text-xs" data-target="3">EJECT P4</button></div><button id="btn-cancel-vote" class="btn-main text-xs mt-3 border-gray-500 text-gray-500 w-1/2">CANCEL</button>`;break;
-                case 'GAMEOVER': { let won=false,msg='',subMsg='';if(this.hull<=0){msg='SHIP DESTROYED';subMsg='Hull reached 0%. ALIEN WINS.'}else if(this.stateData&&this.stateData.ejected!==undefined){let targetId=this.stateData.ejected;if(this.players[targetId].role==='ALIEN'){msg='ALIEN EJECTED';subMsg='Threat neutralized. CREW SURVIVES.';won=true}else{msg='INNOCENT EJECTED';subMsg='The Crew turns on itself. ALIEN WINS.'}}else if(this.round>=this.maxRounds){msg='DESTINATION REACHED';subMsg='The ship survived 5 rounds. CREW SURVIVES.';won=true}let alienIndex=this.players.find(p=>p.role==='ALIEN').id;if(!won){document.getElementById('center-console').style.borderColor='var(--neon-red)';document.getElementById('center-console').style.boxShadow='0 0 40px rgba(255,0,60,0.4), inset 0 0 30px rgba(255,0,60,0.4)';let alienQuad=document.querySelector(`.anchor-wrapper:not(.pass-mode-anchor)[data-q="${alienIndex}"]`);if(alienQuad)alienQuad.classList.add('alien-origin');let glitchInt=setInterval(()=>{Haptics.tap()},150);setTimeout(()=>clearInterval(glitchInt),1500);AudioSys.playAlarm();setTimeout(()=>AudioSys.playAlarm(),300);ui.innerHTML=`<div class="text-4xl severe-glitch mb-3 tracking-widest font-bold">SYSTEM<br>CORRUPTED</div><div class="text-sm text-white mb-3 tracking-widest bg-red-600 px-3 py-1 font-bold rounded">${msg}</div><p class="text-xs text-gray-300 mb-6 text-center leading-relaxed severe-glitch">${subMsg}</p><p class="text-sm text-red-400 mb-6 font-bold tracking-widest bg-black px-2 animate-pulse-fast">INFECTION ORIGIN: P${alienIndex+1}</p><button id="btn-main-menu" class="btn-main btn-danger px-6 py-3 border-red-500 text-red-500 bg-red-900/20">MAIN MENU</button>`}else{document.getElementById('center-console').style.borderColor='var(--neon-green)';document.getElementById('center-console').style.boxShadow='0 0 40px rgba(0,255,102,0.3), inset 0 0 30px rgba(0,255,102,0.3)';AudioSys.playSuccess();setTimeout(()=>AudioSys.playSuccess(),400);setTimeout(()=>AudioSys.playConfirm(),800);ui.innerHTML=`<div class="text-3xl celebrate mb-3 tracking-widest font-bold">THREAT<br>ELIMINATED</div><div class="text-sm text-black mb-3 tracking-widest bg-green-400 px-3 py-1 font-bold rounded">${msg}</div><p class="text-xs text-gray-300 mb-5 text-center leading-relaxed">${subMsg}</p><p class="text-xs text-green-400/70 mb-6 tracking-widest">Alien was Player ${alienIndex+1}</p><button id="btn-main-menu" class="btn-main px-6 py-3" style="border-color: var(--neon-green); color: var(--neon-green);">MAIN MENU</button>`}this.players.forEach(p=>{p.state='LOCKED';let menu=document.getElementById(`menu-${p.id}`);if(!menu)return;let roleColor='var(--neon-blue)';if(p.role==='ALIEN')roleColor='var(--neon-red)';if(p.role==='ENGINEER')roleColor='var(--neon-orange)';if(p.role==='MEDIC')roleColor='var(--neon-green)';if(p.role==='SECURITY')roleColor='var(--neon-purple)';menu.innerHTML=`<div class="role-text text-sm" style="color: ${roleColor};">ROLE:<br>${p.role}</div>`;menu.classList.add('visible');let quad=document.querySelector(`.anchor-wrapper:not(.pass-mode-anchor)[data-q="${p.id}"]`);if(quad)quad.classList.add('locked')});break; }
-            }
-        }
-    };
-
-    document.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        for (let touch of e.changedTouches) {
-            let target = document.elementFromPoint(touch.clientX, touch.clientY); if (!target) continue;
-            if (target.closest('#btn-start-table')) { AudioSys.playConfirm(); Haptics.tap(); Game.gameMode = 'TABLETOP'; Game.init(); }
-            else if (target.closest('#btn-start-pass')) { AudioSys.playConfirm(); Haptics.tap(); Game.gameMode = 'PASS'; Game.init(); }
-            else if (target.closest('#btn-main-menu')) { AudioSys.playConfirm(); Haptics.tap(); Game.setState('INIT'); }
-            else if (target.closest('.btn-bench-target') && Game.state === 'CAPTAIN') { let btn=target.closest('.btn-bench-target');AudioSys.playThud();Haptics.tap();Game.benchedId=parseInt(btn.dataset.target);let quad=document.querySelector(`.anchor-wrapper:not(.pass-mode-anchor)[data-q="${Game.benchedId}"]`);if(quad)quad.classList.add('benched');Game.captainId=(Game.captainId+1)%4;Game.setState('ACTION'); }
-            else if (target.closest('#btn-continue')) { AudioSys.playConfirm(); Haptics.tap(); if (Game.hull <= 0 || Game.round >= Game.maxRounds) Game.setState('GAMEOVER'); else { Game.round++; Game.setState('CAPTAIN'); } }
-            else if (target.closest('#btn-vote')) { AudioSys.playConfirm(); Haptics.tap(); Game.setState('VOTE'); }
-            else if (target.closest('#btn-cancel-vote')) { AudioSys.playConfirm(); Haptics.tap(); Game.setState('RESULT'); }
-            else if (target.closest('.btn-vote-target')) { let btn=target.closest('.btn-vote-target');let pId=parseInt(btn.dataset.target);AudioSys.playThud();Haptics.thud();Game.stateData={ejected:pId};Game.setState('GAMEOVER'); }
-            let aw=target.closest('.anchor-wrapper'); if(aw) handleAnchorStart(aw,touch.identifier); let actBtn=target.closest('.action-btn'); if(actBtn) handleActionTap(parseInt(actBtn.dataset.q),actBtn.dataset.act);
-        }
-    }, {passive:false});
-    document.addEventListener('touchend',(e)=>{e.preventDefault();for(let touch of e.changedTouches)Game.players.forEach(p=>{if(p.anchorTouch===touch.identifier)handleAnchorRelease(p.id)})},{passive:false});
-    document.addEventListener('touchcancel',(e)=>{for(let touch of e.changedTouches)Game.players.forEach(p=>{if(p.anchorTouch===touch.identifier)handleAnchorRelease(p.id)})},{passive:false});
-
-    function handleAnchorStart(aw,touchId){let qId=parseInt(aw.dataset.q);if(Game.state==='ACTION'&&qId===Game.benchedId)return;if(Game.gameMode==='PASS'&&qId!==Game.currentPlayerIndex&&Game.state!=='RESULT')return;let p=Game.players[qId];if(p.state==='LOCKED'&&Game.state!=='RESULT')return;p.anchorTouch=touchId;p.state='ANCHORED';Haptics.tap();AudioSys.playConfirm();aw.classList.add('active');let isPassMode=aw.classList.contains('pass-mode-anchor'),menuId=isPassMode?'pass-menu':`menu-${qId}`,menu=document.getElementById(menuId);if(Game.state==='ROLES'){p.seenRole=true;let roleColor='var(--neon-blue)';if(p.role==='ALIEN')roleColor='var(--neon-red)';if(p.role==='ENGINEER')roleColor='var(--neon-orange)';if(p.role==='MEDIC')roleColor='var(--neon-green)';if(p.role==='SECURITY')roleColor='var(--neon-purple)';let roleDesc='';if(p.role==='ENGINEER')roleDesc='OVERRIDE: Blocks 1 Sabotage (1 Use)';if(p.role==='SECURITY')roleDesc='SCAN: Check if benched is Alien';if(p.role==='MEDIC')roleDesc='HEAL: Restore 1 Hull (1 Use)';if(p.role==='ALIEN')roleDesc='SABOTAGE: Destroy the ship';menu.innerHTML=`<div class="role-text" style="color: ${roleColor};">${p.role}</div><div class="text-[12px] text-gray-300 text-center px-4 leading-tight bg-black py-2 rounded">${roleDesc}</div>`;menu.classList.add('visible')}else if(Game.state==='ACTION'){let actionHtml=`<div class="action-btn" data-q="${qId}" data-act="REPAIR">REPAIR</div>`;if(p.role==='ALIEN')actionHtml+=`<div class="action-btn text-red-400" data-q="${qId}" data-act="SABOTAGE">SABOTAGE</div>`;else if(p.role==='ENGINEER')actionHtml+=`<div class="action-btn text-orange-400" data-q="${qId}" data-act="${p.abilityUsed?'MAINTAIN':'OVERRIDE'}">${p.abilityUsed?'MAINTAIN':'OVERRIDE'}</div>`;else if(p.role==='MEDIC')actionHtml+=`<div class="action-btn text-green-400" data-q="${qId}" data-act="${p.abilityUsed?'MAINTAIN':'HEAL'}">${p.abilityUsed?'MAINTAIN':'HEAL'}</div>`;else if(p.role==='SECURITY')actionHtml+=`<div class="action-btn text-purple-400" data-q="${qId}" data-act="SCAN">SCAN BENCHED</div>`;menu.innerHTML=actionHtml;menu.classList.add('visible')}else if(Game.state==='RESULT'){if(p.role==='SECURITY'&&p.scanResult){let isAlien=p.scanResult.includes('ALIEN');menu.innerHTML=`<div class="text-[10px] text-gray-400 text-center mb-1 bg-black px-2 py-1 rounded">SCAN RESULT</div><div class="role-text ${isAlien?'text-red-500':'text-blue-400'} text-sm">${p.scanResult}</div>`}else{let roleColor='var(--neon-blue)';if(p.role==='ALIEN')roleColor='var(--neon-red)';menu.innerHTML=`<div class="role-text text-sm" style="color: ${roleColor};">ROLE: ${p.role}</div>`}menu.classList.add('visible')}}
-    function handleAnchorRelease(qId){let p=Game.players[qId];p.anchorTouch=null;if(p.state!=='LOCKED'||Game.state==='RESULT'){p.state='IDLE';document.querySelectorAll(`.anchor-wrapper[data-q="${qId}"]`).forEach(aw=>aw.classList.remove('active'));let menu=document.getElementById(`menu-${qId}`);if(menu)menu.classList.remove('visible');let passMenu=document.getElementById('pass-menu');if(passMenu)passMenu.classList.remove('visible')}if(Game.state==='ROLES'){if(Game.gameMode==='PASS'&&qId===Game.currentPlayerIndex&&p.seenRole)Game.advancePassTurn();else if(Game.gameMode==='TABLETOP')Game.checkAllLocked()}}
-    function handleActionTap(qId,action){if(Game.state!=='ACTION')return;let p=Game.players[qId];if(p.state!=='ANCHORED')return;p.action=action;p.state='LOCKED';Haptics.thud();AudioSys.playThud(.5);let aw=document.querySelector(`.anchor-wrapper.active[data-q="${qId}"]`);if(aw){aw.classList.remove('active');aw.classList.add('locked')}let isPassMode=aw&&aw.classList.contains('pass-mode-anchor'),menuId=isPassMode?'pass-menu':`menu-${qId}`,menu=document.getElementById(menuId);if(menu)menu.classList.remove('visible');if(Game.gameMode==='PASS')Game.advancePassTurn();else Game.checkAllLocked()}
-
-    Game.updateCenterUI();
-</script>
-</body>
+<script src="./js/audio.js"></script><script src="./js/game-state.js"></script><script src="./js/game-flow.js"></script><script src="./js/game-ui.js"></script><script src="./js/input.js"></script><script src="./js/main.js"></script></body>
 </html>

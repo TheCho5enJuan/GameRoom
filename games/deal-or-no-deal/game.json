@@ -1,0 +1,13 @@
+{
+  "game": "Deal or No Deal: Gold Career v5.2.0",
+  "sourceFile": "dealornodeal.txt",
+  "sourceSha256": "86e815183463c59d739bc721b49d6cd2238ff40f1859014476aff75f527568f2",
+  "architecture": [
+    "js/career.js",
+    "js/audio.js",
+    "js/game.js",
+    "js/rendering.js",
+    "js/actions.js",
+    "js/main.js"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "game": "Ultimate Tic Tac Toe",
+  "sourceFile": "ticktacktoe.html",
+  "sourceSha256": "53a8e2d151a5d12879e6a6a4558792698483c67f586cb7af94a837a448b0cb97",
+  "architecture": [
+    "js/runtime.jsx",
+    "js/icons.jsx",
+    "js/config.jsx",
+    "js/app.jsx",
+    "js/main.jsx"
+  ]
+}
