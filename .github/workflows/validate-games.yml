@@ -1,0 +1,102 @@
+name: Validate GameRoom
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate launcher and game entry points
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f index.html
+          test -f games/rogue-quest/index.html
+          test -f games/tide-and-tranquility/index.html
+          test -f games/blockforge/index.html
+          test -f games/space-sabotage/index.html
+          test -f games/deal-or-no-deal/index.html
+          test -f games/tic-tac-toe/index.html
+
+          grep -q '<strong>6</strong> playable now' index.html
+          grep -q 'href="./games/rogue-quest/"' index.html
+          grep -q 'href="./games/tide-and-tranquility/"' index.html
+          grep -q 'href="./games/blockforge/"' index.html
+          grep -q 'href="./games/space-sabotage/"' index.html
+          grep -q 'href="./games/deal-or-no-deal/"' index.html
+          grep -q 'href="./games/tic-tac-toe/"' index.html
+
+          if grep -q 'Source uploaded' index.html; then
+            echo 'Launcher still contains unpublished-game text.' >&2
+            exit 1
+          fi
+
+          test ! -d .game-upload
+          test ! -f .github/workflows/install-games.yml
+
+      - name: Validate modular game builds
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for game in rogue-quest tide-and-tranquility blockforge; do
+            test -f "games/$game/build-manifest.json"
+            test -f "games/$game/css/game.css"
+            test -d "games/$game/js"
+            for script in games/$game/js/*.js; do
+              node --check "$script"
+            done
+          done
+
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+
+          const games = ['rogue-quest', 'tide-and-tranquility', 'blockforge'];
+          const hash = value => crypto.createHash('sha256').update(value).digest('hex');
+
+          for (const game of games) {
+            const dir = path.join('games', game);
+            const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'build-manifest.json'), 'utf8'));
+            const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+
+            if (!html.includes('href="./css/game.css"')) throw new Error(`${game}: stylesheet is not linked`);
+            if (!Array.isArray(manifest.scripts) || manifest.scripts.length === 0) throw new Error(`${game}: no scripts in manifest`);
+
+            let previousIndex = -1;
+            let reassembled = '';
+            for (const relative of manifest.scripts) {
+              const file = path.join(dir, relative);
+              if (!fs.existsSync(file)) throw new Error(`${game}: missing ${relative}`);
+              const reference = `src="./${relative}"`;
+              const index = html.indexOf(reference);
+              if (index < 0) throw new Error(`${game}: index.html does not load ${relative}`);
+              if (index <= previousIndex) throw new Error(`${game}: scripts are not loaded in manifest order`);
+              previousIndex = index;
+
+              const contents = fs.readFileSync(file, 'utf8');
+              if (Buffer.byteLength(contents, 'utf8') > 70000) throw new Error(`${game}: ${relative} is too large; split it again`);
+              reassembled += contents;
+            }
+
+            const calculated = hash(reassembled);
+            if (!manifest.validation?.scriptBodyPreserved) throw new Error(`${game}: preservation flag is false`);
+            if (calculated !== manifest.validation.scriptBodySha256) throw new Error(`${game}: script body hash mismatch`);
+            if (calculated !== manifest.validation.reassembledScriptSha256) throw new Error(`${game}: reassembled script hash mismatch`);
+
+            if (Buffer.byteLength(html, 'utf8') > 100000) throw new Error(`${game}: index.html has become too large`);
+            if (fs.statSync(path.join(dir, 'css', 'game.css')).size > 100000) throw new Error(`${game}: game.css has become too large`);
+          }
+          NODE
