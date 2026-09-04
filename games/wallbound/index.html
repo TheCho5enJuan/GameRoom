@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08101b">
+  <meta name="description" content="Wallbound — a two-player pathfinding strategy game in the GameRoom arcade.">
+  <title>Wallbound · GameRoom</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">🧱</div><div><b>Wallbound</b><small>GameRoom · Two-player strategy</small></div></div>
+      <a class="back" href="../../">← Back to GameRoom</a>
+    </header>
+
+    <main class="layout">
+      <section class="game-stage" aria-label="Wallbound game board">
+        <div class="turn-strip">
+          <div class="player-chip active" id="p1Chip"><span class="pawn-dot p1"></span><div><strong id="p1NameTop">Player 1</strong><small>Goal: top edge</small></div></div>
+          <div class="turn-label"><b id="turnText">Your turn</b><span id="turnSub">Move or place a wall</span></div>
+          <div class="player-chip right" id="p2Chip"><div><strong id="p2NameTop">Player 2</strong><small>Goal: bottom edge</small></div><span class="pawn-dot p2"></span></div>
+        </div>
+
+        <div class="board-shell">
+          <div class="board" id="board">
+            <div class="cells" id="cells"></div>
+            <div class="walls-layer" id="wallsLayer"></div>
+            <div class="slots-layer" id="slotsLayer"></div>
+            <div class="toast" id="toast" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="board-note">
+          <div class="goal-key"><span><i class="mini-dot p1"></i>Player 1 → top</span><span><i class="mini-dot p2"></i>Player 2 → bottom</span></div>
+          <strong id="statusLine">Player 1 to move</strong>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel">
+          <h2>Choose your action</h2>
+          <p class="sub">Each turn, move your pawn once or place one wall.</p>
+          <div class="mode-grid">
+            <button class="mode active" id="moveMode" type="button">Move pawn</button>
+            <button class="mode" id="wallMode" type="button">Place wall</button>
+          </div>
+          <div class="orientation" id="orientation">
+            <button id="horizontal" class="active" type="button">Horizontal</button>
+            <button id="vertical" type="button">Vertical</button>
+          </div>
+          <div class="wall-bank">
+            <div class="wall-count"><header><b id="p1NameWalls">Player 1</b><span id="p1Count">10 left</span></header><div class="sticks" id="p1Sticks"></div></div>
+            <div class="wall-count"><header><b id="p2NameWalls">Player 2</b><span id="p2Count">10 left</span></header><div class="sticks" id="p2Sticks"></div></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Game controls</h2>
+          <p class="sub">Pass the device after each turn.</p>
+          <div class="controls">
+            <button class="btn" id="undoBtn" type="button" disabled>Undo</button>
+            <button class="btn" id="rulesBtn" type="button">Rules</button>
+            <button class="btn primary" id="newBtn" type="button">New game</button>
+            <button class="btn" id="namesBtn" type="button">Player names</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Move history</h2>
+          <p class="sub">The current game, newest action last.</p>
+          <div class="history" id="history"><div class="history-empty">No moves yet.</div></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="modal">
+      <h2 id="rulesTitle">How to play Wallbound</h2>
+      <p>Race your pawn to the opposite edge before your rival gets there.</p>
+      <div class="rules">
+        <div class="rule"><div class="rule-num">1</div><div><b>Move or build</b><br><span>On your turn, either move one space or place one wall. You cannot do both.</span></div></div>
+        <div class="rule"><div class="rule-num">2</div><div><b>Move orthogonally</b><br><span>Pawns move up, down, left, or right through open edges. They never move diagonally normally.</span></div></div>
+        <div class="rule"><div class="rule-num">3</div><div><b>Jump your rival</b><br><span>If the other pawn is directly beside you, jump straight over it when the space behind is open. If that jump is blocked by the board edge or a wall, you may step around either open side of that pawn.</span></div></div>
+        <div class="rule"><div class="rule-num">4</div><div><b>Walls redirect, never seal</b><br><span>Walls span two spaces. They may not overlap or cross. Every wall placement must leave both players at least one route to their goal edge.</span></div></div>
+        <div class="rule"><div class="rule-num">5</div><div><b>Reach the far edge</b><br><span>Player 1 wins by reaching the top row. Player 2 wins by reaching the bottom row.</span></div></div>
+      </div>
+      <div class="modal-actions"><button class="primary" id="closeRules" type="button">Got it</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="namesModal" role="dialog" aria-modal="true" aria-labelledby="namesTitle">
+    <div class="modal">
+      <h2 id="namesTitle">Player names</h2>
+      <p>Names are kept for this browser session only.</p>
+      <label class="field-label" for="p1Input">Player 1</label>
+      <input class="field-input" id="p1Input" maxlength="18" value="Player 1">
+      <label class="field-label" for="p2Input">Player 2</label>
+      <input class="field-input" id="p2Input" maxlength="18" value="Player 2">
+      <div class="modal-actions"><button id="cancelNames" type="button">Cancel</button><button class="primary" id="saveNames" type="button">Save names</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
+    <div class="modal">
+      <div class="winner-mark">🏁</div>
+      <h2 id="winnerTitle">Player wins!</h2>
+      <p id="winnerText">The opposite edge has been reached.</p>
+      <div class="modal-actions"><button id="closeWinner" type="button">Review board</button><button class="primary" id="playAgain" type="button">Play again</button></div>
+    </div>
+  </div>
+
+  <script src="./game.js"></script>
+</body>
+</html>
