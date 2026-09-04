@@ -1,0 +1,123 @@
+/* Wallbound v2.1 interaction polish */
+
+/* Primary actions should read as the main game controls. */
+.mode-button{
+  min-height:58px;
+  border-radius:15px;
+  font-size:12px;
+  gap:9px;
+  transition:transform .14s,background .14s,border-color .14s,box-shadow .14s;
+}
+.mode-button:active{transform:scale(.985)}
+.mode-button.active{box-shadow:0 8px 24px rgba(255,255,255,.10)}
+.mode-icon{font-size:11px}
+.wall-icon{width:21px;height:7px}
+.mode-count{min-width:24px;height:24px;font-size:9px}
+.command-card{padding:10px;border-radius:20px}
+.command-detail{min-height:50px;margin-top:9px;gap:9px}
+.action-context{width:100%}
+.action-hint{font-size:10px;padding-left:5px}
+
+/* Wall controls get enough room to be comfortably tappable on phones/foldables. */
+.wall-tools{
+  width:100%;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  align-items:center;
+}
+.wall-tools[hidden]{display:none}
+.orientation-button{
+  min-width:0;
+  width:100%;
+  height:43px;
+  border-radius:11px;
+  padding:0 12px;
+  font-size:9px;
+  letter-spacing:.01em;
+}
+.orientation-button.active{
+  border-color:rgba(243,194,99,.95);
+  background:linear-gradient(180deg,rgba(243,194,99,.20),rgba(243,194,99,.10));
+  box-shadow:0 0 0 1px rgba(243,194,99,.12),0 0 18px rgba(243,194,99,.13);
+}
+.wall-helper{
+  grid-column:1/-1;
+  color:#d8bd85;
+  font-size:8px;
+  line-height:1.25;
+  padding:0 3px;
+  letter-spacing:.01em;
+}
+.utility-actions{gap:7px}
+.utility-button{height:43px;min-width:46px;border-radius:11px}
+
+/* Entering Wall mode should visibly change the board. */
+.board.wall-mode{
+  border-color:rgba(243,194,99,.36);
+  box-shadow:inset 0 0 28px rgba(0,0,0,.52),0 0 0 1px rgba(243,194,99,.08),0 0 30px rgba(243,194,99,.06);
+}
+.board.wall-mode .cell:before{
+  filter:saturate(.88) brightness(.93);
+}
+.wall-mode .slot.valid:before{
+  opacity:.42;
+  background:linear-gradient(180deg,#ffe7ad,var(--wall) 55%,#b37b2a);
+  box-shadow:0 0 0 1px rgba(255,230,170,.18),0 0 12px rgba(243,194,99,.20);
+}
+.wall-mode .slot.invalid:before{
+  opacity:.055;
+  background:var(--danger);
+  box-shadow:none;
+}
+.wall-mode .slot.valid:hover:before,
+.wall-mode .slot.valid:focus-visible:before{
+  opacity:.96;
+  box-shadow:0 0 0 2px rgba(255,233,180,.30),0 0 20px rgba(243,194,99,.52);
+}
+.wall-mode .slot.valid:active:before{
+  opacity:1;
+  filter:brightness(1.18);
+}
+.wall-mode .slot.invalid:hover:before,
+.wall-mode .slot.invalid:focus-visible:before{
+  opacity:.35;
+  background:var(--danger);
+}
+
+/* Coarse pointers have no hover state, so legal wall positions must already be visible. */
+@media(pointer:coarse){
+  .wall-mode .slot.valid:before{opacity:.53}
+  .wall-mode .slot.invalid:before{opacity:.035}
+}
+
+/* Phones and foldables have vertical room in v2; use it for better controls instead of tiny buttons. */
+@media(max-width:900px){
+  .command-card{padding:11px 10px 10px}
+  .mode-switch{gap:9px}
+  .mode-button{min-height:62px;font-size:12.5px;border-radius:16px}
+  .mode-count{min-width:25px;height:25px}
+  .command-detail{min-height:54px;margin-top:10px}
+  .orientation-button{height:46px;font-size:9.5px}
+  .utility-button{height:46px;min-width:48px}
+  .utility-label{font-size:8px}
+}
+
+@media(max-width:560px){
+  .mode-button{min-height:58px}
+  .command-card{padding:9px}
+  .orientation-button{height:42px}
+  .utility-button{height:42px;min-width:44px}
+  .wall-helper{font-size:7.5px}
+}
+
+/* Large foldables/tablets in portrait can afford even stronger primary controls. */
+@media(min-width:600px) and (max-width:900px) and (min-height:850px){
+  .mode-button{min-height:68px;font-size:13px}
+  .orientation-button{height:48px;font-size:10px}
+  .utility-button{height:48px;min-width:50px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .mode-button{transition:none}
+}
