@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08111c">
-  <meta name="description" content="Wallbound v2 — a two-player pathfinding strategy game in the GameRoom arcade.">
-  <title>Wallbound v2 · GameRoom</title>
+  <meta name="description" content="Wallbound v2.1 — a two-player pathfinding strategy game in the GameRoom arcade.">
+  <title>Wallbound v2.1 · GameRoom</title>
   <link rel="stylesheet" href="./styles.css?v=2.0">
+  <link rel="stylesheet" href="./ui-v2.1.css?v=2.1">
 </head>
 <body>
   <div class="game-app">
@@ -15,7 +16,7 @@
       <div class="brand-lockup">
         <span class="brand-icon" aria-hidden="true">🧱</span>
         <div>
-          <div class="brand-line"><strong>Wallbound</strong><span class="version-badge">v2.0</span></div>
+          <div class="brand-line"><strong>Wallbound</strong><span class="version-badge">v2.1</span></div>
           <small>Two-player strategy</small>
         </div>
       </div>
@@ -27,26 +28,13 @@
         <div class="players-row" aria-live="polite">
           <article class="player-card player-one active" id="p1Card" aria-current="true">
             <span class="player-token" id="p1TokenTop" aria-hidden="true">🧭</span>
-            <div class="player-copy">
-              <strong id="p1NameTop">Player 1</strong>
-              <small>Reach the top</small>
-            </div>
-            <div class="player-status">
-              <span class="turn-chip">TURN</span>
-              <span class="wall-badge" title="Walls remaining"><span aria-hidden="true">🧱</span><b id="p1Count">10</b></span>
-            </div>
+            <div class="player-copy"><strong id="p1NameTop">Player 1</strong><small>Reach the top</small></div>
+            <div class="player-status"><span class="turn-chip">TURN</span><span class="wall-badge" title="Walls remaining"><span aria-hidden="true">🧱</span><b id="p1Count">10</b></span></div>
           </article>
-
           <article class="player-card player-two" id="p2Card">
             <span class="player-token" id="p2TokenTop" aria-hidden="true">🚀</span>
-            <div class="player-copy">
-              <strong id="p2NameTop">Player 2</strong>
-              <small>Reach the bottom</small>
-            </div>
-            <div class="player-status">
-              <span class="turn-chip">TURN</span>
-              <span class="wall-badge" title="Walls remaining"><span aria-hidden="true">🧱</span><b id="p2Count">10</b></span>
-            </div>
+            <div class="player-copy"><strong id="p2NameTop">Player 2</strong><small>Reach the bottom</small></div>
+            <div class="player-status"><span class="turn-chip">TURN</span><span class="wall-badge" title="Walls remaining"><span aria-hidden="true">🧱</span><b id="p2Count">10</b></span></div>
           </article>
         </div>
 
@@ -67,23 +55,16 @@
       <aside class="control-rail" aria-label="Turn controls">
         <section class="command-card">
           <div class="mode-switch" role="group" aria-label="Choose action">
-            <button class="mode-button active" id="moveMode" type="button" aria-pressed="true">
-              <span class="mode-icon" aria-hidden="true">●</span>
-              <span>Move</span>
-            </button>
-            <button class="mode-button" id="wallMode" type="button" aria-pressed="false">
-              <span class="mode-icon wall-icon" aria-hidden="true"></span>
-              <span>Wall</span>
-              <span class="mode-count" id="wallModeCount">10</span>
-            </button>
+            <button class="mode-button active" id="moveMode" type="button" aria-pressed="true"><span class="mode-icon" aria-hidden="true">●</span><span>Move</span></button>
+            <button class="mode-button" id="wallMode" type="button" aria-pressed="false"><span class="mode-icon wall-icon" aria-hidden="true"></span><span>Wall</span><span class="mode-count" id="wallModeCount">10</span></button>
           </div>
-
           <div class="command-detail">
             <div class="action-context">
               <p class="action-hint" id="moveHint">Tap a highlighted square.</p>
               <div class="wall-tools" id="wallTools" hidden>
                 <button id="horizontal" class="orientation-button active" type="button" aria-pressed="true"><span aria-hidden="true">↔</span> Horizontal</button>
                 <button id="vertical" class="orientation-button" type="button" aria-pressed="false"><span aria-hidden="true">↕</span> Vertical</button>
+                <span class="wall-helper">Gold guides on the board show every legal wall position.</span>
               </div>
             </div>
             <div class="utility-actions">
@@ -92,7 +73,6 @@
             </div>
           </div>
         </section>
-
         <nav class="desktop-tools" aria-label="Game tools">
           <button id="playersRailBtn" type="button"><span aria-hidden="true">🙂</span><span>Players &amp; tokens</span></button>
           <button id="rulesRailBtn" type="button"><span aria-hidden="true">?</span><span>How to play</span></button>
@@ -103,103 +83,18 @@
     </main>
   </div>
 
-  <div class="overlay" id="menuModal" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
-    <section class="sheet">
-      <header class="sheet-header">
-        <div><h2 id="menuTitle">Game menu</h2><p>Everything else stays off the play surface.</p></div>
-        <button class="close-button" data-close="menuModal" type="button" aria-label="Close menu">×</button>
-      </header>
-      <div class="menu-grid">
-        <button id="playersBtn" type="button"><span class="menu-icon" aria-hidden="true">🙂</span><span><b>Players &amp; tokens</b><small>Names and emoji pieces</small></span></button>
-        <button id="rulesBtn" type="button"><span class="menu-icon" aria-hidden="true">?</span><span><b>How to play</b><small>Movement, jumps, and walls</small></span></button>
-        <button id="historyBtn" type="button"><span class="menu-icon" aria-hidden="true">☷</span><span><b>Move history</b><small id="historyMenuCount">No moves yet</small></span></button>
-        <button id="restartBtn" class="danger" type="button"><span class="menu-icon" aria-hidden="true">↻</span><span><b>Restart game</b><small>Keep players, reset the board</small></span></button>
-      </div>
-      <a class="return-link" href="../../">Return to GameRoom</a>
-    </section>
-  </div>
+  <div class="overlay" id="menuModal" role="dialog" aria-modal="true" aria-labelledby="menuTitle"><section class="sheet"><header class="sheet-header"><div><h2 id="menuTitle">Game menu</h2><p>Everything else stays off the play surface.</p></div><button class="close-button" data-close="menuModal" type="button" aria-label="Close menu">×</button></header><div class="menu-grid"><button id="playersBtn" type="button"><span class="menu-icon" aria-hidden="true">🙂</span><span><b>Players &amp; tokens</b><small>Names and emoji pieces</small></span></button><button id="rulesBtn" type="button"><span class="menu-icon" aria-hidden="true">?</span><span><b>How to play</b><small>Movement, jumps, and walls</small></span></button><button id="historyBtn" type="button"><span class="menu-icon" aria-hidden="true">☷</span><span><b>Move history</b><small id="historyMenuCount">No moves yet</small></span></button><button id="restartBtn" class="danger" type="button"><span class="menu-icon" aria-hidden="true">↻</span><span><b>Restart game</b><small>Keep players, reset the board</small></span></button></div><a class="return-link" href="../../">Return to GameRoom</a></section></div>
 
-  <div class="overlay" id="playersModal" role="dialog" aria-modal="true" aria-labelledby="playersTitle">
-    <section class="sheet sheet-wide">
-      <header class="sheet-header">
-        <div><h2 id="playersTitle">Players &amp; tokens</h2><p>Choose names and pieces. They stay saved on this device.</p></div>
-        <button class="close-button" data-close="playersModal" type="button" aria-label="Close player setup">×</button>
-      </header>
-      <div class="player-editors">
-        <section class="player-editor player-one-editor">
-          <div class="editor-title"><span class="token-preview" id="p1TokenPreview">🧭</span><div><b>Player 1</b><small>Goal: top edge</small></div></div>
-          <label for="p1Input">Name</label>
-          <input id="p1Input" maxlength="18" value="Player 1" autocomplete="off">
-          <span class="field-caption">Choose a token</span>
-          <div class="emoji-grid" id="p1EmojiGrid" role="group" aria-label="Player 1 token choices"></div>
-        </section>
-        <section class="player-editor player-two-editor">
-          <div class="editor-title"><span class="token-preview" id="p2TokenPreview">🚀</span><div><b>Player 2</b><small>Goal: bottom edge</small></div></div>
-          <label for="p2Input">Name</label>
-          <input id="p2Input" maxlength="18" value="Player 2" autocomplete="off">
-          <span class="field-caption">Choose a token</span>
-          <div class="emoji-grid" id="p2EmojiGrid" role="group" aria-label="Player 2 token choices"></div>
-        </section>
-      </div>
-      <div class="sheet-actions">
-        <button data-close="playersModal" type="button">Cancel</button>
-        <button class="primary" id="savePlayers" type="button">Save players</button>
-      </div>
-    </section>
-  </div>
+  <div class="overlay" id="playersModal" role="dialog" aria-modal="true" aria-labelledby="playersTitle"><section class="sheet sheet-wide"><header class="sheet-header"><div><h2 id="playersTitle">Players &amp; tokens</h2><p>Choose names and pieces. They stay saved on this device.</p></div><button class="close-button" data-close="playersModal" type="button" aria-label="Close player setup">×</button></header><div class="player-editors"><section class="player-editor player-one-editor"><div class="editor-title"><span class="token-preview" id="p1TokenPreview">🧭</span><div><b>Player 1</b><small>Goal: top edge</small></div></div><label for="p1Input">Name</label><input id="p1Input" maxlength="18" value="Player 1" autocomplete="off"><span class="field-caption">Choose a token</span><div class="emoji-grid" id="p1EmojiGrid" role="group" aria-label="Player 1 token choices"></div></section><section class="player-editor player-two-editor"><div class="editor-title"><span class="token-preview" id="p2TokenPreview">🚀</span><div><b>Player 2</b><small>Goal: bottom edge</small></div></div><label for="p2Input">Name</label><input id="p2Input" maxlength="18" value="Player 2" autocomplete="off"><span class="field-caption">Choose a token</span><div class="emoji-grid" id="p2EmojiGrid" role="group" aria-label="Player 2 token choices"></div></section></div><div class="sheet-actions"><button data-close="playersModal" type="button">Cancel</button><button class="primary" id="savePlayers" type="button">Save players</button></div></section></div>
 
-  <div class="overlay" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
-    <section class="sheet sheet-wide">
-      <header class="sheet-header">
-        <div><h2 id="rulesTitle">How to play</h2><p>Reach the opposite edge before your rival.</p></div>
-        <button class="close-button" data-close="rulesModal" type="button" aria-label="Close rules">×</button>
-      </header>
-      <div class="rules-grid">
-        <article><span>1</span><div><b>Choose one action</b><p>Every turn, either move your pawn or place one wall.</p></div></article>
-        <article><span>2</span><div><b>Move through open edges</b><p>Move one square up, down, left, or right. Walls block movement.</p></div></article>
-        <article><span>3</span><div><b>Jump an adjacent rival</b><p>Jump straight over them when the square behind is open. If the jump is blocked, step around either open side.</p></div></article>
-        <article><span>4</span><div><b>Walls redirect, never seal</b><p>Walls span two spaces, cannot overlap or cross, and must leave both players a route to their goal.</p></div></article>
-        <article><span>5</span><div><b>Reach the far edge</b><p>Player 1 wins at the top row. Player 2 wins at the bottom row.</p></div></article>
-      </div>
-      <div class="sheet-actions"><button class="primary" data-close="rulesModal" type="button">Got it</button></div>
-    </section>
-  </div>
+  <div class="overlay" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle"><section class="sheet sheet-wide"><header class="sheet-header"><div><h2 id="rulesTitle">How to play</h2><p>Reach the opposite edge before your rival.</p></div><button class="close-button" data-close="rulesModal" type="button" aria-label="Close rules">×</button></header><div class="rules-grid"><article><span>1</span><div><b>Choose one action</b><p>Every turn, either move your pawn or place one wall.</p></div></article><article><span>2</span><div><b>Move through open edges</b><p>Move one square up, down, left, or right. Walls block movement.</p></div></article><article><span>3</span><div><b>Jump an adjacent rival</b><p>Jump straight over them when the square behind is open. If the jump is blocked, step around either open side.</p></div></article><article><span>4</span><div><b>Walls redirect, never seal</b><p>Walls span two spaces, cannot overlap or cross, and must leave both players a route to their goal.</p></div></article><article><span>5</span><div><b>Reach the far edge</b><p>Player 1 wins at the top row. Player 2 wins at the bottom row.</p></div></article></div><div class="sheet-actions"><button class="primary" data-close="rulesModal" type="button">Got it</button></div></section></div>
 
-  <div class="overlay" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
-    <section class="sheet">
-      <header class="sheet-header">
-        <div><h2 id="historyTitle">Move history</h2><p>Newest action appears last.</p></div>
-        <button class="close-button" data-close="historyModal" type="button" aria-label="Close move history">×</button>
-      </header>
-      <div class="history-list" id="historyList"><p class="empty-state">No moves yet.</p></div>
-    </section>
-  </div>
+  <div class="overlay" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle"><section class="sheet"><header class="sheet-header"><div><h2 id="historyTitle">Move history</h2><p>Newest action appears last.</p></div><button class="close-button" data-close="historyModal" type="button" aria-label="Close move history">×</button></header><div class="history-list" id="historyList"><p class="empty-state">No moves yet.</p></div></section></div>
 
-  <div class="overlay" id="restartModal" role="dialog" aria-modal="true" aria-labelledby="restartTitle">
-    <section class="sheet compact-sheet">
-      <header class="sheet-header">
-        <div><h2 id="restartTitle">Restart this game?</h2><p>The board and move history will reset. Player names and tokens stay.</p></div>
-        <button class="close-button" data-close="restartModal" type="button" aria-label="Cancel restart">×</button>
-      </header>
-      <div class="sheet-actions">
-        <button data-close="restartModal" type="button">Cancel</button>
-        <button class="danger-fill" id="confirmRestart" type="button">Restart game</button>
-      </div>
-    </section>
-  </div>
+  <div class="overlay" id="restartModal" role="dialog" aria-modal="true" aria-labelledby="restartTitle"><section class="sheet compact-sheet"><header class="sheet-header"><div><h2 id="restartTitle">Restart this game?</h2><p>The board and move history will reset. Player names and tokens stay.</p></div><button class="close-button" data-close="restartModal" type="button" aria-label="Cancel restart">×</button></header><div class="sheet-actions"><button data-close="restartModal" type="button">Cancel</button><button class="danger-fill" id="confirmRestart" type="button">Restart game</button></div></section></div>
 
-  <div class="overlay" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
-    <section class="sheet compact-sheet winner-sheet">
-      <div class="winner-icon" id="winnerIcon" aria-hidden="true">🏁</div>
-      <h2 id="winnerTitle">Player wins!</h2>
-      <p id="winnerText">The opposite edge has been reached.</p>
-      <div class="sheet-actions">
-        <button data-close="winnerModal" type="button">Review board</button>
-        <button class="primary" id="playAgain" type="button">Play again</button>
-      </div>
-    </section>
-  </div>
+  <div class="overlay" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle"><section class="sheet compact-sheet winner-sheet"><div class="winner-icon" id="winnerIcon" aria-hidden="true">🏁</div><h2 id="winnerTitle">Player wins!</h2><p id="winnerText">The opposite edge has been reached.</p><div class="sheet-actions"><button data-close="winnerModal" type="button">Review board</button><button class="primary" id="playAgain" type="button">Play again</button></div></section></div>
 
-  <script src="./game.js?v=2.0"></script>
+  <script src="./game.js?v=2.1"></script>
 </body>
 </html>
