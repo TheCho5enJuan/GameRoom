@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
-const games=['tic-tac-toe','space-sabotage','deal-or-no-deal','rogue-quest','tide-and-tranquility','blockforge'];
+const games=['wallbound','tic-tac-toe','space-sabotage','deal-or-no-deal','rogue-quest','tide-and-tranquility','blockforge'];
 const launcher=await readFile(join(root,'index.html'),'utf8');
 for(const game of games){
   assert.match(launcher,new RegExp(`href="\\./games/${game}/"`));
