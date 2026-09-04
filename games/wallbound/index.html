@@ -17,10 +17,10 @@
 
     <main class="layout">
       <section class="game-stage" aria-label="Wallbound game board">
-        <div class="turn-strip">
-          <div class="player-chip active" id="p1Chip"><span class="pawn-dot p1"></span><div><strong id="p1NameTop">Player 1</strong><small>Goal: top edge</small></div></div>
+        <div class="turn-strip" aria-live="polite">
+          <div class="player-chip active" id="p1Chip"><span class="token-badge p1" id="p1TokenTop" aria-hidden="true">🧭</span><div><strong id="p1NameTop">Player 1</strong><small>Goal: top edge</small></div></div>
           <div class="turn-label"><b id="turnText">Your turn</b><span id="turnSub">Move or place a wall</span></div>
-          <div class="player-chip right" id="p2Chip"><div><strong id="p2NameTop">Player 2</strong><small>Goal: bottom edge</small></div><span class="pawn-dot p2"></span></div>
+          <div class="player-chip right" id="p2Chip"><div><strong id="p2NameTop">Player 2</strong><small>Goal: bottom edge</small></div><span class="token-badge p2" id="p2TokenTop" aria-hidden="true">🚀</span></div>
         </div>
 
         <div class="board-shell">
@@ -38,7 +38,7 @@
       </section>
 
       <aside class="side">
-        <section class="panel">
+        <section class="panel action-panel">
           <h2>Choose your action</h2>
           <p class="sub">Each turn, move your pawn once or place one wall.</p>
           <div class="mode-grid">
@@ -55,18 +55,18 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel control-panel">
           <h2>Game controls</h2>
           <p class="sub">Pass the device after each turn.</p>
           <div class="controls">
             <button class="btn" id="undoBtn" type="button" disabled>Undo</button>
             <button class="btn" id="rulesBtn" type="button">Rules</button>
             <button class="btn primary" id="newBtn" type="button">New game</button>
-            <button class="btn" id="namesBtn" type="button">Player names</button>
+            <button class="btn" id="namesBtn" type="button">Players &amp; tokens</button>
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel history-panel">
           <h2>Move history</h2>
           <p class="sub">The current game, newest action last.</p>
           <div class="history" id="history"><div class="history-empty">No moves yet.</div></div>
@@ -92,13 +92,33 @@
 
   <div class="modal-backdrop" id="namesModal" role="dialog" aria-modal="true" aria-labelledby="namesTitle">
     <div class="modal">
-      <h2 id="namesTitle">Player names</h2>
-      <p>Names are kept for this browser session only.</p>
-      <label class="field-label" for="p1Input">Player 1</label>
-      <input class="field-input" id="p1Input" maxlength="18" value="Player 1">
-      <label class="field-label" for="p2Input">Player 2</label>
-      <input class="field-input" id="p2Input" maxlength="18" value="Player 2">
-      <div class="modal-actions"><button id="cancelNames" type="button">Cancel</button><button class="primary" id="saveNames" type="button">Save names</button></div>
+      <h2 id="namesTitle">Players &amp; tokens</h2>
+      <p>Give each player a name and an emoji token.</p>
+      <div class="player-editor">
+        <div>
+          <label class="field-label" for="p1Input">Player 1 name</label>
+          <input class="field-input" id="p1Input" maxlength="18" value="Player 1">
+        </div>
+        <div>
+          <label class="field-label" for="p1Emoji">Player 1 token</label>
+          <select class="field-input token-select" id="p1Emoji" aria-label="Player 1 token">
+            <option>🧭</option><option>😎</option><option>🤖</option><option>👑</option><option>🐉</option><option>🦊</option><option>🐸</option><option>🦄</option><option>👻</option><option>🐱</option><option>🐶</option><option>🦁</option><option>🥷</option><option>🧙</option><option>🏎️</option><option>🚀</option>
+          </select>
+        </div>
+      </div>
+      <div class="player-editor">
+        <div>
+          <label class="field-label" for="p2Input">Player 2 name</label>
+          <input class="field-input" id="p2Input" maxlength="18" value="Player 2">
+        </div>
+        <div>
+          <label class="field-label" for="p2Emoji">Player 2 token</label>
+          <select class="field-input token-select" id="p2Emoji" aria-label="Player 2 token">
+            <option>🚀</option><option>😎</option><option>🤖</option><option>👑</option><option>🐉</option><option>🦊</option><option>🐸</option><option>🦄</option><option>👻</option><option>🐱</option><option>🐶</option><option>🦁</option><option>🥷</option><option>🧙</option><option>🏎️</option><option>🧭</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions"><button id="cancelNames" type="button">Cancel</button><button class="primary" id="saveNames" type="button">Save players</button></div>
     </div>
   </div>
 
