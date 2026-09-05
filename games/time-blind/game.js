@@ -35,6 +35,8 @@
     playerCount: document.getElementById('playerCount'),
     difficultyWrap: document.getElementById('difficultyWrap'),
     difficultyControl: document.getElementById('difficultyControl'),
+    soundToggle: document.getElementById('soundToggle'),
+    vibrationToggle: document.getElementById('vibrationToggle'),
     playerRows: document.getElementById('playerRows'),
     beginButton: document.getElementById('beginButton'),
     roundNumber: document.getElementById('roundNumber'),
@@ -58,6 +60,9 @@
 
   let setupPlayerCount = 2;
   let selectedDifficulty = 'normal';
+  let soundEnabled = true;
+  let vibrationEnabled = true;
+  let audioContext = null;
   let players = [];
   let round = 1;
   let targetMs = 4000;
@@ -66,6 +71,8 @@
   let phase = 'setup';
   let startTime = 0;
   let hideTimer = 0;
+  let revealFrame = 0;
+  let calibrationVisible = false;
   let winnerIndex = -1;
 
   function clamp(value, min, max) {
@@ -89,7 +96,7 @@
       .replaceAll("'", '&#039;');
   }
 
-  function renderDisplay(value, hidden = false) {
+  function renderDisplay(value, hidden = false, announce = true) {
     const text = String(value);
     const parts = [];
     for (const char of text) {
@@ -106,7 +113,80 @@
     }
     el.sevenDisplay.innerHTML = parts.join('');
     el.sevenDisplay.classList.toggle('hidden-clock', hidden);
-    el.displayText.textContent = `${text} seconds`;
+    if (announce) el.displayText.textContent = `${text} seconds`;
+  }
+
+  function ensureAudioContext() {
+    if (!soundEnabled) return null;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioContext) audioContext = new AudioContextClass();
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    return audioContext;
+  }
+
+  function tone(frequency, duration = 0.06, volume = 0.03, delay = 0, type = 'square') {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const start = ctx.currentTime + delay;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.015);
+  }
+
+  function playCue(name) {
+    if (!soundEnabled) return;
+    if (name === 'start') {
+      tone(880, 0.055, 0.028);
+    } else if (name === 'hide') {
+      tone(440, 0.045, 0.02);
+    } else if (name === 'stop') {
+      tone(660, 0.045, 0.026);
+    } else if (name === 'bust') {
+      tone(190, 0.10, 0.026);
+      tone(135, 0.12, 0.024, 0.085);
+    } else if (name === 'point') {
+      tone(760, 0.07, 0.026);
+      tone(1040, 0.10, 0.024, 0.075);
+    } else if (name === 'win') {
+      tone(660, 0.07, 0.028);
+      tone(880, 0.08, 0.028, 0.075);
+      tone(1100, 0.14, 0.028, 0.16);
+    }
+  }
+
+  function vibrate(pattern) {
+    if (!vibrationEnabled || !navigator.vibrate) return;
+    navigator.vibrate(pattern);
+  }
+
+  function updateFeedbackToggles() {
+    const configs = [
+      [el.soundToggle, soundEnabled],
+      [el.vibrationToggle, vibrationEnabled],
+    ];
+    for (const [button, enabled] of configs) {
+      button.classList.toggle('selected', enabled);
+      button.setAttribute('aria-pressed', String(enabled));
+      const status = button.querySelector('small');
+      if (status) status.textContent = enabled ? 'On' : 'Off';
+    }
+  }
+
+  function clearActiveTiming() {
+    clearTimeout(hideTimer);
+    cancelAnimationFrame(revealFrame);
+    hideTimer = 0;
+    revealFrame = 0;
+    calibrationVisible = false;
   }
 
   function renderPlayerRows() {
@@ -148,6 +228,7 @@
     el.minusPlayer.disabled = setupPlayerCount <= MIN_PLAYERS;
     el.plusPlayer.disabled = setupPlayerCount >= MAX_PLAYERS;
     el.difficultyWrap.hidden = setupPlayerCount !== 1;
+    updateFeedbackToggles();
     renderPlayerRows();
   }
 
@@ -175,6 +256,7 @@
   }
 
   function startGame() {
+    clearActiveTiming();
     players = Array.from({ length: setupPlayerCount }, (_, index) => normalizedPlayer(index));
     round = 1;
     targetMs = randomTargetMs();
@@ -191,7 +273,7 @@
   }
 
   function resetToSetup() {
-    clearTimeout(hideTimer);
+    clearActiveTiming();
     phase = 'setup';
     el.gameScreen.hidden = true;
     el.setupScreen.hidden = false;
@@ -245,10 +327,11 @@
   }
 
   function showReadyState() {
+    clearActiveTiming();
     renderTurnHeader();
     el.clockLabel.textContent = 'TARGET';
     renderDisplay(formatMs(targetMs), false);
-    setNote('Press START. The target disappears after 1 second.');
+    setNote('Press START. Watch the countdown for 1 second, then it disappears.');
     configureAction('START', 'start');
   }
 
@@ -259,28 +342,56 @@
     showReadyState();
   }
 
+  function hideCalibration() {
+    if (phase !== 'running' || !calibrationVisible) return;
+    calibrationVisible = false;
+    clearTimeout(hideTimer);
+    cancelAnimationFrame(revealFrame);
+    hideTimer = 0;
+    revealFrame = 0;
+    el.sevenDisplay.classList.add('hidden-clock');
+    el.clockLabel.textContent = 'HIDDEN';
+    el.displayText.textContent = 'Timer hidden';
+    setNote('Trust your sense of time.');
+    playCue('hide');
+    vibrate(12);
+  }
+
+  function updateVisibleCountdown(now) {
+    if (phase !== 'running' || !calibrationVisible) return;
+    const elapsedMs = Math.max(0, now - startTime);
+    if (elapsedMs >= HIDE_DELAY_MS) {
+      hideCalibration();
+      return;
+    }
+    const remainingMs = Math.max(0, Math.round(targetMs - elapsedMs));
+    renderDisplay(formatMs(remainingMs), false, false);
+    revealFrame = requestAnimationFrame(updateVisibleCountdown);
+  }
+
   function beginAttempt() {
     if (phase !== 'ready') return;
+    clearActiveTiming();
     phase = 'running';
     startTime = performance.now();
-    el.clockLabel.textContent = 'TARGET';
-    renderDisplay(formatMs(targetMs), false);
-    setNote('Clock is running…');
+    calibrationVisible = true;
+    el.clockLabel.textContent = 'COUNTDOWN';
+    renderDisplay(formatMs(targetMs), false, false);
+    el.displayText.textContent = 'Countdown started';
+    setNote('Watch the clock for 1 second…');
     configureAction('STOP', 'stop');
-    clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(() => {
-      if (phase !== 'running') return;
-      el.sevenDisplay.classList.add('hidden-clock');
-      el.clockLabel.textContent = 'HIDDEN';
-      el.displayText.textContent = 'Timer hidden';
-      setNote('Trust your sense of time.');
-    }, HIDE_DELAY_MS);
+    playCue('start');
+    vibrate(20);
+    revealFrame = requestAnimationFrame(updateVisibleCountdown);
+    hideTimer = window.setTimeout(hideCalibration, HIDE_DELAY_MS);
   }
 
   function finishAttempt() {
     if (phase !== 'running') return;
     const elapsedMs = Math.max(0, Math.round(performance.now() - startTime));
-    clearTimeout(hideTimer);
+    clearActiveTiming();
+    playCue('stop');
+    vibrate(28);
     const player = players[currentPlayerIndex];
     const bust = elapsedMs > targetMs;
     const deltaMs = Math.abs(targetMs - elapsedMs);
@@ -299,6 +410,8 @@
 
     if (bust) {
       setNote(`BUST · ${formatMs(elapsedMs - targetMs)}s over the ${formatMs(targetMs)}s target`, 'bust');
+      playCue('bust');
+      vibrate([60, 35, 80]);
     } else {
       setNote(`${formatMs(deltaMs)}s under the ${formatMs(targetMs)}s target`, 'good');
     }
@@ -322,6 +435,8 @@
     if (success) {
       players[0].score += 1;
       setNote(`POINT · ${formatMs(attempt.deltaMs)}s under target`, 'round-win');
+      playCue('point');
+      vibrate([30, 25, 30]);
     } else if (!attempt.bust) {
       setNote(`No point · needed within ${formatMs(difficulty.toleranceMs)}s`, '');
     }
@@ -383,6 +498,8 @@
     el.clockLabel.textContent = 'ROUND WINNER';
     renderDisplay(formatMs(winningAttempt.elapsedMs), false);
     setNote(`${winningAttempt.name} was ${formatMs(targetMs - winningAttempt.elapsedMs)}s under target`, 'round-win');
+    playCue('point');
+    vibrate([30, 25, 30]);
 
     if (players[winningAttempt.playerIndex].score >= WIN_SCORE) {
       winnerIndex = winningAttempt.playerIndex;
@@ -403,9 +520,12 @@
     renderDisplay('3.000', false);
     setNote(`${winner.name} reached 3 points.`, 'good');
     configureAction('PLAY AGAIN', 'win');
+    playCue('win');
+    vibrate([40, 30, 40, 30, 80]);
   }
 
   function startNextRound() {
+    clearActiveTiming();
     round += 1;
     targetMs = randomTargetMs();
     currentPlayerIndex = 0;
@@ -433,6 +553,16 @@
   el.difficultyControl.addEventListener('click', event => {
     const button = event.target.closest('[data-difficulty]');
     if (button) setDifficulty(button.dataset.difficulty);
+  });
+  el.soundToggle.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    updateFeedbackToggles();
+    if (soundEnabled) playCue('start');
+  });
+  el.vibrationToggle.addEventListener('click', () => {
+    vibrationEnabled = !vibrationEnabled;
+    updateFeedbackToggles();
+    if (vibrationEnabled) vibrate(20);
   });
   el.beginButton.addEventListener('click', startGame);
   el.actionButton.addEventListener('click', handleAction);
