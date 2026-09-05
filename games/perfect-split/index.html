@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0c12">
+  <meta name="description" content="Perfect Split is a precision emoji slicing game for one to ten players.">
+  <title>Perfect Split · GameRoom</title>
+  <link rel="stylesheet" href="./styles.css?v=1.0">
+</head>
+<body>
+  <div class="app">
+    <header class="game-header">
+      <a class="back-link" href="../../">← GameRoom</a>
+      <div class="mini-brand"><strong>PERFECT SPLIT</strong><span>v1.0</span></div>
+      <button class="text-button" id="newGameButton" type="button" hidden>New Game</button>
+    </header>
+
+    <main>
+      <section class="setup-screen" id="setupScreen" aria-labelledby="setupTitle">
+        <div class="setup-hero">
+          <div class="split-mark" aria-hidden="true"><span>🍉</span><i></i></div>
+          <p class="eyebrow">Precision slicing</p>
+          <h1 id="setupTitle">Perfect Split</h1>
+          <p>Drag one continuous cut through the emoji. The closest balance to 50.000 / 50.000 wins.</p>
+          <div class="rules-strip">
+            <div><strong>1</strong><span>SLICE</span></div>
+            <div><strong>0.001%</strong><span>PRECISION</span></div>
+            <div><strong>3</strong><span>POINTS WINS</span></div>
+          </div>
+        </div>
+
+        <div class="setup-panel">
+          <div class="setting-row">
+            <div><span class="setting-label">Players</span><small>Solo or 2–10 pass-and-play</small></div>
+            <div class="stepper" aria-label="Number of players">
+              <button id="minusPlayer" type="button" aria-label="Remove a player">−</button>
+              <output id="playerCount">2</output>
+              <button id="plusPlayer" type="button" aria-label="Add a player">+</button>
+            </div>
+          </div>
+
+          <div class="difficulty-wrap" id="soloDifficultyWrap" hidden>
+            <span class="setting-label">Solo accuracy</span>
+            <div class="choice-grid three" id="soloDifficulty" role="group" aria-label="Solo accuracy difficulty">
+              <button type="button" data-solo="easy">Easy<small>±5.000%</small></button>
+              <button type="button" class="selected" data-solo="normal">Normal<small>±2.000%</small></button>
+              <button type="button" data-solo="hard">Hard<small>±0.500%</small></button>
+            </div>
+          </div>
+
+          <div class="setting-block">
+            <div class="setting-heading"><span class="setting-label">Emoji</span><small>Same emoji for everyone in a round</small></div>
+            <div class="choice-grid two" id="emojiMode" role="group" aria-label="Emoji selection mode">
+              <button type="button" class="selected" data-mode="random">🎲 Random</button>
+              <button type="button" data-mode="pick">👉 Pick one</button>
+            </div>
+            <div class="shape-row" id="shapeDifficultyRow">
+              <label for="shapeDifficulty">Shape difficulty</label>
+              <select id="shapeDifficulty">
+                <option value="mix">Mixed</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div class="pick-row" id="pickRow" hidden>
+              <label for="emojiPicker">Target emoji</label>
+              <select id="emojiPicker"></select>
+            </div>
+          </div>
+
+          <div class="setting-block">
+            <div class="setting-heading"><span class="setting-label">Feedback</span><small>Sound + haptics</small></div>
+            <div class="feedback-grid">
+              <button class="toggle-card selected" id="soundToggle" type="button" aria-pressed="true"><span>🔊</span><b>Sound</b><small>On</small></button>
+              <button class="toggle-card selected" id="vibrationToggle" type="button" aria-pressed="true"><span>📳</span><b>Vibration</b><small>On</small></button>
+            </div>
+          </div>
+
+          <div class="player-editor">
+            <div class="setting-heading"><span class="setting-label">Players</span><small>Name + avatar</small></div>
+            <div id="playerRows"></div>
+          </div>
+
+          <p class="setup-note">Multiplayer scores stay hidden until every player has sliced. Exact ties remain ties and all tied winners earn the point.</p>
+          <button class="primary-button" id="beginButton" type="button">Begin Game</button>
+        </div>
+      </section>
+
+      <section class="game-screen" id="gameScreen" hidden aria-labelledby="gameTitle">
+        <div class="game-meta">
+          <div><span>ROUND</span><strong id="roundNumber">1</strong></div>
+          <div class="game-title" id="gameTitle">FIRST TO 3</div>
+          <div id="turnStat">TURN 1/2</div>
+        </div>
+        <div class="scoreboard" id="scoreboard"></div>
+
+        <section class="slice-panel">
+          <div class="turn-line"><span id="turnAvatar">🙂</span><strong id="turnName">Player 1</strong><span id="turnSuffix">is slicing</span></div>
+          <div class="target-meta"><span id="shapeBadge">MEDIUM</span><strong id="targetEmojiLabel">🍉</strong><span>SLICE ACROSS</span></div>
+          <div class="canvas-shell" id="canvasShell">
+            <canvas id="sliceCanvas" width="560" height="560" aria-label="Emoji slicing canvas"></canvas>
+            <div class="slice-hint" id="sliceHint"><strong>Drag across the emoji</strong><span>One continuous finger stroke. Curves and wiggles count.</span></div>
+          </div>
+          <div class="slice-message" id="sliceMessage">Start outside one side and drag all the way through.</div>
+          <button class="action-button" id="nextButton" type="button" hidden>PASS TO NEXT PLAYER</button>
+        </section>
+      </section>
+
+      <section class="reveal-screen" id="revealScreen" hidden aria-labelledby="revealTitle">
+        <div class="reveal-heading">
+          <span id="revealKicker">ROUND 1 · RESULT 1/2</span>
+          <h2 id="revealTitle">The weigh-in</h2>
+          <p id="revealPlayer">🙂 Player 1</p>
+        </div>
+
+        <div class="scale-card">
+          <div class="scale-readout"><span id="leftPercent">50.000%</span><strong id="balanceError">0.000% off</strong><span id="rightPercent">50.000%</span></div>
+          <div class="scale" id="scale">
+            <div class="scale-post"></div>
+            <div class="scale-beam">
+              <div class="pan left-pan"><span class="chain"></span><canvas id="leftPiece" width="260" height="220"></canvas></div>
+              <div class="fulcrum"></div>
+              <div class="pan right-pan"><span class="chain"></span><canvas id="rightPiece" width="260" height="220"></canvas></div>
+            </div>
+            <div class="scale-base"></div>
+          </div>
+          <div class="accuracy-line" id="accuracyLine">Measured from the visible rendered emoji area.</div>
+        </div>
+
+        <div class="ranking" id="ranking" hidden></div>
+        <button class="primary-button reveal-action" id="revealButton" type="button">NEXT RESULT</button>
+      </section>
+    </main>
+  </div>
+  <script src="./game.js?v=1.0"></script>
+</body>
+</html>
