@@ -1,9 +1,10 @@
 # GameRoom
 
-A static GitHub Pages arcade containing eight browser games. Each game is an independent project under `games/<slug>/`.
+A static GitHub Pages arcade containing nine browser games. Each game is an independent project under `games/<slug>/`.
 
 ## Games
 
+- Perfect Split
 - Time Blind
 - Wallbound
 - Ultimate Tic Tac Toe
