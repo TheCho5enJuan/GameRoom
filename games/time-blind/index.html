@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Time Blind is a hidden-timer precision game for one to ten players.">
   <title>Time Blind · GameRoom</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=1.1">
 </head>
 <body>
   <div class="app" id="app">
     <header class="game-header">
       <a class="back-link" href="../../">← GameRoom</a>
-      <div class="mini-brand"><strong>TIME BLIND</strong><span>v1.0</span></div>
+      <div class="mini-brand"><strong>TIME BLIND</strong><span>v1.1</span></div>
       <button class="text-button" id="newGameButton" type="button" hidden>New Game</button>
     </header>
 
@@ -47,6 +47,14 @@
             </div>
           </div>
 
+          <div class="feedback-wrap">
+            <div class="editor-heading"><span>Feedback</span><small>During the visible calibration second</small></div>
+            <div class="feedback-controls" role="group" aria-label="Game feedback settings">
+              <button class="feedback-toggle selected" id="soundToggle" type="button" aria-pressed="true"><span aria-hidden="true">🔊</span><b>Sound</b><small>On</small></button>
+              <button class="feedback-toggle selected" id="vibrationToggle" type="button" aria-pressed="true"><span aria-hidden="true">📳</span><b>Vibration</b><small>On</small></button>
+            </div>
+          </div>
+
           <div class="player-editor">
             <div class="editor-heading"><span>Players</span><small>Name + avatar</small></div>
             <div id="playerRows"></div>
@@ -78,7 +86,7 @@
             <span class="sr-only" id="displayText" aria-live="polite">4.000 seconds</span>
           </div>
 
-          <div class="target-note" id="targetNote">Press START. The target disappears after 1 second.</div>
+          <div class="target-note" id="targetNote">Press START. Watch the countdown for 1 second, then it disappears.</div>
           <button class="action-button start" id="actionButton" type="button">START</button>
 
           <div class="round-attempts" id="roundAttempts" aria-live="polite"></div>
@@ -87,6 +95,6 @@
     </main>
   </div>
 
-  <script src="./game.js"></script>
+  <script src="./game.js?v=1.1"></script>
 </body>
 </html>
