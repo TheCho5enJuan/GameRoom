@@ -16,9 +16,9 @@ const ctx=new Proxy(ctxTarget,{get(t,p){if(p in t)return t[p];return noop},set(t
 const classList={add:noop,remove:noop,toggle:()=>false,contains:()=>false,replace:noop};
 let element;
 const elementTarget={
-  style:new Proxy({setProperty:noop,removeProperty:noop,getPropertyValue:()=>''}, {get:(t,p)=>p in t?t[p]:'',set:(t,p,v)=>(t[p]=v,true)}),classList,dataset:{},value:'',checked:false,disabled:false,textContent:'',innerHTML:'',
+  style:new Proxy({setProperty:noop,removeProperty:noop,getPropertyValue:()=>''}, {get:(t,p)=>p in t?t[p]:'',set:(t,p,v)=>(t[p]=v,true)}),classList,dataset:{},value:'',checked:false,disabled:false,textContent:'',innerHTML:'',hidden:false,
   width:900,height:900,clientWidth:900,clientHeight:900,offsetWidth:900,offsetHeight:900,scrollWidth:900,scrollHeight:900,
-  addEventListener:noop,removeEventListener:noop,dispatchEvent:()=>true,appendChild:x=>x,append:noop,prepend:noop,remove:noop,focus:noop,select:noop,click:noop,
+  addEventListener:noop,removeEventListener:noop,dispatchEvent:()=>true,appendChild:x=>x,append:noop,prepend:noop,remove:noop,focus:noop,select:noop,click:noop,scrollIntoView:noop,
   getContext:()=>ctx,getBoundingClientRect:()=>({left:0,top:0,right:900,bottom:900,width:900,height:900}),
   querySelector:()=>element,querySelectorAll:()=>childList,closest:()=>null,setAttribute:noop,getAttribute:()=>null,removeAttribute:noop,
   setPointerCapture:noop,releasePointerCapture:noop,cloneNode:()=>element,replaceWith:noop,insertAdjacentHTML:noop,
@@ -53,10 +53,10 @@ const sandbox={...windowObj,window:windowObj,self:windowObj,globalThis:windowObj
   Blob:class{},URL:{createObjectURL:()=>'',revokeObjectURL:noop},FileReader:class{readAsText(){this.result='';this.onload?.()}},
   AudioContext:AudioContextStub,webkitAudioContext:AudioContextStub,
 };
-const games=['rogue-quest','tide-and-tranquility','blockforge','space-sabotage','deal-or-no-deal'];
+const games=['time-blind','rogue-quest','tide-and-tranquility','blockforge','space-sabotage','deal-or-no-deal'];
 for(const game of games){
   const html=await readFile(join(site,'games',game,'index.html'),'utf8');
-  const srcs=[...html.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)].map(m=>m[1]).filter(x=>!/^https?:/.test(x));
+  const srcs=[...html.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)].map(m=>m[1].split('?')[0]).filter(x=>!/^https?:/.test(x));
   const context=vm.createContext({...sandbox});
   try{
     for(const src of srcs){
