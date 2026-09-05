@@ -3,26 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0a0c12">
+  <meta name="theme-color" content="#080a0f">
   <meta name="description" content="Perfect Split is a precision emoji slicing game for one to ten players.">
   <title>Perfect Split · GameRoom</title>
-  <link rel="stylesheet" href="./styles.css?v=1.0">
+  <link rel="stylesheet" href="./styles.css?v=2.0">
 </head>
 <body>
   <div class="app">
     <header class="game-header">
       <a class="back-link" href="../../">← GameRoom</a>
-      <div class="mini-brand"><strong>PERFECT SPLIT</strong><span>v1.0</span></div>
+      <div class="mini-brand"><strong>PERFECT SPLIT</strong><span>v2.0</span></div>
       <button class="text-button" id="newGameButton" type="button" hidden>New Game</button>
     </header>
 
     <main>
       <section class="setup-screen" id="setupScreen" aria-labelledby="setupTitle">
         <div class="setup-hero">
-          <div class="split-mark" aria-hidden="true"><span>🍉</span><i></i></div>
+          <div class="split-mark" aria-hidden="true"><span class="hero-piece hero-left">🍉</span><span class="hero-piece hero-right">🍉</span><i></i></div>
           <p class="eyebrow">Precision slicing</p>
           <h1 id="setupTitle">Perfect Split</h1>
-          <p>Drag one continuous cut through the emoji. The closest balance to 50.000 / 50.000 wins.</p>
+          <p>Draw one continuous cut through the emoji. The closest balance to 50.000 / 50.000 wins.</p>
           <div class="rules-strip">
             <div><strong>1</strong><span>SLICE</span></div>
             <div><strong>0.001%</strong><span>PRECISION</span></div>
@@ -50,7 +50,7 @@
           </div>
 
           <div class="setting-block">
-            <div class="setting-heading"><span class="setting-label">Emoji</span><small>Same emoji for everyone in a round</small></div>
+            <div class="setting-heading"><span class="setting-label">Emoji</span><small>Same target for everyone each round</small></div>
             <div class="choice-grid two" id="emojiMode" role="group" aria-label="Emoji selection mode">
               <button type="button" class="selected" data-mode="random">🎲 Random</button>
               <button type="button" data-mode="pick">👉 Pick one</button>
@@ -71,7 +71,7 @@
           </div>
 
           <div class="setting-block">
-            <div class="setting-heading"><span class="setting-label">Feedback</span><small>Sound + haptics</small></div>
+            <div class="setting-heading"><span class="setting-label">Feedback</span><small>Responsive sound + haptics</small></div>
             <div class="feedback-grid">
               <button class="toggle-card selected" id="soundToggle" type="button" aria-pressed="true"><span>🔊</span><b>Sound</b><small>On</small></button>
               <button class="toggle-card selected" id="vibrationToggle" type="button" aria-pressed="true"><span>📳</span><b>Vibration</b><small>On</small></button>
@@ -83,8 +83,18 @@
             <div id="playerRows"></div>
           </div>
 
-          <p class="setup-note">Multiplayer scores stay hidden until every player has sliced. Exact ties remain ties and all tied winners earn the point.</p>
+          <p class="setup-note">Multiplayer results stay private until everyone slices. Exact three-decimal ties stay tied and all tied winners earn the point.</p>
           <button class="primary-button" id="beginButton" type="button">Begin Game</button>
+        </div>
+      </section>
+
+      <section class="handoff-screen" id="handoffScreen" hidden aria-labelledby="handoffTitle">
+        <div class="handoff-card">
+          <span class="handoff-kicker" id="handoffKicker">PASS THE DEVICE</span>
+          <div class="handoff-avatar" id="handoffAvatar">😎</div>
+          <h2 id="handoffTitle">Player 2 is next</h2>
+          <p id="handoffText">Previous results are hidden. Hand the device over before continuing.</p>
+          <button class="primary-button" id="handoffButton" type="button">I'M READY</button>
         </div>
       </section>
 
@@ -96,14 +106,20 @@
         </div>
         <div class="scoreboard" id="scoreboard"></div>
 
-        <section class="slice-panel">
+        <section class="slice-panel" id="slicePanel">
           <div class="turn-line"><span id="turnAvatar">🙂</span><strong id="turnName">Player 1</strong><span id="turnSuffix">is slicing</span></div>
-          <div class="target-meta"><span id="shapeBadge">MEDIUM</span><strong id="targetEmojiLabel">🍉</strong><span>SLICE ACROSS</span></div>
+          <div class="target-meta"><span id="shapeBadge">MEDIUM</span><strong id="targetEmojiLabel">🍉</strong><span id="gestureStatus">READY</span></div>
           <div class="canvas-shell" id="canvasShell">
             <canvas id="sliceCanvas" width="560" height="560" aria-label="Emoji slicing canvas"></canvas>
-            <div class="slice-hint" id="sliceHint"><strong>Drag across the emoji</strong><span>One continuous finger stroke. Curves and wiggles count.</span></div>
+            <div class="slice-vignette" aria-hidden="true"></div>
+            <div class="slice-hint" id="sliceHint"><strong>Drag across the emoji</strong><span>One continuous stroke. Curves and wiggles count.</span></div>
+            <div class="motion-meter" id="motionMeter" aria-hidden="true"><span id="motionFill"></span></div>
+            <div class="cut-stamp" id="cutStamp" hidden><strong>CUT LOCKED</strong><span>Result sealed</span></div>
           </div>
-          <div class="slice-message" id="sliceMessage">Start outside one side and drag all the way through.</div>
+          <div class="slice-feedback-row">
+            <div class="slice-message" id="sliceMessage">Start outside one side and drag all the way through.</div>
+            <div class="slice-style" id="sliceStyle">—</div>
+          </div>
           <button class="action-button" id="nextButton" type="button" hidden>PASS TO NEXT PLAYER</button>
         </section>
       </section>
@@ -115,8 +131,11 @@
           <p id="revealPlayer">🙂 Player 1</p>
         </div>
 
-        <div class="scale-card">
-          <div class="scale-readout"><span id="leftPercent">50.000%</span><strong id="balanceError">0.000% off</strong><span id="rightPercent">50.000%</span></div>
+        <div class="grade-banner" id="gradeBanner"><span id="gradeLabel">MEASURING</span><small id="gradeHint">Calculating visible emoji area</small></div>
+
+        <div class="scale-card" id="scaleCard">
+          <div class="scale-readout"><span id="leftPercent">—</span><strong id="balanceError">MEASURING</strong><span id="rightPercent">—</span></div>
+          <div class="balance-track" aria-hidden="true"><span id="balanceMarker"></span><i></i></div>
           <div class="scale" id="scale">
             <div class="scale-post"></div>
             <div class="scale-beam">
@@ -134,6 +153,6 @@
       </section>
     </main>
   </div>
-  <script src="./game.js?v=1.0"></script>
+  <script src="./game.js?v=2.0"></script>
 </body>
 </html>
