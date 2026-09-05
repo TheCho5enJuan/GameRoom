@@ -6,14 +6,13 @@
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Time Blind is a hidden-timer precision game for one to ten players.">
   <title>Time Blind · GameRoom</title>
-  <link rel="stylesheet" href="./styles.css?v=1.1">
-  <link rel="stylesheet" href="./feedback-v1.1.css?v=1.1">
+  <link rel="stylesheet" href="./styles.css?v=2.0">
 </head>
 <body>
   <div class="app" id="app">
     <header class="game-header">
       <a class="back-link" href="../../">← GameRoom</a>
-      <div class="mini-brand"><strong>TIME BLIND</strong><span>v1.1</span></div>
+      <div class="mini-brand"><strong>TIME BLIND</strong><span>v2.0</span></div>
       <button class="text-button" id="newGameButton" type="button" hidden>New Game</button>
     </header>
 
@@ -23,7 +22,12 @@
           <div class="preview-clock" aria-hidden="true">4.000</div>
           <p class="eyebrow">Hidden timer challenge</p>
           <h1 id="setupTitle">Time Blind</h1>
-          <p>See the target. Start the clock. Stop as close as you can without going over.</p>
+          <p>Watch half the countdown. Feel the other half. Stop as close as you can without going over.</p>
+          <div class="rules-strip" aria-label="Game rules">
+            <div><strong>50%</strong><span>VISIBLE</span></div>
+            <div><strong>50%</strong><span>BLIND</span></div>
+            <div><strong>3</strong><span>POINTS WINS</span></div>
+          </div>
         </div>
 
         <div class="setup-panel">
@@ -49,7 +53,7 @@
           </div>
 
           <div class="feedback-wrap">
-            <div class="editor-heading"><span>Feedback</span><small>During the visible calibration second</small></div>
+            <div class="editor-heading"><span>Feedback</span><small>Cues stop when the timer goes blind</small></div>
             <div class="feedback-controls" role="group" aria-label="Game feedback settings">
               <button class="feedback-toggle selected" id="soundToggle" type="button" aria-pressed="true"><span aria-hidden="true">🔊</span><b>Sound</b><small>On</small></button>
               <button class="feedback-toggle selected" id="vibrationToggle" type="button" aria-pressed="true"><span aria-hidden="true">📳</span><b>Vibration</b><small>On</small></button>
@@ -61,15 +65,16 @@
             <div id="playerRows"></div>
           </div>
 
+          <p class="setup-note">In multiplayer, the starting player rotates each round.</p>
           <button class="primary-button" id="beginButton" type="button">Begin Game</button>
         </div>
       </section>
 
       <section class="game-screen" id="gameScreen" hidden aria-labelledby="gameTitle">
         <div class="game-meta">
-          <div><span>ROUND</span><strong id="roundNumber">1</strong></div>
+          <div class="round-stat"><span>ROUND</span><strong id="roundNumber">1</strong></div>
           <div class="game-title" id="gameTitle">FIRST TO 3</div>
-          <div class="difficulty-badge" id="difficultyBadge" hidden>NORMAL</div>
+          <div class="turn-stat" id="turnStat">TURN 1/2</div>
         </div>
 
         <div class="scoreboard" id="scoreboard" aria-label="Scoreboard"></div>
@@ -85,9 +90,11 @@
             <div class="clock-label" id="clockLabel">TARGET</div>
             <div class="seven-display" id="sevenDisplay" aria-hidden="true"></div>
             <span class="sr-only" id="displayText" aria-live="polite">4.000 seconds</span>
+            <div class="calibration-progress" id="calibrationProgress" aria-hidden="true"><span id="calibrationFill"></span></div>
+            <div class="blind-badge" id="blindBadge" hidden>BLIND</div>
           </div>
 
-          <div class="target-note" id="targetNote">Press START. Watch the countdown for 1 second, then it disappears.</div>
+          <div class="target-note" id="targetNote">Press START. The first half counts down visibly, then the timer disappears.</div>
           <button class="action-button start" id="actionButton" type="button">START</button>
 
           <div class="round-attempts" id="roundAttempts" aria-live="polite"></div>
@@ -96,6 +103,6 @@
     </main>
   </div>
 
-  <script src="./game.js?v=1.1"></script>
+  <script src="./game.js?v=2.0"></script>
 </body>
 </html>
