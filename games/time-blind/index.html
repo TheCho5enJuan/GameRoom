@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Time Blind is a hidden-timer precision game for one to ten players.">
+  <title>Time Blind · GameRoom</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="game-header">
+      <a class="back-link" href="../../">← GameRoom</a>
+      <div class="mini-brand"><strong>TIME BLIND</strong><span>v1.0</span></div>
+      <button class="text-button" id="newGameButton" type="button" hidden>New Game</button>
+    </header>
+
+    <main>
+      <section class="setup-screen" id="setupScreen" aria-labelledby="setupTitle">
+        <div class="setup-hero">
+          <div class="preview-clock" aria-hidden="true">4.000</div>
+          <p class="eyebrow">Hidden timer challenge</p>
+          <h1 id="setupTitle">Time Blind</h1>
+          <p>See the target. Start the clock. Stop as close as you can without going over.</p>
+        </div>
+
+        <div class="setup-panel">
+          <div class="setting-row">
+            <div>
+              <span class="setting-label">Players</span>
+              <small>1–10 players</small>
+            </div>
+            <div class="stepper" aria-label="Number of players">
+              <button id="minusPlayer" type="button" aria-label="Remove a player">−</button>
+              <output id="playerCount" aria-live="polite">2</output>
+              <button id="plusPlayer" type="button" aria-label="Add a player">+</button>
+            </div>
+          </div>
+
+          <div class="difficulty-wrap" id="difficultyWrap" hidden>
+            <span class="setting-label">Solo difficulty</span>
+            <div class="difficulty" id="difficultyControl" role="group" aria-label="Solo difficulty">
+              <button type="button" data-difficulty="easy">Easy <small>0.500s</small></button>
+              <button type="button" class="selected" data-difficulty="normal">Normal <small>0.250s</small></button>
+              <button type="button" data-difficulty="hard">Hard <small>0.100s</small></button>
+            </div>
+          </div>
+
+          <div class="player-editor">
+            <div class="editor-heading"><span>Players</span><small>Name + avatar</small></div>
+            <div id="playerRows"></div>
+          </div>
+
+          <button class="primary-button" id="beginButton" type="button">Begin Game</button>
+        </div>
+      </section>
+
+      <section class="game-screen" id="gameScreen" hidden aria-labelledby="gameTitle">
+        <div class="game-meta">
+          <div><span>ROUND</span><strong id="roundNumber">1</strong></div>
+          <div class="game-title" id="gameTitle">FIRST TO 3</div>
+          <div class="difficulty-badge" id="difficultyBadge" hidden>NORMAL</div>
+        </div>
+
+        <div class="scoreboard" id="scoreboard" aria-label="Scoreboard"></div>
+
+        <section class="clock-stage">
+          <div class="turn-line" id="turnLine">
+            <span class="turn-avatar" id="turnAvatar">🙂</span>
+            <strong id="turnName">Player 1</strong>
+            <span id="turnSuffix">is up</span>
+          </div>
+
+          <div class="clock-frame" id="clockFrame">
+            <div class="clock-label" id="clockLabel">TARGET</div>
+            <div class="seven-display" id="sevenDisplay" aria-hidden="true"></div>
+            <span class="sr-only" id="displayText" aria-live="polite">4.000 seconds</span>
+          </div>
+
+          <div class="target-note" id="targetNote">Press START. The target disappears after 1 second.</div>
+          <button class="action-button start" id="actionButton" type="button">START</button>
+
+          <div class="round-attempts" id="roundAttempts" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./game.js"></script>
+</body>
+</html>

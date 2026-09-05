@@ -1,9 +1,11 @@
 # GameRoom
 
-A static GitHub Pages arcade containing six browser games. Each game is an independent project under `games/<slug>/`.
+A static GitHub Pages arcade containing eight browser games. Each game is an independent project under `games/<slug>/`.
 
 ## Games
 
+- Time Blind
+- Wallbound
 - Ultimate Tic Tac Toe
 - Space Sabotage
 - Deal or No Deal
