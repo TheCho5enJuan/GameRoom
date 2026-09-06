@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07120f">
   <title>Lonecraft Sprite Lab</title>
-  <link rel="stylesheet" href="./sprite-lab.css?v=1.0">
+  <link rel="stylesheet" href="./sprite-lab.css?v=2.0">
 </head>
 <body>
   <div class="lab-shell">
@@ -27,84 +27,27 @@
           <button type="button" data-preset="slime">Slime</button>
           <button type="button" data-preset="boss">Air Wizard</button>
         </div>
-        <div class="sheet-scroll" id="sheetScroll">
-          <canvas id="sheetCanvas" width="384" height="640" aria-label="Sprite sheet with frame grid"></canvas>
-        </div>
-        <div class="sheet-footer">
-          <span id="selectedLabel">Selected row 0 · col 0</span>
-          <label>Zoom <input id="zoom" type="range" min="1" max="6" step="1" value="4"><b id="zoomValue">4×</b></label>
-        </div>
+        <div class="sheet-scroll" id="sheetScroll"><canvas id="sheetCanvas" width="384" height="640" aria-label="Sprite sheet with frame grid"></canvas></div>
+        <div class="sheet-footer"><span id="selectedLabel">Selected row 0 · col 0</span><label>Zoom <input id="zoom" type="range" min="1" max="6" step="1" value="2"><b id="zoomValue">2×</b></label></div>
       </section>
 
       <section class="panel controls-panel">
         <div class="panel-head"><div><small>CALIBRATION</small><h2>Source rectangles</h2></div><a id="sourceLink" href="#" target="_blank" rel="noreferrer">Open source ↗</a></div>
         <label class="wide">Image URL<input id="imageUrl" type="url" spellcheck="false"></label>
         <button id="reloadImage" class="primary" type="button">Reload image</button>
-
-        <fieldset>
-          <legend>Grid</legend>
-          <label>Cell W<input id="cellW" type="number" min="1" max="512"></label>
-          <label>Cell H<input id="cellH" type="number" min="1" max="512"></label>
-          <label>Offset X<input id="offsetX" type="number" min="0" max="512"></label>
-          <label>Offset Y<input id="offsetY" type="number" min="0" max="512"></label>
-          <label>Gap X<input id="gapX" type="number" min="0" max="128"></label>
-          <label>Gap Y<input id="gapY" type="number" min="0" max="128"></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Selected frame</legend>
-          <label>Column<input id="frameCol" type="number" min="0" max="99"></label>
-          <label>Row<input id="frameRow" type="number" min="0" max="99"></label>
-          <label>Trim L<input id="trimL" type="number" min="0" max="128"></label>
-          <label>Trim T<input id="trimT" type="number" min="0" max="128"></label>
-          <label>Trim R<input id="trimR" type="number" min="0" max="128"></label>
-          <label>Trim B<input id="trimB" type="number" min="0" max="128"></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Render + game origin</legend>
-          <label>Render W<input id="renderW" type="number" min="1" max="256"></label>
-          <label>Render H<input id="renderH" type="number" min="1" max="256"></label>
-          <label>Anchor X<input id="anchorX" type="number" min="-128" max="256"></label>
-          <label>Anchor Y<input id="anchorY" type="number" min="-128" max="256"></label>
-          <label>Collision radius<input id="collisionR" type="number" min="0" max="64" step="0.1"></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Animation map</legend>
-          <label>Down row<input id="rowDown" type="number" min="0" max="99"></label>
-          <label>Left row<input id="rowLeft" type="number" min="0" max="99"></label>
-          <label>Right row<input id="rowRight" type="number" min="0" max="99"></label>
-          <label>Up row<input id="rowUp" type="number" min="0" max="99"></label>
-          <label class="wide">Frame sequence<input id="frameSequence" type="text" value="0,1,2" spellcheck="false"></label>
-          <label>FPS<input id="fps" type="number" min="1" max="30" value="6"></label>
-        </fieldset>
+        <fieldset><legend>Grid</legend><label>Cell W<input id="cellW" type="number" min="1" max="512"></label><label>Cell H<input id="cellH" type="number" min="1" max="512"></label><label>Offset X<input id="offsetX" type="number" min="0" max="512"></label><label>Offset Y<input id="offsetY" type="number" min="0" max="512"></label><label>Gap X<input id="gapX" type="number" min="0" max="128"></label><label>Gap Y<input id="gapY" type="number" min="0" max="128"></label></fieldset>
+        <fieldset><legend>Selected frame</legend><label>Column<input id="frameCol" type="number" min="0" max="99"></label><label>Row<input id="frameRow" type="number" min="0" max="99"></label><label>Trim L<input id="trimL" type="number" min="0" max="128" value="0"></label><label>Trim T<input id="trimT" type="number" min="0" max="128" value="0"></label><label>Trim R<input id="trimR" type="number" min="0" max="128" value="0"></label><label>Trim B<input id="trimB" type="number" min="0" max="128" value="0"></label></fieldset>
+        <fieldset><legend>Render + game origin</legend><label>Render W<input id="renderW" type="number" min="1" max="256"></label><label>Render H<input id="renderH" type="number" min="1" max="256"></label><label>Anchor X<input id="anchorX" type="number" min="-128" max="256"></label><label>Anchor Y<input id="anchorY" type="number" min="-128" max="256"></label><label>Collision radius<input id="collisionR" type="number" min="0" max="64" step="0.1"></label></fieldset>
+        <fieldset><legend>Animation map</legend><label>Down row<input id="rowDown" type="number" min="0" max="99"></label><label>Left row<input id="rowLeft" type="number" min="0" max="99"></label><label>Right row<input id="rowRight" type="number" min="0" max="99"></label><label>Up row<input id="rowUp" type="number" min="0" max="99"></label><label class="wide">Frame sequence<input id="frameSequence" type="text" spellcheck="false"></label><label>FPS<input id="fps" type="number" min="1" max="30"></label></fieldset>
       </section>
 
-      <section class="panel preview-panel">
-        <div class="panel-head"><div><small>SELECTED FRAME</small><h2>Anchor preview</h2></div><span class="legend"><i class="origin"></i> origin <i class="hitbox"></i> collision</span></div>
-        <canvas id="previewCanvas" width="420" height="300" aria-label="Selected sprite frame with anchor and collision overlay"></canvas>
-        <div id="rectReadout" class="readout"></div>
-      </section>
-
-      <section class="panel animation-panel">
-        <div class="panel-head"><div><small>ANIMATION TEST</small><h2>Four directions</h2></div><button id="toggleAnimation" type="button">Pause</button></div>
-        <canvas id="animationCanvas" width="420" height="300" aria-label="Animated four direction sprite preview"></canvas>
-        <p class="hint">This preview uses the exact row mapping, frame sequence, render size, and anchor values above. If this looks wrong, the game will look wrong.</p>
-      </section>
-
-      <section class="panel diagnostics-panel">
-        <div class="panel-head"><div><small>DIAGNOSTICS</small><h2>Sanity checks</h2></div></div>
-        <div id="checks" class="checks"></div>
-      </section>
-
-      <section class="panel config-panel">
-        <div class="panel-head"><div><small>HANDOFF</small><h2>Renderer config</h2></div><button id="copyConfig" type="button">Copy JSON</button></div>
-        <textarea id="configOutput" readonly spellcheck="false"></textarea>
-        <p class="hint">Send me this JSON or a screenshot of this page. I can then put these exact rectangles and anchors into Lonecraft instead of guessing.</p>
-      </section>
+      <section class="panel preview-panel"><div class="panel-head"><div><small>SELECTED FRAME</small><h2>Anchor preview</h2></div><span class="legend"><i class="origin"></i> origin <i class="hitbox"></i> collision</span></div><canvas id="previewCanvas" width="420" height="300" aria-label="Selected sprite frame with anchor and collision overlay"></canvas><div id="rectReadout" class="readout"></div></section>
+      <section class="panel animation-panel"><div class="panel-head"><div><small>ANIMATION TEST</small><h2>Four directions</h2></div><button id="toggleAnimation" type="button">Pause</button></div><canvas id="animationCanvas" width="420" height="300" aria-label="Animated four direction sprite preview"></canvas><p class="hint">This uses the same shared sprite manifest as Lonecraft itself. If this preview is correct, the game uses the same source geometry.</p></section>
+      <section class="panel diagnostics-panel"><div class="panel-head"><div><small>DIAGNOSTICS</small><h2>Sanity checks</h2></div></div><div id="checks" class="checks"></div></section>
+      <section class="panel config-panel"><div class="panel-head"><div><small>HANDOFF</small><h2>Renderer config</h2></div><button id="copyConfig" type="button">Copy JSON</button></div><textarea id="configOutput" readonly spellcheck="false"></textarea><p class="hint">The lab and runtime now share sprite-config.js. A change can be verified here before it is considered finished.</p></section>
     </main>
   </div>
-  <script src="./sprite-lab.js?v=1.0"></script>
+  <script src="./sprite-config.js?v=2.2"></script>
+  <script src="./sprite-lab-v2.js?v=2.0"></script>
 </body>
 </html>
