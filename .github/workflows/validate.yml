@@ -19,3 +19,4 @@ jobs:
           node-version: 22
       - run: node tests/validate.mjs
       - run: node tests/smoke.mjs
+      - run: node tests/lonecraft-renderer.mjs
