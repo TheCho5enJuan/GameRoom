@@ -54,7 +54,7 @@ const sandbox={...windowObj,window:windowObj,self:windowObj,globalThis:windowObj
   Blob:class{},URL:{createObjectURL:()=>'',revokeObjectURL:noop},FileReader:class{readAsText(){this.result='';this.onload?.()}},
   AudioContext:AudioContextStub,webkitAudioContext:AudioContextStub,
 };
-const games=['perfect-split','time-blind','rogue-quest','tide-and-tranquility','blockforge','space-sabotage','deal-or-no-deal'];
+const games=['lonecraft','perfect-split','time-blind','rogue-quest','tide-and-tranquility','blockforge','space-sabotage','deal-or-no-deal'];
 for(const game of games){
   const html=await readFile(join(site,'games',game,'index.html'),'utf8');
   const srcs=[...html.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)].map(m=>m[1].split('?')[0]).filter(x=>!/^https?:/.test(x));
