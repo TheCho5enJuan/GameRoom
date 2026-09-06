@@ -32,12 +32,12 @@
     },
     boss:{
       title:'Air Wizard',
-      url:'https://opengameart.org/sites/default/files/black_mage.png',
+      url:'https://opengameart.org/sites/default/files/black_mage_1.png',
       source:'https://opengameart.org/content/pixel-mage',
       license:'CC0',
       cell:{w:32,h:32,offsetX:0,offsetY:0,gapX:0,gapY:0},
       render:{w:32,h:32,anchorX:16,anchorY:23,collisionR:5.2},
-      animation:{axis:'rows',directions:{down:0,left:0,right:0,up:0},idle:[0,1,2,3,4],walk:[0,1,2,3,4],attack:[0,1,2,3,4],fps:6,attackRow:1}
+      animation:{axis:'rows',directions:{down:0,left:0,right:0,up:0},idle:[0,1,2,3,4],walk:[0,1,2,3,4],attack:[0,1,2,3,4],fps:6,attackRows:[1,2,3]}
     },
     environment:{
       treeLight:{
@@ -45,14 +45,14 @@
         url:'https://opengameart.org/sites/default/files/tree-light-green-isaiah658.png',
         source:'https://opengameart.org/content/tree-16x16',
         license:'CC0',
-        render:{w:30,h:34,anchorX:15,anchorY:34}
+        render:{w:42,h:42,anchorX:21,anchorY:42}
       },
       treeDark:{
         title:'Tree — dark',
         url:'https://opengameart.org/sites/default/files/tree-dark-green-isaiah658.png',
         source:'https://opengameart.org/content/tree-16x16',
         license:'CC0',
-        render:{w:30,h:34,anchorX:15,anchorY:34}
+        render:{w:42,h:42,anchorX:21,anchorY:42}
       }
     }
   };
