@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#07120f">
   <title>Lonecraft Sprite Lab</title>
-  <link rel="stylesheet" href="./sprite-lab.css?v=2.0">
+  <link rel="stylesheet" href="./sprite-lab.css?v=2.3">
 </head>
 <body>
   <div class="lab-shell">
     <header class="lab-topbar">
       <a href="./">← Lonecraft</a>
-      <div><strong>SPRITE LAB</strong><span>Frame + anchor calibration</span></div>
+      <div><strong>SPRITE LAB</strong><span>Frame + anchor calibration · v2.3</span></div>
       <span class="dev-pill">DEV</span>
     </header>
 
@@ -42,12 +42,12 @@
       </section>
 
       <section class="panel preview-panel"><div class="panel-head"><div><small>SELECTED FRAME</small><h2>Anchor preview</h2></div><span class="legend"><i class="origin"></i> origin <i class="hitbox"></i> collision</span></div><canvas id="previewCanvas" width="420" height="300" aria-label="Selected sprite frame with anchor and collision overlay"></canvas><div id="rectReadout" class="readout"></div></section>
-      <section class="panel animation-panel"><div class="panel-head"><div><small>ANIMATION TEST</small><h2>Four directions</h2></div><button id="toggleAnimation" type="button">Pause</button></div><canvas id="animationCanvas" width="420" height="300" aria-label="Animated four direction sprite preview"></canvas><p class="hint">This uses the same shared sprite manifest as Lonecraft itself. If this preview is correct, the game uses the same source geometry.</p></section>
+      <section class="panel animation-panel"><div class="panel-head"><div><small>ANIMATION TEST</small><h2>Four directions</h2></div><button id="toggleAnimation" type="button">Pause</button></div><canvas id="animationCanvas" width="420" height="300" aria-label="Animated four direction sprite preview"></canvas><p class="hint">This uses the same v2.3 sprite manifest as Lonecraft itself. If this preview is correct, the game uses the same source geometry.</p></section>
       <section class="panel diagnostics-panel"><div class="panel-head"><div><small>DIAGNOSTICS</small><h2>Sanity checks</h2></div></div><div id="checks" class="checks"></div></section>
-      <section class="panel config-panel"><div class="panel-head"><div><small>HANDOFF</small><h2>Renderer config</h2></div><button id="copyConfig" type="button">Copy JSON</button></div><textarea id="configOutput" readonly spellcheck="false"></textarea><p class="hint">The lab and runtime now share sprite-config.js. A change can be verified here before it is considered finished.</p></section>
+      <section class="panel config-panel"><div class="panel-head"><div><small>HANDOFF</small><h2>Renderer config</h2></div><button id="copyConfig" type="button">Copy JSON</button></div><textarea id="configOutput" readonly spellcheck="false"></textarea><p class="hint">The lab and runtime both read sprite-config.js. A sprite change is not considered finished until it looks correct here and passes the renderer regression test.</p></section>
     </main>
   </div>
-  <script src="./sprite-config.js?v=2.2"></script>
-  <script src="./sprite-lab-v2.js?v=2.0"></script>
+  <script src="./sprite-config.js?v=2.3"></script>
+  <script src="./sprite-lab-v2.js?v=2.3"></script>
 </body>
 </html>
