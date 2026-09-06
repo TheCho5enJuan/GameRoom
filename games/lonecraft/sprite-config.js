@@ -32,7 +32,7 @@
     },
     boss:{
       title:'Air Wizard',
-      url:'https://opengameart.org/sites/default/files/black_mage_1.png',
+      url:'https://opengameart.org/sites/default/files/black_mage.png',
       source:'https://opengameart.org/content/pixel-mage',
       license:'CC0',
       cell:{w:32,h:32,offsetX:0,offsetY:0,gapX:0,gapY:0},
