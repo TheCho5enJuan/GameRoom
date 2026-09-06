@@ -6,14 +6,15 @@
   <meta name="theme-color" content="#07120f">
   <meta name="description" content="Lonecraft is a polished browser survival-crafting adventure inspired by the original 2011 Minicraft game.">
   <title>Lonecraft · GameRoom</title>
-  <link rel="stylesheet" href="./styles.css?v=2.2">
-  <link rel="stylesheet" href="./sprites.css?v=2.2">
+  <link rel="stylesheet" href="./styles.css?v=2.3">
+  <link rel="stylesheet" href="./sprites.css?v=2.3">
+  <link rel="stylesheet" href="./controls-v3.css?v=2.3">
 </head>
 <body>
   <div class="game-shell" id="gameShell">
     <header class="topbar">
       <a href="../../" class="back">← GameRoom</a>
-      <div class="brand"><strong>LONECRAFT</strong><span>v2.2 · Sprite Calibration</span></div>
+      <div class="brand"><strong>LONECRAFT</strong><span>v2.3 · Renderer Rebuild</span></div>
       <button id="pauseButton" class="top-action" type="button" aria-label="Pause game">Ⅱ</button>
     </header>
 
@@ -37,25 +38,25 @@
           <p class="intro">Gather, craft, explore three cave layers, break into the sky, and face the Air Wizard.</p>
           <div class="title-actions"><button class="primary" id="newWorldButton" type="button">NEW WORLD</button><button class="secondary" id="continueButton" type="button" hidden>CONTINUE</button></div>
           <button class="small-link" id="howButton" type="button">Controls &amp; objective</button>
-          <p class="credit">Inspired by Minicraft (2011), Markus Persson. Character sprites use CC0 pixel art; sources are documented in the project README.</p>
+          <p class="credit">Inspired by Minicraft (2011), Markus Persson. Character and environment sprites use CC0 pixel art; sources are documented in the project README.</p>
         </section>
         <section class="screen-overlay compact-overlay" id="pauseScreen" hidden><p class="kicker">GAME PAUSED</p><h2 id="pauseTitle">Lonecraft</h2><div class="pause-stats"><span id="pauseLevel">Surface</span><span id="pauseTime">00:00</span><span id="pauseScore">0 pts</span></div><button class="primary" id="resumeButton" type="button">RESUME</button><button class="secondary" id="saveButton" type="button">SAVE WORLD</button><button class="secondary" id="restartButton" type="button">NEW WORLD</button></section>
         <section class="screen-overlay compact-overlay" id="deadScreen" hidden><p class="kicker danger">YOU DIED</p><h2>The world goes on without you.</h2><p id="deadStats"></p><button class="primary" id="deadRestartButton" type="button">START OVER</button></section>
         <section class="screen-overlay compact-overlay win-overlay" id="winScreen" hidden><p class="kicker win">THE SKY IS QUIET</p><h2>You are alone.</h2><p id="winStats">The Air Wizard is gone.</p><button class="primary" id="winRestartButton" type="button">NEW WORLD</button></section>
-        <section class="screen-overlay help-overlay" id="helpScreen" hidden><button class="close-x" id="closeHelp" type="button" aria-label="Close help">×</button><p class="kicker">HOW TO PLAY</p><h2>Survive. Progress. Reach the sky.</h2><div class="help-grid"><div><b>MOVE</b><span>WASD / arrows<br>or mobile pad</span></div><div><b>ACTION</b><span>C / Space<br>attack, mine, place</span></div><div><b>USE</b><span>X / Enter<br>inventory or station</span></div><div><b>QUICK ITEM</b><span>Q<br>cycle equipped item</span></div></div><p>Start with a Workbench and Power Glove. Harvest trees, place the Workbench, craft a wood pickaxe, descend through iron, gold, and gem caves, then use a Gem Pickaxe to break the hard rock around the staircase to the Sky.</p></section>
+        <section class="screen-overlay help-overlay" id="helpScreen" hidden><button class="close-x" id="closeHelp" type="button" aria-label="Close help">×</button><p class="kicker">HOW TO PLAY</p><h2>Survive. Progress. Reach the sky.</h2><div class="help-grid"><div><b>MOVE</b><span>WASD / arrows<br>or mobile joystick</span></div><div><b>ACTION</b><span>C / Space<br>attack, mine, place</span></div><div><b>USE</b><span>X / Enter<br>inventory or station</span></div><div><b>QUICK ITEM</b><span>Q<br>cycle equipped item</span></div></div><p>Start with a Workbench and Power Glove. Harvest trees, place the Workbench, craft a wood pickaxe, descend through iron, gold, and gem caves, then use a Gem Pickaxe to break the hard rock around the staircase to the Sky.</p></section>
       </div>
 
       <div class="quickbar" id="quickbar" hidden><button id="prevItem" type="button" aria-label="Previous item">‹</button><button id="activeItemButton" class="active-item" type="button"><span id="activeIcon">✊</span><div><small>EQUIPPED</small><strong id="activeName">Hands</strong></div></button><button id="nextItem" type="button" aria-label="Next item">›</button><button id="bagButton" class="bag" type="button" aria-label="Open inventory">🎒</button></div>
-      <div class="mobile-controls" id="mobileControls" hidden><div class="dpad" aria-label="Movement controls"><button data-move="up" type="button">▲</button><button data-move="left" type="button">◀</button><i></i><button data-move="right" type="button">▶</button><button data-move="down" type="button">▼</button></div><div class="action-cluster"><button id="mobileUse" class="use" type="button"><small>X</small>USE</button><button id="mobileAction" class="action" type="button"><small>C</small>ACTION</button></div></div>
+      <div class="mobile-controls" id="mobileControls" hidden><div class="joystick" id="joystick" aria-label="Movement joystick" role="application"><div class="joystick-ring"><div class="joystick-knob" id="joystickKnob"></div></div></div><div class="action-cluster"><button id="mobileUse" class="use" type="button"><small>X</small>USE</button><button id="mobileAction" class="action" type="button"><small>C</small>ACTION</button></div></div>
     </main>
 
     <dialog class="menu-dialog" id="inventoryDialog"><form method="dialog" class="menu-card"><header><div><small id="menuKicker">INVENTORY</small><h2 id="menuTitle">Your pack</h2></div><button class="close-x" value="cancel" aria-label="Close inventory">×</button></header><div class="menu-tabs" id="menuTabs"><button class="selected" data-tab="items" type="button">ITEMS</button><button data-tab="craft" type="button">CRAFT</button></div><div class="menu-list" id="menuList"></div><footer id="menuFooter">Select an item to equip it.</footer></form></dialog>
   </div>
 
-  <script src="./data.js?v=2.2"></script>
-  <script src="./world.js?v=2.2"></script>
-  <script src="./sprite-config.js?v=2.2"></script>
-  <script src="./art-v2.js?v=2.2"></script>
-  <script src="./game.js?v=2.2"></script>
+  <script src="./data.js?v=2.3"></script>
+  <script src="./world.js?v=2.3"></script>
+  <script src="./sprite-config.js?v=2.3"></script>
+  <script src="./art-v3.js?v=2.3"></script>
+  <script src="./game.js?v=2.3"></script>
 </body>
 </html>
