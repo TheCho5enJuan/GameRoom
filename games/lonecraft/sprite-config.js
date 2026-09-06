@@ -8,7 +8,7 @@
       source:'https://opengameart.org/content/ninja-npc-sprite-sheet',
       license:'CC0',
       cell:{w:16,h:16,offsetX:0,offsetY:0,gapX:0,gapY:0},
-      render:{w:32,h:32,anchorX:16,anchorY:25,collisionR:4.3},
+      render:{w:20,h:20,anchorX:10,anchorY:14,collisionR:4.3},
       animation:{axis:'columns',directions:{down:0,up:1,left:2,right:3},idle:[0],walk:[0,1,2,3],attack:[4],fps:7}
     },
     zombie:{
@@ -17,7 +17,7 @@
       source:'https://opengameart.org/content/zombie-rpg-sprites',
       license:'CC0',
       cell:{w:64,h:64,offsetX:0,offsetY:0,gapX:0,gapY:0},
-      render:{w:40,h:40,anchorX:20,anchorY:34,collisionR:4.3},
+      render:{w:24,h:24,anchorX:12,anchorY:17,collisionR:4.3},
       animation:{axis:'rows',directions:{down:0,left:1,up:2,right:3},idle:[1],walk:[0,1,2],fps:5}
     },
     slime:{
@@ -26,7 +26,7 @@
       source:'https://opengameart.org/content/slimes-32x32',
       license:'CC0',
       cell:{w:32,h:32,offsetX:0,offsetY:0,gapX:0,gapY:0},
-      render:{w:30,h:30,anchorX:15,anchorY:22,collisionR:4.3},
+      render:{w:20,h:20,anchorX:10,anchorY:14,collisionR:4.3},
       animation:{axis:'rows',directions:{down:3,left:3,right:3,up:3},idle:[0],walk:[0,1,2,3,4,5,6,7],fps:8},
       tierRows:{1:3,2:1,3:2,4:5}
     },
@@ -36,8 +36,24 @@
       source:'https://opengameart.org/content/pixel-mage',
       license:'CC0',
       cell:{w:32,h:32,offsetX:0,offsetY:0,gapX:0,gapY:0},
-      render:{w:48,h:48,anchorX:24,anchorY:36,collisionR:5.2},
+      render:{w:32,h:32,anchorX:16,anchorY:23,collisionR:5.2},
       animation:{axis:'rows',directions:{down:0,left:0,right:0,up:0},idle:[0,1,2,3,4],walk:[0,1,2,3,4],attack:[0,1,2,3,4],fps:6,attackRow:1}
+    },
+    environment:{
+      treeLight:{
+        title:'Tree — light',
+        url:'https://opengameart.org/sites/default/files/tree-light-green-isaiah658.png',
+        source:'https://opengameart.org/content/tree-16x16',
+        license:'CC0',
+        render:{w:30,h:34,anchorX:15,anchorY:34}
+      },
+      treeDark:{
+        title:'Tree — dark',
+        url:'https://opengameart.org/sites/default/files/tree-dark-green-isaiah658.png',
+        source:'https://opengameart.org/content/tree-16x16',
+        license:'CC0',
+        render:{w:30,h:34,anchorX:15,anchorY:34}
+      }
     }
   };
 })();
