@@ -51,17 +51,17 @@
 
   let internal=false;
   let suppress=null;
-  let previous={zombie:[],boss:[]};
-  let current={zombie:[],boss:[]};
-  let usedPrevious={zombie:new Set(),boss:new Set()};
+  let previous={zombie:[],boss:[],tree:[]};
+  let current={zombie:[],boss:[],tree:[]};
+  let usedPrevious={zombie:new Set(),boss:new Set(),tree:new Set()};
   const activeDirections=new Set();
   let playerDir='down';
   let attackUntil=0;
 
   function beginFrame(){
     previous=current;
-    current={zombie:[],boss:[]};
-    usedPrevious={zombie:new Set(),boss:new Set()};
+    current={zombie:[],boss:[],tree:[]};
+    usedPrevious={zombie:new Set(),boss:new Set(),tree:new Set()};
     suppress=null;
   }
 
@@ -81,7 +81,7 @@
     for(let i=0;i<list.length;i++){
       if(used.has(i))continue;
       const d=Math.hypot(x-list[i].x,y-list[i].y);
-      if(d<bestD&&d<18){bestD=d;best=i}
+      if(d<bestD&&d<22){bestD=d;best=i}
     }
     const prev=best>=0?list[best]:null;
     if(best>=0)used.add(best);
@@ -93,7 +93,8 @@
       if(tier===1&&prev.tier)tier=prev.tier;
     }
     const phase=prev?.phase??Math.floor(Math.random()*700);
-    const state={x,y,tier,dir,moving,phase};
+    const variant=prev?.variant??((current[kind].length*13+Math.floor(x/8)+Math.floor(y/8))%4===0?'dark':'light');
+    const state={x,y,tier,dir,moving,phase,variant};
     current[kind].push(state);
     return state;
   }
@@ -161,8 +162,10 @@
     const cfg=S.boss;if(!cfg||!ready('boss'))return false;
     const b=track('boss',x,y,4),now=performance.now();
     const sw=cfg.cell.w,sh=cfg.cell.h,cols=Math.max(1,Math.floor(images.boss.naturalWidth/sw)),rows=Math.max(1,Math.floor(images.boss.naturalHeight/sh));
-    const cycle=Math.floor(now/620)%4,casting=cycle===0&&rows>1;
-    const row=casting?Math.min(cfg.animation.attackRow??1,rows-1):0;
+    const castWindow=760,period=2400,phase=now%period,casting=phase<castWindow&&rows>1;
+    const castRows=(cfg.animation.attackRows||[1]).filter(row=>row>=0&&row<rows);
+    const castRowIndex=casting?Math.min(castRows.length-1,Math.floor(phase/(castWindow/Math.max(1,castRows.length)))):0;
+    const row=casting?(castRows[castRowIndex]??1):0;
     const col=Math.floor((now+b.phase)/(1000/(cfg.animation.fps||6)))%Math.min(cols,5);
     const bob=Math.sin((now+b.phase)/260)*1.6;
     const {w,h,anchorX,anchorY}=cfg.render;
@@ -170,12 +173,12 @@
     shadow(ctx,x,y+5,20,.22);
     ctx.save();
     const pulse=12+Math.sin(now/190)*1.5;
-    ctx.globalAlpha=casting?.24:.13;ctx.fillStyle='#8fe8ff';ctx.beginPath();ctx.arc(x,y-7+bob,pulse,0,Math.PI*2);originalFill.call(ctx);
-    ctx.globalAlpha=.55;ctx.strokeStyle='#d8f8ff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y-7+bob,pulse+4,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=casting?.27:.13;ctx.fillStyle='#8fe8ff';ctx.beginPath();ctx.arc(x,y-7+bob,pulse,0,Math.PI*2);originalFill.call(ctx);
+    ctx.globalAlpha=casting?.72:.42;ctx.strokeStyle='#d8f8ff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y-7+bob,pulse+4,0,Math.PI*2);ctx.stroke();
     if(casting){
-      for(let i=0;i<3;i++){
-        const a=now*.004+i*2.094,r=15+i*2;
-        ctx.fillStyle='#d9fbff';ctx.globalAlpha=.55;originalFillRect.call(ctx,Math.round(x+Math.cos(a)*r),Math.round(y-7+bob+Math.sin(a)*r),2,2);
+      for(let i=0;i<4;i++){
+        const a=now*.004+i*Math.PI/2,r=15+(i%2)*3;
+        ctx.fillStyle=i%2?'#fff0a5':'#d9fbff';ctx.globalAlpha=.62;originalFillRect.call(ctx,Math.round(x+Math.cos(a)*r),Math.round(y-7+bob+Math.sin(a)*r),2,2);
       }
     }
     ctx.restore();
@@ -185,11 +188,13 @@
 
   function drawTree(ctx,trunkX,trunkY){
     const cfg=S.environment?.treeLight;if(!cfg||!ready('treeLight'))return false;
-    const tileX=trunkX-6,tileY=trunkY-8;
-    const baseX=tileX+8,baseY=tileY+16;
-    const {w,h,anchorX,anchorY}=cfg.render;
-    const image=images.treeLight;
-    shadow(ctx,baseX,baseY-1,17,.17);
+    const tileX=trunkX-6,tileY=trunkY-8,baseX=tileX+8,baseY=tileY+16;
+    const state=track('tree',baseX,baseY,1);
+    const useDark=state.variant==='dark'&&ready('treeDark');
+    const treeCfg=useDark?(S.environment?.treeDark||cfg):cfg;
+    const image=useDark?images.treeDark:images.treeLight;
+    const {w,h,anchorX,anchorY}=treeCfg.render;
+    shadow(ctx,baseX,baseY-1,19,.18);
     ctx.save();ctx.imageSmoothingEnabled=false;
     originalDrawImage.call(ctx,image,0,0,image.naturalWidth,image.naturalHeight,Math.round(baseX-anchorX),Math.round(baseY-anchorY),w,h);
     ctx.restore();
