@@ -4,15 +4,15 @@
   const canvas=document.getElementById('gameCanvas');
   if(!canvas)return;
 
+  const S=window.LonecraftSprites||{};
   const shell=document.getElementById('gameShell');
   shell?.classList.add('lonecraft-v2','lonecraft-sprite-edition');
 
-  // All shipped runtime sprite sources are explicitly CC0. See README.md.
   const ASSET_URLS={
-    hero:'https://opengameart.org/sites/default/files/ninja_3.png',
-    boss:'https://opengameart.org/sites/default/files/ninja_3.png',
-    zombie:'https://opengameart.org/sites/default/files/zombie7_0.png',
-    slime:'https://opengameart.org/sites/default/files/smallSlimesSpriteSheet.png'
+    hero:S.player?.url||'https://opengameart.org/sites/default/files/ninja_3.png',
+    boss:S.boss?.url||'https://opengameart.org/sites/default/files/black_mage.png',
+    zombie:S.zombie?.url||'https://opengameart.org/sites/default/files/zombie7_0.png',
+    slime:S.slime?.url||'https://opengameart.org/sites/default/files/smallSlimesSpriteSheet.png'
   };
 
   const remap=new Map([
@@ -38,8 +38,16 @@
     title.innerHTML='<div class="sprite-title-stage"><div class="sprite-title-hero"></div><div class="sprite-title-slime"></div><div class="sprite-title-shadow hero-shadow"></div><div class="sprite-title-shadow slime-shadow"></div></div>';
     const hero=title.querySelector('.sprite-title-hero');
     const slime=title.querySelector('.sprite-title-slime');
-    if(hero){hero.style.backgroundImage=`url("${ASSET_URLS.hero}")`;hero.style.backgroundSize='96px 160px';hero.style.backgroundPosition='-32px 0'}
-    if(slime){slime.style.backgroundImage=`url("${ASSET_URLS.slime}")`;slime.style.backgroundSize='256px 256px';slime.style.backgroundPosition='0 -96px'}
+    if(hero){
+      hero.style.backgroundImage=`url("${ASSET_URLS.hero}")`;
+      hero.style.backgroundSize='128px 224px';
+      hero.style.backgroundPosition='0 0';
+    }
+    if(slime){
+      slime.style.backgroundImage=`url("${ASSET_URLS.slime}")`;
+      slime.style.backgroundSize='256px 256px';
+      slime.style.backgroundPosition='0 -96px';
+    }
   }
 
   const proto=window.CanvasRenderingContext2D&&CanvasRenderingContext2D.prototype;
@@ -70,11 +78,7 @@
   const records=[];
   const trackers={zombie:[],boss:[]};
   const activeDirections=new Set();
-  let frameToken=0;
-  let overlayDrawn=false;
-  let internalDraw=false;
-  let playerDir='down';
-  let attackUntil=0;
+  let frameToken=0,overlayDrawn=false,internalDraw=false,playerDir='down',attackUntil=0;
 
   const normalizeColor=value=>String(value||'').toLowerCase().replace(/\s+/g,'');
   const SLIME_TIERS=new Map([
@@ -94,9 +98,7 @@
 
   function captureRect(ctx,x,y,w,h){
     if(internalDraw||ctx.canvas!==canvas)return;
-    const color=normalizeColor(ctx.fillStyle);
-    const centerX=canvas.width/2,centerY=canvas.height/2;
-
+    const color=normalizeColor(ctx.fillStyle),centerX=canvas.width/2,centerY=canvas.height/2;
     if(w===10&&h===7&&Math.abs((x+5)-centerX)<3&&Math.abs((y+1)-centerY)<3){recordActor('player',x+5,y+1,1);return}
     if(w===12&&h===10&&SLIME_TIERS.has(color)){recordActor('slime',x+6,y+5,SLIME_TIERS.get(color));return}
     if(w===8&&h===6&&ZOMBIE_TIERS.has(color)){recordActor('zombie',x+4,y+7,ZOMBIE_TIERS.get(color));return}
@@ -148,40 +150,51 @@
   function withShadow(ctx,x,y,w=18,alpha=.28){ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle='#07100d';ctx.beginPath();ctx.ellipse(Math.round(x),Math.round(y),w/2,3,0,0,Math.PI*2);originalFill.call(ctx);ctx.restore()}
   function drawFrame(ctx,image,sx,sy,sw,sh,dx,dy,dw,dh){if(!ready(image))return false;originalDrawImage.call(ctx,image,sx,sy,sw,sh,Math.round(dx),Math.round(dy),dw,dh);return true}
 
-  // ninja.png: 3 x 5 grid of 32px frames. Rows 0-3 are directional movement; row 4 is attack.
-  function ninjaFrame(dir,moving,attacking,now,phase=0){
-    const row=attacking?4:({down:0,left:1,right:2,up:3}[dir]??0);
-    const col=attacking?Math.floor(now/80)%3:(moving?Math.floor((now+phase)/155)%3:1);
-    return{sx:col*32,sy:row*32};
+  // Player source is 64x112: 4 direction columns x 7 animation rows, 16x16 cells.
+  function playerFrame(dir,moving,attacking,now){
+    const col={down:0,up:1,left:2,right:3}[dir]??0;
+    const row=attacking?4:(moving?Math.floor(now/145)%4:0);
+    return{sx:col*16,sy:row*16};
   }
 
   function drawPlayerSprite(ctx,p,now){
     const image=images.hero;if(!ready(image))return;
-    const moving=activeDirections.size>0,attacking=now<attackUntil,frame=ninjaFrame(playerDir,moving,attacking,now);
-    withShadow(ctx,p.x,p.y+8,20,.32);drawFrame(ctx,image,frame.sx,frame.sy,32,32,p.x-16,p.y-21,32,32);
-    if(attacking){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle='#fff2ae';ctx.lineWidth=2;const a={right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2}[playerDir]||0;ctx.beginPath();ctx.arc(p.x+Math.cos(a)*10,p.y+Math.sin(a)*10,8,a-.8,a+.8);ctx.stroke();ctx.restore()}
+    const moving=activeDirections.size>0,attacking=now<attackUntil,frame=playerFrame(playerDir,moving,attacking,now);
+    withShadow(ctx,p.x,p.y+8,18,.3);
+    drawFrame(ctx,image,frame.sx,frame.sy,16,16,p.x-16,p.y-24,32,32);
+    if(attacking){ctx.save();ctx.globalAlpha=.82;ctx.strokeStyle='#fff2ae';ctx.lineWidth=2;const a={right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2}[playerDir]||0;ctx.beginPath();ctx.arc(p.x+Math.cos(a)*10,p.y+Math.sin(a)*10,8,a-.8,a+.8);ctx.stroke();ctx.restore()}
   }
 
+  // Zombie source is 192x256: 3 columns x 4 directional rows, 64x64 cells.
   function drawZombieSprite(ctx,z,now){
     const image=images.zombie;if(!ready(image))return;
     const row={down:0,left:1,up:2,right:3}[z.dir]??0,col=z.moving?Math.floor((now+(z.phase||0))/210)%3:1;
     const aura=['','#83d76f','#ee8b72','#d7eef7','#a49ae8'][z.tier]||'';
-    if(z.tier>1){ctx.save();ctx.globalAlpha=.18+.04*z.tier;ctx.fillStyle=aura;ctx.beginPath();ctx.ellipse(z.x,z.y+7,12,5,0,0,Math.PI*2);originalFill.call(ctx);ctx.restore()}
-    withShadow(ctx,z.x,z.y+8,18,.3);drawFrame(ctx,image,col*32,row*32,32,32,z.x-16,z.y-23,32,32);
+    if(z.tier>1){ctx.save();ctx.globalAlpha=.18+.04*z.tier;ctx.fillStyle=aura;ctx.beginPath();ctx.ellipse(z.x,z.y+7,13,5,0,0,Math.PI*2);originalFill.call(ctx);ctx.restore()}
+    withShadow(ctx,z.x,z.y+8,21,.3);
+    drawFrame(ctx,image,col*64,row*64,64,64,z.x-20,z.y-28,40,40);
   }
 
   function drawSlimeSprite(ctx,s,now){
     const image=images.slime;if(!ready(image))return;
     const row={1:3,2:1,3:2,4:5}[s.tier||1]??3,col=Math.floor((now+(s.x+s.y)*17)/120)%8,bob=Math.sin((now+s.x*37)/150)*1.2;
-    withShadow(ctx,s.x,s.y+7,18,.24);drawFrame(ctx,image,col*32,row*32,32,32,s.x-15,s.y-20+bob,30,30);
+    withShadow(ctx,s.x,s.y+7,18,.24);
+    drawFrame(ctx,image,col*32,row*32,32,32,s.x-15,s.y-22+bob,30,30);
   }
 
   function drawBossSprite(ctx,b,now){
     const image=images.boss;if(!ready(image))return;
-    const burst=Math.floor(now/650)%5===0,frame=ninjaFrame(b.dir,b.moving,burst,now,b.phase||0);
-    ctx.save();const pulse=14+Math.sin(now/180)*2;ctx.globalAlpha=.22;ctx.fillStyle='#89e5ff';ctx.beginPath();ctx.arc(b.x,b.y-5,pulse,0,Math.PI*2);originalFill.call(ctx);ctx.globalAlpha=.42;ctx.strokeStyle='#d9f7ff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(b.x,b.y-5,pulse+5,0,Math.PI*2);ctx.stroke();ctx.restore();
-    withShadow(ctx,b.x,b.y+11,27,.34);
-    ctx.save();ctx.filter='hue-rotate(145deg) saturate(1.35) brightness(1.15)';drawFrame(ctx,image,frame.sx,frame.sy,32,32,b.x-24,b.y-32,48,48);ctx.restore();
+    const cols=Math.max(1,Math.floor(image.naturalWidth/32));
+    const rows=Math.max(1,Math.floor(image.naturalHeight/32));
+    const casting=Math.floor(now/700)%4===0;
+    const row=casting&&rows>1?1:0;
+    const col=Math.floor((now+(b.phase||0))/140)%cols;
+    ctx.save();
+    const pulse=16+Math.sin(now/180)*2;
+    ctx.globalAlpha=.22;ctx.fillStyle='#89e5ff';ctx.beginPath();ctx.arc(b.x,b.y-6,pulse,0,Math.PI*2);originalFill.call(ctx);
+    ctx.globalAlpha=.5;ctx.strokeStyle='#d9f7ff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(b.x,b.y-6,pulse+5,0,Math.PI*2);ctx.stroke();ctx.restore();
+    withShadow(ctx,b.x,b.y+11,28,.34);
+    drawFrame(ctx,image,col*32,row*32,32,32,b.x-24,b.y-35,48,48);
   }
 
   function setDirection(dir,on){if(on){activeDirections.add(dir);playerDir=dir}else activeDirections.delete(dir)}
