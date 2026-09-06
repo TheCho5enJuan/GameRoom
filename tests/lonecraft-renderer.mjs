@@ -13,8 +13,8 @@ class MockImage{
     if(value.includes('ninja_3'))[this.naturalWidth,this.naturalHeight]=[64,112];
     else if(value.includes('zombie7_0'))[this.naturalWidth,this.naturalHeight]=[192,256];
     else if(value.includes('smallSlimes'))[this.naturalWidth,this.naturalHeight]=[256,256];
-    else if(value.includes('black_mage'))[this.naturalWidth,this.naturalHeight]=[160,128];
-    else if(value.includes('tree-'))[this.naturalWidth,this.naturalHeight]=[32,40];
+    else if(value.includes('black_mage_1'))[this.naturalWidth,this.naturalHeight]=[160,160];
+    else if(value.includes('tree-'))[this.naturalWidth,this.naturalHeight]=[91,90];
     else [this.naturalWidth,this.naturalHeight]=[32,32];
   }
   get src(){return this._src;}
@@ -39,12 +39,21 @@ const ctx=new MockContext(canvas);
 canvas.getContext=()=>ctx;
 
 const noopNode={addEventListener(){},classList:{add(){},remove(){}},style:{}};
+const joystickListeners=new Map();
+const joystick={
+  style:{},classList:{add(){},remove(){}},
+  addEventListener(name,fn){const list=joystickListeners.get(name)||[];list.push(fn);joystickListeners.set(name,list);},
+  getBoundingClientRect(){return{left:0,top:0,width:120,height:120};},
+  setPointerCapture(){}
+};
+const knob={style:{}};
 const document={
-  getElementById(id){if(id==='gameCanvas')return canvas;if(id==='mobileAction')return noopNode;return null;},
+  getElementById(id){if(id==='gameCanvas')return canvas;if(id==='mobileAction')return noopNode;if(id==='joystick')return joystick;if(id==='joystickKnob')return knob;return null;},
   querySelector(){return null;}
 };
 
 const listeners=new Map();
+const emitted=[];
 const sandbox={
   console,Math,Image:MockImage,CanvasRenderingContext2D:MockContext,document,
   performance:{now:()=>1000},
@@ -53,11 +62,14 @@ const sandbox={
 };
 sandbox.window=sandbox;
 sandbox.addEventListener=(name,fn)=>{const list=listeners.get(name)||[];list.push(fn);listeners.set(name,list);};
-sandbox.dispatchEvent=event=>{for(const fn of listeners.get(event.type)||[])fn(event);};
+sandbox.dispatchEvent=event=>{emitted.push({type:event.type,key:event.key});for(const fn of listeners.get(event.type)||[])fn(event);};
 
 vm.createContext(sandbox);
 vm.runInContext(configCode,sandbox,{filename:'sprite-config.js'});
 vm.runInContext(artCode,sandbox,{filename:'art-v3.js'});
+
+assert.equal(sandbox.LonecraftSprites.boss.url,'https://opengameart.org/sites/default/files/black_mage_1.png','Air Wizard must use the verified mage file');
+assert.deepEqual(Array.from(sandbox.LonecraftSprites.boss.animation.attackRows),[1,2,3],'Air Wizard cast rows must be explicit');
 
 function reset(){ctx.draws.length=0;ctx.rects.length=0;ctx.clearRect(0,0,480,270);}
 function drawFor(fragment){return ctx.draws.filter(d=>d.image.src.includes(fragment));}
@@ -95,17 +107,26 @@ ctx.fillStyle='#bfe7f2';ctx.fillRect(200,100,10,7);
 ctx.fillStyle='#7fa9c0';ctx.fillRect(199,107,12,10);
 ctx.fillStyle='#effcff';ctx.fillRect(202,103,2,2);ctx.fillRect(206,103,2,2);
 ctx.fillStyle='#78cce8';ctx.fillRect(197,110,3,5);ctx.fillRect(210,110,3,5);
-assertSprite('black_mage',32,32,32,32);
+assertSprite('black_mage_1',32,32,32,32);
 
 reset();
 ctx.fillStyle='#4c3320';ctx.fillRect(100,100,4,8);
 ctx.fillStyle='#2b653a';ctx.fillRect(96,94,12,10);
 ctx.fillStyle='#4c8c48';ctx.fillRect(98,93,8,3);ctx.fillRect(95,97,4,4);
-const treeDraws=drawFor('tree-light-green');
+const treeDraws=ctx.draws.filter(d=>d.image.src.includes('tree-'));
 assert.equal(treeDraws.length,1,'tree: expected exactly one replacement sprite draw');
-assert.equal(treeDraws[0].args[6],30,'tree: render width');
-assert.equal(treeDraws[0].args[7],34,'tree: render height');
+assert.equal(treeDraws[0].args[6],42,'tree: render width');
+assert.equal(treeDraws[0].args[7],42,'tree: render height');
 assert.equal(ctx.rects.length,0,'tree: legacy trunk/canopy rectangles should be suppressed');
+
+const pointerDown=joystickListeners.get('pointerdown')?.[0];
+const pointerUp=joystickListeners.get('pointerup')?.[0];
+assert.ok(pointerDown&&pointerUp,'joystick pointer handlers must be registered');
+pointerDown({pointerId:7,clientX:110,clientY:60,preventDefault(){}});
+assert.ok(emitted.some(e=>e.type==='keydown'&&e.key==='ArrowRight'),'joystick right deflection must emit ArrowRight keydown');
+pointerUp({pointerId:7});
+assert.ok(emitted.some(e=>e.type==='keyup'&&e.key==='ArrowRight'),'joystick release must emit ArrowRight keyup');
+assert.equal(knob.style.transform,'translate3d(0,0,0)','joystick knob must return to center on release');
 
 assert.match(html,/id="joystick"/,'mobile joystick must be present');
 assert.doesNotMatch(html,/data-move=/,'legacy D-pad buttons must not be present');
