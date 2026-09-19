@@ -77,8 +77,8 @@
           </div>
           <div id="remoteRoom" hidden>
             <div class="remote-code" id="remoteCodeDisplay">------</div>
-            <button class="remote-copy remote-secondary" id="remoteCopy" type="button">Copy room code</button>
-            <div class="remote-note" id="remoteRoomNote">Share this code with Player 2.</div>
+            <button class="remote-copy remote-primary" id="remoteShare" type="button">Share invite</button>
+            <div class="remote-note" id="remoteRoomNote">Share the invite link with Player 2.</div>
             <button class="remote-copy remote-danger" id="remoteLeave" type="button">Leave remote room</button>
           </div>
           <div class="remote-note">The host owns the official game state. The other phone sends moves to the host, and the host broadcasts the validated board back.</div>
@@ -94,6 +94,7 @@
   const lobby = $('remoteLobby');
   const codeInput = $('remoteCodeInput');
   const nameInput = $('remoteName');
+  const inviteCode = net.cleanCode(new URLSearchParams(window.location.search).get('room'));
 
   function currentDefaultName(){
     const s=game.getState();
@@ -161,6 +162,41 @@
     return String(nameInput.value||fallback).trim().slice(0,18)||fallback;
   }
 
+  function inviteUrl(code){
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('room', net.cleanCode(code));
+    return url.toString();
+  }
+
+  async function shareInvite(){
+    const code = net.cleanCode($('remoteCodeDisplay').textContent);
+    if(code.length !== 6) return;
+    const url = inviteUrl(code);
+    const shareData = {
+      title: 'Wallbound Remote',
+      text: 'Join my Wallbound room '+code,
+      url
+    };
+    try{
+      if(navigator.share){
+        await navigator.share(shareData);
+      }else{
+        await navigator.clipboard.writeText(url);
+        game.toast('Invite link copied.');
+      }
+    }catch(error){
+      if(error?.name === 'AbortError') return;
+      try{
+        await navigator.clipboard.writeText(url);
+        game.toast('Invite link copied.');
+      }catch(_){
+        prompt('Share this invite link:', url);
+      }
+    }
+  }
+
   function createRoom(){
     clearSession(false);
     role='host';seat=0;connected=false;
@@ -191,6 +227,8 @@
           game.setPlayerProfile(info.seat,info.name||'Player 2');
           session.sendTo(info.seat,{type:'wallbound:state',state:game.getState()});
           setStatus('Connected',info.name+' joined as Player 2','HOST');
+          close();
+          game.toast((info.name||'Player 2')+' joined. You are Player 1.');
         },
         onPlayerLeave(){
           connected=false;
@@ -251,6 +289,8 @@
             seat=Number(info.seat);connected=true;
             setRemoteLocks();
             setStatus('Connected','You are Player 2 · Guest','GUEST');
+            close();
+            game.toast('Connected. You are Player 2.');
           }else if(info.state==='disconnected'){
             connected=false;
             setStatus('Disconnected','The host connection closed.','OFFLINE');
@@ -258,7 +298,7 @@
         },
         onWelcome(message){
           seat=Number(message.seat);connected=true;
-          showRoom(code,'Connected to the host. Your moves are sent to Player 1.');
+          setRemoteLocks();
         },
         onMessage(message){
           if(message?.type==='wallbound:state'){
@@ -293,16 +333,21 @@
   $('remoteJoin').addEventListener('click',joinRoom);
   $('remoteLocal').addEventListener('click',()=>{clearSession(false);close();});
   $('remoteLeave').addEventListener('click',()=>clearSession(true));
-  $('remoteCopy').addEventListener('click',async()=>{
-    const code=$('remoteCodeDisplay').textContent.trim();
-    try{await navigator.clipboard.writeText(code);$('remoteCopy').textContent='Copied!';setTimeout(()=>$('remoteCopy').textContent='Copy room code',1200);}
-    catch(_){prompt('Copy this room code:',code);}
-  });
+  $('remoteShare').addEventListener('click',shareInvite);
   codeInput.addEventListener('input',()=>{codeInput.value=net.cleanCode(codeInput.value);});
   modal.addEventListener('click',event=>{if(event.target===modal)close();});
   window.addEventListener('beforeunload',()=>{try{session?.close();}catch(_){}});
 
   setRemoteLocks();
-  setStatus('Local play','Create a room or join with a code.','LOCAL');
-  setTimeout(open,250);
+  if(inviteCode.length === 6){
+    codeInput.value = inviteCode;
+    setStatus('Remote invite','Room '+inviteCode+' is ready to join.','INVITE');
+    setTimeout(()=>{
+      open();
+      nameInput.focus();
+    },250);
+  }else{
+    setStatus('Local play','Create a room or join with a code.','LOCAL');
+    setTimeout(open,250);
+  }
 })();
