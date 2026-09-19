@@ -100,7 +100,8 @@
     const s=game.getState();
     return s?.players?.[0]?.name || 'Player';
   }
-  nameInput.value = currentDefaultName();
+  const savedDefaultName = currentDefaultName();
+  nameInput.value = inviteCode.length === 6 && savedDefaultName === 'Player 1' ? 'Player 2' : savedDefaultName;
 
   function setStatus(title,detail,state=''){
     status.innerHTML = '<strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(detail)+'</span>';
@@ -151,7 +152,12 @@
     setRemoteLocks();
     setStatus('Local play','Both players use this device.','LOCAL');
     lobby.hidden=false;roomBox.hidden=true;
-    if(reload) location.reload();
+    if(reload){
+      const url = new URL(window.location.href);
+      url.searchParams.delete('room');
+      history.replaceState({},'',url.pathname + (url.search ? url.search : '') + url.hash);
+      location.reload();
+    }
   }
   function showRoom(code,note){
     lobby.hidden=true;roomBox.hidden=false;
@@ -215,7 +221,9 @@
             setStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…','RETRY');
           }else if(info.state==='waiting'){
             connected=false;
-            showRoom(session.code,'Share this code with Player 2.');
+            const url = inviteUrl(session.code);
+            history.replaceState({},'',url);
+            showRoom(session.code,'Share the invite link with Player 2.');
             setStatus('Room '+session.code,'Ready — waiting for Player 2 to join…','WAITING');
           }else if(info.state==='connected'){
             connected=true;
