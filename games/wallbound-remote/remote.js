@@ -174,9 +174,13 @@
         gameKey:'wallbound',
         maxPlayers:2,
         onStatus(info){
-          if(info.state==='waiting'){
+          if(info.state==='retrying'){
             connected=false;
-            setStatus('Room '+session.code,'Waiting for Player 2 to join…','WAITING');
+            setStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…','RETRY');
+          }else if(info.state==='waiting'){
+            connected=false;
+            showRoom(session.code,'Share this code with Player 2.');
+            setStatus('Room '+session.code,'Ready — waiting for Player 2 to join…','WAITING');
           }else if(info.state==='connected'){
             connected=true;
             setStatus('Connected','You are Player 1 · Host','HOST');
@@ -204,11 +208,18 @@
           else if(action.type==='wall') game.actWall(action.row,action.col,action.orientation);
         },
         onError(error){
-          setStatus('Connection error',error?.type||error?.message||'Could not create room.','ERROR');
+          connected=false;
+          lobby.hidden=false;
+          roomBox.hidden=true;
+          const detail=error?.type==='network'
+            ? 'Could not reach the signaling service after automatic retries. Try again or switch between Wi-Fi and cellular.'
+            : (error?.type||error?.message||'Could not create room.');
+          setStatus('Could not create room',detail,'ERROR');
         }
       });
-      showRoom(session.code,'Share this code with Player 2.');
-      setStatus('Room '+session.code,'Waiting for Player 2 to join…','WAITING');
+      lobby.hidden=false;
+      roomBox.hidden=true;
+      setStatus('Creating room','Connecting to the signaling service…','CONNECTING');
     }catch(error){
       clearSession(false);
       setStatus('Could not create room',error.message||String(error),'ERROR');
@@ -235,6 +246,7 @@
         maxPlayers:2,
         onStatus(info){
           if(info.state==='connecting') setStatus('Connecting','Looking for room '+code+'…','JOINING');
+          else if(info.state==='retrying') setStatus('Reconnecting','Signaling retry '+(info.attempt||1)+' of '+(info.maxRetries||4)+'…','RETRY');
           else if(info.state==='connected'){
             seat=Number(info.seat);connected=true;
             setRemoteLocks();
@@ -256,10 +268,17 @@
           }
         },
         onError(error){
-          setStatus('Connection error',error?.type||error?.message||'Could not join room.','ERROR');
+          connected=false;
+          lobby.hidden=false;
+          roomBox.hidden=true;
+          const detail=error?.type==='network'
+            ? 'Could not reach the signaling service after automatic retries. Try again or switch between Wi-Fi and cellular.'
+            : (error?.type||error?.message||'Could not join room.');
+          setStatus('Could not join room',detail,'ERROR');
         }
       });
-      showRoom(code,'Connecting to the host…');
+      lobby.hidden=false;
+      roomBox.hidden=true;
       setStatus('Connecting','Looking for room '+code+'…','JOINING');
     }catch(error){
       clearSession(false);
