@@ -22,6 +22,8 @@
   let undoStack = [];
   let toastTimer = null;
   let draftTokens = ['🧭','🚀'];
+  let remoteActionInterceptor = null;
+  let stateChangeListener = null;
 
   function loadPlayers() {
     try {
@@ -180,9 +182,11 @@
       const next = game.players[game.current];
       showToast(`${next.emoji} ${next.name}'s turn`);
     }
+    if (stateChangeListener) stateChangeListener();
   }
 
-  function moveTo(row,col) {
+  function moveTo(row,col,remoteBypass = false) {
+    if (!remoteBypass && remoteActionInterceptor && remoteActionInterceptor({type:'move',row,col,player:game.current}) === false) return;
     if (game.winner !== null || mode !== 'move') return;
     if (!legalMoves().some(p => p.row === row && p.col === col)) return;
 
@@ -205,7 +209,8 @@
     if (game.winner !== null) showWinner();
   }
 
-  function placeWall(row,col,wallOrientation) {
+  function placeWall(row,col,wallOrientation,remoteBypass = false) {
+    if (!remoteBypass && remoteActionInterceptor && remoteActionInterceptor({type:'wall',row,col,orientation:wallOrientation,player:game.current}) === false) return;
     if (game.winner !== null || mode !== 'wall') return;
     const candidate = {r:row,c:col,o:wallOrientation};
     const check = validateWall(candidate);
@@ -237,6 +242,7 @@
     closeOverlay('winnerModal');
     render();
     showToast('Last action undone.');
+    if (stateChangeListener) stateChangeListener();
   }
 
   function setMode(nextMode) {
@@ -542,6 +548,7 @@
     closeOverlay('playersModal');
     render();
     showToast('Players updated.');
+    if (stateChangeListener) stateChangeListener();
   }
 
   function openRules() {
@@ -569,6 +576,7 @@
     document.querySelectorAll('.overlay.show').forEach(node => node.classList.remove('show'));
     render();
     showToast('New game started.');
+    if (stateChangeListener) stateChangeListener();
   }
 
   function showWinner() {
@@ -620,6 +628,54 @@
       new ResizeObserver(fitBoard).observe(boardStage);
     }
   }
+
+  window.WallboundGame = {
+    getState() {
+      return JSON.parse(JSON.stringify(game));
+    },
+    setState(nextState) {
+      if (!nextState || !Array.isArray(nextState.players) || nextState.players.length !== 2) return false;
+      game = JSON.parse(JSON.stringify(nextState));
+      undoStack = [];
+      mode = 'move';
+      orientation = 'H';
+      document.querySelectorAll('.overlay.show').forEach(node => node.classList.remove('show'));
+      render();
+      if (game.winner !== null) showWinner();
+      return true;
+    },
+    getCurrent() {
+      return game.current;
+    },
+    actMove(row,col) {
+      mode = 'move';
+      moveTo(Number(row),Number(col),true);
+    },
+    actWall(row,col,wallOrientation) {
+      mode = 'wall';
+      orientation = wallOrientation === 'V' ? 'V' : 'H';
+      placeWall(Number(row),Number(col),orientation,true);
+    },
+    setActionInterceptor(fn) {
+      remoteActionInterceptor = typeof fn === 'function' ? fn : null;
+    },
+    onStateChange(fn) {
+      stateChangeListener = typeof fn === 'function' ? fn : null;
+    },
+    setPlayerProfile(index,name,emoji) {
+      const i = Number(index);
+      if (i !== 0 && i !== 1) return;
+      const player = game.players[i];
+      const trimmed = String(name || '').trim().slice(0,18);
+      if (trimmed) player.name = trimmed;
+      if (emoji) player.emoji = String(emoji);
+      savePlayerPrefs();
+      render();
+      if (stateChangeListener) stateChangeListener();
+    },
+    restart: restartGame,
+    toast: showToast
+  };
 
   game = freshGame();
   bindEvents();
