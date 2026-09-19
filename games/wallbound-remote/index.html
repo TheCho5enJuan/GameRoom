@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08111c">
-  <meta name="description" content="Wallbound v2.1 — a two-player pathfinding strategy game in the GameRoom arcade.">
-  <title>Wallbound v2.1 · GameRoom</title>
+  <meta name="description" content="Wallbound Remote — two-player pathfinding strategy with GameRoom room codes.">
+  <title>Wallbound Remote · GameRoom</title>
   <link rel="stylesheet" href="./styles.css?v=2.0">
   <link rel="stylesheet" href="./ui-v2.1.css?v=2.1">
 </head>
@@ -95,6 +95,9 @@
 
   <div class="overlay" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle"><section class="sheet compact-sheet winner-sheet"><div class="winner-icon" id="winnerIcon" aria-hidden="true">🏁</div><h2 id="winnerTitle">Player wins!</h2><p id="winnerText">The opposite edge has been reached.</p><div class="sheet-actions"><button data-close="winnerModal" type="button">Review board</button><button class="primary" id="playAgain" type="button">Play again</button></div></section></div>
 
-  <script src="./game.js?v=2.1"></script>
+  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="../../shared/multiplayer-room.js?v=1"></script>
+  <script src="./game.js?v=2.1-remote"></script>
+  <script src="./remote.js?v=1"></script>
 </body>
 </html>
