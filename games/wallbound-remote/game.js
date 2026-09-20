@@ -240,7 +240,7 @@
   }
 
   function undo(remoteBypass = false) {
-    if (!remoteBypass && undoRequestInterceptor && undoRequestInterceptor() === false) return;
+    if (remoteBypass !== true && undoRequestInterceptor && undoRequestInterceptor() === false) return;
     if (!undoStack.length) return;
     pendingWall = null;
     game = JSON.parse(undoStack.pop());
@@ -598,7 +598,7 @@
   }
 
   function restartGame(remoteBypass = false) {
-    if (!remoteBypass && restartRequestInterceptor && restartRequestInterceptor() === false) return;
+    if (remoteBypass !== true && restartRequestInterceptor && restartRequestInterceptor() === false) return;
     const players = game.players.map(p => ({name:p.name,emoji:p.emoji}));
     game = freshGame(players);
     undoStack = [];
