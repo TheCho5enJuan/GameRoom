@@ -23,7 +23,10 @@
   let toastTimer = null;
   let draftTokens = ['🧭','🚀'];
   let remoteActionInterceptor = null;
+  let undoRequestInterceptor = null;
+  let restartRequestInterceptor = null;
   let stateChangeListener = null;
+  let pendingWall = null;
 
   function loadPlayers() {
     try {
@@ -174,6 +177,7 @@
   function commitAction(action) {
     game.moves.push(action);
     if (game.winner === null) game.current = 1 - game.current;
+    pendingWall = null;
     mode = 'move';
     render();
     softHaptic();
@@ -235,8 +239,10 @@
     });
   }
 
-  function undo() {
+  function undo(remoteBypass = false) {
+    if (!remoteBypass && undoRequestInterceptor && undoRequestInterceptor() === false) return;
     if (!undoStack.length) return;
+    pendingWall = null;
     game = JSON.parse(undoStack.pop());
     mode = 'move';
     closeOverlay('winnerModal');
@@ -247,6 +253,7 @@
 
   function setMode(nextMode) {
     if (game.winner !== null) return;
+    if (nextMode !== mode || nextMode !== 'wall') pendingWall = null;
     if (nextMode === 'wall' && game.players[game.current].walls <= 0) {
       showToast('No walls remaining.');
       return;
@@ -257,6 +264,7 @@
 
   function setOrientation(nextOrientation) {
     orientation = nextOrientation;
+    pendingWall = null;
     renderCommandState();
     renderSlots();
   }
@@ -278,9 +286,12 @@
 
         const legal = moves.some(p => p.row === r && p.col === c);
         if (legal) {
+          const current = game.players[game.current];
+          const jump = Math.abs(current.row-r) + Math.abs(current.col-c) > 1;
           cell.classList.add('legal');
+          if (jump) cell.classList.add('jump-target');
           cell.addEventListener('click', () => moveTo(r,c));
-          cell.setAttribute('aria-label', `Move to ${coord(r,c)}`);
+          cell.setAttribute('aria-label', `${jump ? 'Jump' : 'Move'} to ${coord(r,c)}`);
         } else {
           cell.setAttribute('aria-label', `Square ${coord(r,c)}`);
         }
@@ -360,13 +371,28 @@
         const check = validateWall(candidate);
         const slot = document.createElement('button');
         slot.type = 'button';
-        slot.className = `slot ${check.ok ? 'valid' : 'invalid'}`;
+        const previewing = pendingWall && pendingWall.r === r && pendingWall.c === c && pendingWall.o === orientation;
+        slot.className = `slot ${check.ok ? 'valid' : 'invalid'}${previewing ? ' preview' : ''}`;
         styleWallSlot(slot,candidate);
-        slot.setAttribute('aria-label', `${check.ok ? 'Place' : 'Invalid'} ${orientation === 'H' ? 'horizontal' : 'vertical'} wall at ${wallCoord(candidate)}`);
-        slot.title = check.ok ? `Place wall at ${wallCoord(candidate)}` : check.reason;
+        slot.setAttribute('aria-label', `${check.ok ? (previewing ? 'Confirm' : 'Preview') : 'Invalid'} ${orientation === 'H' ? 'horizontal' : 'vertical'} wall at ${wallCoord(candidate)}`);
+        slot.title = check.ok ? `${previewing ? 'Tap again to place' : 'Preview'} wall at ${wallCoord(candidate)}` : check.reason;
         slot.addEventListener('click', () => {
-          if (check.ok) placeWall(r,c,orientation);
-          else showToast(check.reason);
+          if (!check.ok) {
+            pendingWall = null;
+            showToast(check.reason);
+            renderSlots();
+            renderCommandState();
+            return;
+          }
+          if (previewing) {
+            pendingWall = null;
+            placeWall(r,c,orientation);
+            return;
+          }
+          pendingWall = {r,c,o:orientation};
+          renderSlots();
+          renderCommandState();
+          showToast(`Previewing ${orientation === 'H' ? 'horizontal' : 'vertical'} wall — tap it again to place.`);
         });
         slotsLayer.appendChild(slot);
       }
@@ -409,6 +435,10 @@
     el('vertical').classList.toggle('active',orientation === 'V');
     el('horizontal').setAttribute('aria-pressed',String(orientation === 'H'));
     el('vertical').setAttribute('aria-pressed',String(orientation === 'V'));
+    const wallHelper = document.querySelector('.wall-helper');
+    if (wallHelper) wallHelper.textContent = pendingWall
+      ? `Previewing ${orientation === 'H' ? 'horizontal' : 'vertical'} wall — tap the bright gold wall again to place it.`
+      : 'Tap a legal gold guide once to preview the exact wall, then tap it again to place.';
     el('undoBtn').disabled = !undoStack.length;
   }
 
@@ -567,12 +597,14 @@
     openOverlay('restartModal');
   }
 
-  function restartGame() {
+  function restartGame(remoteBypass = false) {
+    if (!remoteBypass && restartRequestInterceptor && restartRequestInterceptor() === false) return;
     const players = game.players.map(p => ({name:p.name,emoji:p.emoji}));
     game = freshGame(players);
     undoStack = [];
     mode = 'move';
     orientation = 'H';
+    pendingWall = null;
     document.querySelectorAll('.overlay.show').forEach(node => node.classList.remove('show'));
     render();
     showToast('New game started.');
@@ -629,6 +661,19 @@
     }
   }
 
+  function timeoutTurn() {
+    if (game.winner !== null) return false;
+    undoStack.push(snapshot());
+    const playerIndex = game.current;
+    pendingWall = null;
+    commitAction({
+      player: playerIndex,
+      type: 'timeout',
+      text: 'Turn timed out'
+    });
+    return true;
+  }
+
   window.WallboundGame = {
     getState() {
       return JSON.parse(JSON.stringify(game));
@@ -639,6 +684,7 @@
       undoStack = [];
       mode = 'move';
       orientation = 'H';
+      pendingWall = null;
       document.querySelectorAll('.overlay.show').forEach(node => node.classList.remove('show'));
       render();
       if (game.winner !== null) showWinner();
@@ -659,6 +705,19 @@
     setActionInterceptor(fn) {
       remoteActionInterceptor = typeof fn === 'function' ? fn : null;
     },
+    setUndoInterceptor(fn) {
+      undoRequestInterceptor = typeof fn === 'function' ? fn : null;
+    },
+    setRestartInterceptor(fn) {
+      restartRequestInterceptor = typeof fn === 'function' ? fn : null;
+    },
+    canUndo() {
+      return undoStack.length > 0;
+    },
+    undoLast() {
+      undo(true);
+    },
+    timeoutTurn,
     onStateChange(fn) {
       stateChangeListener = typeof fn === 'function' ? fn : null;
     },
@@ -673,7 +732,7 @@
       render();
       if (stateChangeListener) stateChangeListener();
     },
-    restart: restartGame,
+    restart() { restartGame(true); },
     toast: showToast
   };
 
