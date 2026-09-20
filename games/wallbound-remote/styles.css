@@ -157,6 +157,41 @@ button{color:inherit}
 .empty-state{font-size:10px;color:var(--muted);text-align:center;padding:24px 0}
 .winner-sheet{text-align:center}
 .winner-icon{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;margin:0 auto 12px;background:linear-gradient(145deg,#213952,#101b29);border:1px solid var(--line);font-size:34px}
+@media (max-width:759px){
+  html,body{height:auto;min-height:100%}
+  body{overflow-y:auto;overflow-x:hidden}
+  .game-app{height:auto;min-height:100dvh;display:block}
+  .appbar{margin-bottom:5px}
+  .play-layout{
+    height:auto;
+    min-height:0;
+    display:grid;
+    grid-template-rows:auto auto;
+    align-content:start;
+    gap:7px;
+  }
+  .game-main{
+    min-height:0;
+    display:grid;
+    grid-template-rows:auto auto auto;
+    align-content:start;
+    gap:6px;
+  }
+  .board-stage{
+    width:100%;
+    height:min(calc(100vw - 10px),430px);
+    min-height:0;
+    overflow:visible;
+  }
+  .board-frame{
+    width:min(calc(100vw - 10px),430px);
+    height:min(calc(100vw - 10px),430px);
+    max-width:none;
+    max-height:none;
+  }
+  .control-rail{margin-top:0}
+}
+
 @media (min-width:760px){
   .game-app{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
   .appbar{height:50px;margin-bottom:8px}
