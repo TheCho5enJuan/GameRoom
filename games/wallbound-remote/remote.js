@@ -25,7 +25,7 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .game-main{grid-template-rows:auto auto minmax(0,1fr)}\n    .remote-panel{display:grid;gap:14px}
+    @media(min-width:760px){.game-main{grid-template-rows:auto auto minmax(0,1fr)}}\n    @media(max-width:759px){.game-main{grid-template-rows:auto auto auto;align-content:start}}\n    .remote-panel{display:grid;gap:14px}
     .remote-status{padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.045);font-size:.92rem}
     .remote-status strong{display:block;font-size:1.05rem;margin-bottom:3px}
     .remote-code{font-size:clamp(2rem,10vw,3.4rem);font-weight:900;letter-spacing:.16em;text-align:center;padding:16px;border-radius:16px;background:#07101b;border:1px solid rgba(255,255,255,.13)}
