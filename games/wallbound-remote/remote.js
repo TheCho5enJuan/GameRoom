@@ -321,6 +321,12 @@
 
   function resumeHostTimer(reset=false){
     if (role !== 'host' || !connected || pendingDecision) return;
+    if (game.getState().winner !== null) {
+      hostDeadline = 0;
+      pausedRemainingMs = 0;
+      renderTimer();
+      return;
+    }
     if (reset) {
       pausedRemainingMs = turnSeconds*1000;
       lastTurnKey = currentTurnKey();
@@ -347,11 +353,32 @@
   function renderTimer(){
     if (!turnbar) return;
     const remote = role !== 'local';
-    turnbar.hidden = !remote || !connected;
+    turnbar.hidden = !remote;
     if (turnbar.hidden) return;
 
     const state = game.getState();
     const player = state.players[state.current];
+
+    if (!connected) {
+      $('remoteTurnPlayer').textContent = 'Remote player disconnected';
+      $('remoteTurnDetail').textContent = 'Turn clock paused until the room reconnects';
+      $('remoteClock').textContent = 'OFFLINE';
+      turnbar.classList.add('paused');
+      turnbar.classList.remove('warning','critical');
+      setRemoteLocks();
+      return;
+    }
+
+    if (state.winner !== null) {
+      $('remoteTurnPlayer').textContent = state.players[state.winner].emoji+' '+state.players[state.winner].name+' won';
+      $('remoteTurnDetail').textContent = 'Match complete · request a restart for a rematch';
+      $('remoteClock').textContent = 'FINAL';
+      turnbar.classList.add('paused');
+      turnbar.classList.remove('warning','critical');
+      setRemoteLocks();
+      return;
+    }
+
     const rem = remainingMs();
     const sec = Math.max(0,Math.ceil(rem/1000));
     const paused = !!pendingDecision || ((role==='host' ? hostDeadline : guestDeadline)===0 && pausedRemainingMs>0);
