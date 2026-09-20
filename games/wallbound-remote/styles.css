@@ -67,6 +67,8 @@ button{color:inherit}
 .cell.legal{cursor:pointer}
 .cell.legal:before{background:linear-gradient(145deg,rgba(85,215,154,.38),rgba(24,92,65,.38));border-color:rgba(85,215,154,.62);box-shadow:inset 0 0 0 1px rgba(85,215,154,.18)}
 .cell.legal:active:before{transform:scale(.94)}
+.cell.jump-target:before{background:linear-gradient(145deg,rgba(111,177,255,.44),rgba(40,89,151,.42));border-color:rgba(136,194,255,.82);box-shadow:inset 0 0 0 1px rgba(136,194,255,.25),0 0 14px rgba(90,160,255,.18)}
+.cell.jump-target:after{content:"JUMP";position:absolute;left:50%;bottom:4px;transform:translateX(-50%);z-index:10;font-size:5px;font-weight:950;letter-spacing:.08em;color:#d8ecff;background:rgba(5,15,28,.72);border:1px solid rgba(136,194,255,.35);border-radius:999px;padding:1px 3px;pointer-events:none}
 .cell.last-move:before{box-shadow:inset 0 0 0 2px rgba(255,255,255,.40)}
 .piece{position:absolute;left:50%;top:50%;width:62%;height:62%;transform:translate(-50%,-50%);z-index:12;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 25%,#1d2f45,#07111c 72%);border:1px solid rgba(255,255,255,.22);font-size:clamp(13px,3.7vw,27px);box-shadow:0 6px 13px rgba(0,0,0,.50);pointer-events:none}
 .piece.p1{border-color:rgba(74,216,255,.75);box-shadow:0 0 16px rgba(74,216,255,.28),0 6px 13px rgba(0,0,0,.50)}
@@ -83,8 +85,11 @@ button{color:inherit}
 .slot:before{content:"";position:absolute;left:50%;top:50%;opacity:0;background:var(--wall);border-radius:5px;box-shadow:0 0 16px rgba(243,194,99,.38);transition:opacity .12s,background .12s;transform:translate(-50%,-50%)}
 .slot.h:before{width:200%;height:9px}
 .slot.v:before{height:200%;width:9px}
+.wall-mode .slot.valid:before{opacity:.10}
 .slot:hover:before,.slot:focus-visible:before{opacity:.82}
+.slot.preview:before{opacity:1!important;background:#ffe5a3;box-shadow:0 0 0 2px rgba(255,238,184,.55),0 0 24px rgba(243,194,99,.88);animation:wallPreviewPulse .8s ease-in-out infinite alternate}
 .slot.invalid:hover:before,.slot.invalid:focus-visible:before{background:var(--danger)}
+@keyframes wallPreviewPulse{from{filter:brightness(1)}to{filter:brightness(1.28)}}
 .toast{position:absolute;left:50%;bottom:14px;transform:translate(-50%,10px);z-index:50;max-width:86%;opacity:0;pointer-events:none;background:rgba(4,9,15,.95);border:1px solid var(--line-strong);border-radius:999px;padding:8px 11px;color:#edf3fa;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.16s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .control-rail{min-width:0}
