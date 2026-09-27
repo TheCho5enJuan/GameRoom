@@ -71,7 +71,7 @@ let sampleHold = null;
 let sampleHoldTimer = null;
 let lastUiPhaseKey = '';
 let syncSeq=0;
-let guestAckSeq=0;
+let ackBySeat={};
 let hostAppliedSeq=0;
 let guestAppliedSeq=0;
 let phaseSerial=0;
@@ -80,7 +80,8 @@ let lastResyncAt=0;
 let lastPulseAt=0;
 let pendingRemoteState=null;
 let remoteRenderRunning=false;
-let reconnectResumeSeq=0;
+let reconnectResumeBySeat={};
+let lastHostPulseAt=0;
 
 function defaultFigure(){
   return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -616,7 +617,7 @@ function sendGuestPhase(repeat=false){
   if(!repeat) syncSeq++;
   hostState.syncSeq=syncSeq;
   const state=publicState();
-  if(role==='host'&&!solo&&session&&connected) session.sendTo(1,{type:'sb:state',state});
+  if(role==='host'&&!solo&&session?.connections?.size) session.broadcast({type:'sb:state',state});
   return state;
 }
 
@@ -677,11 +678,24 @@ function reportPhaseReady(state){
   else actionMessage('sb:phase-ready');
 }
 
+function allGuestAcks(seq){
+  const seats=(hostState?.activeSeats||[]).filter(s=>s!==0);
+  return seats.every(s=>Number(ackBySeat[s]||0)>=Number(seq||0));
+}
+
+function maybeResumeAfterReconnect(){
+  const entries=Object.entries(reconnectResumeBySeat);
+  if(!entries.length||!hostState?.paused) return;
+  if(entries.some(([s,seq])=>Number(ackBySeat[s]||0)<Number(seq))) return;
+  reconnectResumeBySeat={};
+  resumeMatch();
+}
+
 function maybeStartTimedPhase(){
   if(role!=='host'||!hostState||hostState.timerStarted||hostState.paused) return;
   if(![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)) return;
   const actor=flow.timedActorSeat(hostState);
-  const actorApplied=solo || (actor===0 ? hostAppliedSeq>=syncSeq : guestAckSeq>=syncSeq);
+  const actorApplied=solo||(actor===0?hostAppliedSeq>=syncSeq:Number(ackBySeat[actor]||0)>=syncSeq);
   if(!actorApplied) return;
   hostState.timerStarted=true;
   const seconds=hostState.phase===PHASES.HIDE?hostState.config.hideSeconds:hostState.config.seekSeconds;
@@ -692,7 +706,7 @@ function maybeStartTimedPhase(){
 
 function refreshNextRoundGate(){
   if(role!=='host'||hostState?.phase!==PHASES.REVEAL) return;
-  const ready=solo||guestAckSeq>=syncSeq;
+  const ready=solo||allGuestAcks(syncSeq);
   $('nextRound').disabled=!ready;
   $('nextRoundWait').hidden=ready;
   if(!ready) $('nextRoundWait').textContent='Waiting for opponent to receive the round result…';
@@ -702,13 +716,10 @@ function handleHostMessage(message,meta){
   if(!message?.type||!hostState) return;
   const sender=Number(meta?.seat);
   if(message.type==='sb:state-ack'){
-    guestAckSeq=Math.max(guestAckSeq,Number(message.seq)||0);
+    ackBySeat[sender]=Math.max(Number(ackBySeat[sender]||0),Number(message.seq)||0);
     refreshNextRoundGate();
     maybeStartTimedPhase();
-    if(reconnectResumeSeq && guestAckSeq>=reconnectResumeSeq){
-      reconnectResumeSeq=0;
-      resumeMatch();
-    }
+    maybeResumeAfterReconnect();
     return;
   }
   if(message.type==='sb:resync'){
@@ -893,7 +904,7 @@ function processGuess(x,y){
       updateScoreboard(hostState);
       markDirty();
     }
-    if(!solo&&session) session.sendTo(1,{type:'sb:toast',message:missText});
+    if(!solo&&session?.connections?.size) session.broadcast({type:'sb:toast',message:missText});
     publishHostState();
   }
 }
@@ -915,7 +926,7 @@ function finishRound(found){
 
 function nextRound(){
   if(role!=='host'||!hostState||hostState.phase!==PHASES.REVEAL) return;
-  if(!solo && guestAckSeq<syncSeq){
+  if(!solo&&!allGuestAcks(syncSeq)){
     toast('Waiting for the other player to receive the round result.');
     return;
   }
@@ -1933,7 +1944,7 @@ function tick(){
 
     if(!solo&&session&&connected&&now-lastPulseAt>=1000){
       lastPulseAt=now;
-      session.sendTo(1,{
+      session.broadcast({
         type:'sb:pulse',
         syncSeq,
         round:hostState.round,
