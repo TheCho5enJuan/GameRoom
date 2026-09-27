@@ -55,8 +55,8 @@ The runtime rights check is deliberate: a title being present in a museum collec
 
 ## Image delivery
 
-Streetblend v1.0.2 does not query the museum artwork API at runtime. It uses a curated catalog of seven known public-domain Art Institute works with direct IIIF image URLs.
+Streetblend v1.0.3 uses a curated set of public-domain reproductions hosted by Wikimedia Commons. The selected works are from the Art Institute of Chicago collection, but the game no longer depends on the museum's IIIF service or artwork API during a match.
 
-Each scene first attempts a CORS-enabled direct image load so the eyedropper can read pixels. If that is blocked by the browser or museum edge service, Streetblend retries the same direct image URL as a normal browser image so the painting still renders. When pixel sampling is unavailable, the paint swatch opens a manual color picker instead.
+Each scene first attempts a CORS-enabled Wikimedia image load so the eyedropper can read image pixels. If pixel access is blocked, Streetblend retries the same image as a normal browser image so gameplay can continue; the paint swatch remains available as a manual color picker.
 
 The current catalog includes Paris Street; Rainy Day, A Sunday on La Grande Jatte, Water Lilies, Two Sisters, The Child's Bath, Arrival of the Normandy Train, and The Bedroom.
