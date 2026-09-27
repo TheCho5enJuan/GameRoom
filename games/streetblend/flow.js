@@ -19,14 +19,23 @@
   function requiredReadySeats(state){
     if(!state) return [];
     if(state.phase===PHASES.HIDE_PREPARE) return activeSeats(state);
-    if(state.phase===PHASES.SEEK_PREPARE) return [state.seekerSeat];
+    if(state.phase===PHASES.SEEK_PREPARE){
+      const seats=activeSeats(state);
+      return [seats.includes(state.seekerSeat)?state.seekerSeat:seats[0]];
+    }
     return [];
   }
 
   function timedActorSeat(state){
     if(!state) return null;
-    if(state.phase===PHASES.HIDE) return state.hiderSeat;
-    if(state.phase===PHASES.SEEK) return state.seekerSeat;
+    if(state.phase===PHASES.HIDE){
+      const seats=activeSeats(state);
+      return seats.includes(state.hiderSeat)?state.hiderSeat:seats[0];
+    }
+    if(state.phase===PHASES.SEEK){
+      const seats=activeSeats(state);
+      return seats.includes(state.seekerSeat)?state.seekerSeat:seats[0];
+    }
     return null;
   }
 
