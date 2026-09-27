@@ -775,42 +775,34 @@ function exportFigure(){
 }
 
 function sendDraft(){
-  if(role === 'guest' && connected && remoteState?.phase === 'hide' && remoteState.hiderSeat === 1){
-    session.send({type:'sb:draft',figure:exportFigure()});
-  }else if(role === 'host' && hostState?.phase === 'hide' && hostState.hiderSeat === 0){
-    hostState.lastDraft = exportFigure();
+  if(role==='guest'&&connected&&remoteState?.phase===PHASES.HIDE&&remoteState.hiderSeat===seat){
+    actionMessage('sb:draft',{figure:exportFigure()});
+  }else if(role==='host'&&hostState?.phase===PHASES.HIDE&&hostState.hiderSeat===seat){
+    hostState.lastDraft=exportFigure();
   }
 }
 
 function lockCurrentHide(){
-  const state = getState();
-  if(!state || state.phase !== 'hide' || state.hiderSeat !== seat) return;
-  if(!state.timerStarted){
-    toast('Waiting for the painting to finish loading.');
+  const state=getState();
+  if(!state||state.phase!==PHASES.HIDE||state.hiderSeat!==seat) return;
+  if(!state.timerStarted||state.paused){
+    toast('Your hiding turn is not active yet.');
     return;
   }
-  const f = exportFigure();
-  if(role === 'host') lockFigure(f);
-  else session.send({type:'sb:lock',figure:f});
-  showStageMessage('Hiding spot locked','Waiting for the search to begin…');
-  $('hiderControls').hidden = true;
-  $('waitingControls').hidden = false;
-  $('waitingRole').textContent = 'HIDER';
-  $('waitingTitle').textContent = 'Hiding spot locked';
-  $('waitingText').textContent = 'The Seeker is receiving the painting.';
+  const f=exportFigure();
+  if(role==='host') lockFigure(f);
+  else actionMessage('sb:lock',{figure:f});
+  showStageMessage('Hiding spot locked','Preparing the Seeker’s view…');
+  $('hiderControls').hidden=true;
 }
 
 function lockFigure(f){
-  if(!hostState || hostState.phase !== 'hide') return;
-  hostState.figure = sanitizeFigure(f || hostState.lastDraft || defaultFigure());
-  hostState.phase = 'seek';
-  hostState.timerStarted = true;
-  hostState.deadline = Date.now()+hostState.config.seekSeconds*1000;
-  hostState.wrong = 0;
-  hostState.guessMarks = [];
-  lastTickSent = -1;
-  applyHostView();
-  sendGuestPhase();
+  if(!hostState||hostState.phase!==PHASES.HIDE) return;
+  hostState.figure=sanitizeFigure(f||hostState.lastDraft||defaultFigure());
+  hostState.wrong=0;
+  hostState.guessMarks=[];
+  setHostPhase(PHASES.SEEK_PREPARE);
+  publishHostState();
 }
 
 function processGuess(x,y){
@@ -842,13 +834,13 @@ function processGuess(x,y){
       updateScoreboard(hostState);
       markDirty();
     }
-    if(!solo && session) session.sendTo(1,{type:'sb:toast',message:missText});
-    sendGuestPhase();
+    if(!solo&&session) session.sendTo(1,{type:'sb:toast',message:missText});
+    publishHostState();
   }
 }
 
 function finishRound(found){
-  if(!hostState || hostState.phase !== 'seek') return;
+  if(!hostState||hostState.phase!==PHASES.SEEK) return;
   const remaining=Math.max(0,Math.ceil((hostState.deadline-Date.now())/1000));
   const elapsed=hostState.config.seekSeconds-remaining;
   const seeker=hostState.seekerSeat;
@@ -857,25 +849,21 @@ function finishRound(found){
   const hiderPoints=(found ? elapsed*10 : 1000);
   hostState.players[seeker].score += seekerPoints;
   hostState.players[hider].score += hiderPoints;
-  hostState.phase='reveal';
-  hostState.deadline=0;
   hostState.result={found,remaining,seekerPoints,hiderPoints,wrong:hostState.wrong};
-  sendGuestPhase();
-  applyHostView();
+  setHostPhase(PHASES.REVEAL);
+  publishHostState();
 }
 
 function nextRound(){
-  if(role !== 'host' || !hostState || hostState.phase !== 'reveal') return;
+  if(role!=='host'||!hostState||hostState.phase!==PHASES.REVEAL) return;
   if(!solo && guestAckSeq<syncSeq){
     toast('Waiting for the other player to receive the round result.');
     return;
   }
   const next=hostState.round+1;
   if(next >= hostState.config.rounds){
-    hostState.phase='final';
-    hostState.deadline=0;
-    applyHostView();
-    sendGuestPhase();
+    setHostPhase(PHASES.FINAL);
+    publishHostState();
   }else beginRound(next);
 }
 
@@ -892,7 +880,7 @@ function rematch(){
 }
 
 function pauseMatch(message){
-  if(!hostState || !['hide','seek'].includes(hostState.phase)) return;
+  if(!hostState||![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)||!hostState.timerStarted) return;
   hostState.paused=true;
   hostState.pauseRemaining=Math.max(0,hostState.deadline-Date.now());
   hostState.deadline=0;
@@ -902,9 +890,9 @@ function pauseMatch(message){
 function resumeMatch(){
   if(!hostState?.paused) return;
   hostState.paused=false;
-  hostState.deadline=Date.now()+(hostState.pauseRemaining||30000);
+  hostState.deadline=Date.now()+Math.max(1000,hostState.pauseRemaining||30000);
   hostState.pauseRemaining=0;
-  sendGuestPhase();
+  publishHostState();
 }
 
 function getState(){
@@ -1559,9 +1547,9 @@ function setToolButtons(){
 
 function sendGuess(norm){
   const state=getState();
-  if(!state || state.phase!=='seek' || (state.seekerSeat!==seat && !solo)) return;
+  if(!state||state.phase!==PHASES.SEEK||!state.timerStarted||state.paused||(state.seekerSeat!==seat&&!solo)) return;
   if(role==='host') processGuess(norm.x,norm.y);
-  else session.send({type:'sb:guess',x:norm.x,y:norm.y});
+  else actionMessage('sb:guess',{x:norm.x,y:norm.y});
 }
 
 function pointerXY(event){
