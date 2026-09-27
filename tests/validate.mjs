@@ -90,6 +90,15 @@ for(const game of ['rogue-quest','tide-and-tranquility','blockforge']){
   assert.equal(flow.actionAllowed(seekState,1,'guess',{round:0,phaseToken:'r0-seek'}),true);
   assert.equal(flow.actionAllowed({...seekState,timerStarted:false},1,'guess',{round:0,phaseToken:'r0-seek'}),false);
 
+  const multiPrepare={phase:'hide_prepare',phaseToken:'multi-hide',round:1,activeSeats:[0,1,2,3],players:[{},{},{},{}],hiderSeats:[0,2],seekerSeats:[1,3]};
+  const multiSeekPrepare={...multiPrepare,phase:'seek_prepare',phaseToken:'multi-seek'};
+  assert.equal(JSON.stringify(flow.requiredReadySeats(multiPrepare)),JSON.stringify([0,1,2,3]));
+  assert.equal(JSON.stringify(flow.requiredReadySeats(multiSeekPrepare)),JSON.stringify([1,3]));
+  assert.equal(JSON.stringify(flow.timedActorSeats({...multiPrepare,phase:'hide'})),JSON.stringify([0,2]));
+  assert.equal(JSON.stringify(flow.timedActorSeats({...multiPrepare,phase:'seek'})),JSON.stringify([1,3]));
+  assert.equal(flow.actionAllowed({...multiPrepare,phase:'hide'},2,'lock',{round:1,phaseToken:'multi-hide'}),true);
+  assert.equal(flow.actionAllowed({...multiPrepare,phase:'seek',phaseToken:'multi-live',timerStarted:true},3,'guess',{round:1,phaseToken:'multi-live'}),true);
+
   assert.match(gameJs,/PHASES\.SEEK_PREPARE/);
   assert.match(gameJs,/sb:state-ack/);
   assert.match(gameJs,/sb:pulse/);
