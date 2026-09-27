@@ -122,3 +122,13 @@ Streetblend now gives the inactive player a lightweight drawing activity instead
 - During that same search period, the Hider can customize their own icon.
 - Player icons synchronize over the room connection and appear beside player names in the match header.
 - The studio provides freehand color drawing, brush size, eraser, and reset controls.
+
+## v1.5.1 brush-aware eyedropper
+
+The Sample tool now uses the same brush-size control to determine its source-pixel sampling footprint.
+
+- Brush size 1 samples one exact source pixel.
+- Larger brush sizes use a circular source-pixel area with the brush-size value as the sampling diameter.
+- RGB values from all non-transparent pixels inside that circle are averaged into one sampled color.
+- The sampling loupe shows the active footprint and the resulting aggregate hex color.
+- The central DRAG label was removed from the selected player box; direct drag behavior remains unchanged.
