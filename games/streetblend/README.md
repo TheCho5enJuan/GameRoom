@@ -99,3 +99,16 @@ Streetblend now builds a public-domain artwork catalog from Wikimedia Commons ra
 The target catalog is at least 50 paintings. Match selection uses a cryptographically shuffled deck: every discovered scene is used once before the deck reshuffles, and the first scene of a new deck is prevented from immediately repeating the previous scene.
 
 Hider figures now support Slim, Regular, and Bold builds. Minimum figure height was raised to 10% of the source painting height, the default is 14%, and the maximum is 24%. Figure build affects silhouette thickness, rendered width, painting hit-testing, and Seeker hit detection.
+
+## v1.4 hider control refinements
+
+Streetblend now provides explicit player-focused manipulation controls:
+
+- **Focus Player** centers and zooms tightly around the selected figure.
+- **Fit Artwork** returns to the full painting.
+- The player selection box has interactive **ROTATE** and **SIZE** handles.
+- Dragging the body moves the player.
+- Two-finger pinch/twist remains supported for resize and rotation.
+- Sample mode supports a quick tap or long-press-and-slide continuous sampling.
+- Continuous sampling displays a magnified color loupe with a crosshair and the current hex color.
+- Sampling no longer automatically switches into Paint mode, allowing several colors to be inspected before painting.
