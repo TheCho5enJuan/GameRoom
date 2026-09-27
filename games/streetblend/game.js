@@ -662,10 +662,7 @@ session?.sendTo(sender,{type:'sb:action-reject',actionId:message.actionId||null}
 resendHostState(sender);
 return;
 }
-if(message.actionId){
-seenActionIds.add(actionKey);
-session?.sendTo(sender,{type:'sb:action-ack',actionId:message.actionId});
-}
+if(message.actionId)seenActionIds.add(actionKey);
 if(action==='phase-ready'){
 markPhaseReady(sender,message.phaseToken);
 }else if(action==='draft'){
@@ -675,6 +672,7 @@ lockFigure(sanitizeFigure(message.figure));
 }else if(action==='guess'){
 processGuess(message.x,message.y);
 }
+if(message.actionId)session?.sendTo(sender,{type:'sb:action-ack',actionId:message.actionId});
 }
 function queueRemoteState(state){
 if(!state?.figure&&remoteState?.figure&&Number(state?.round)===Number(remoteState?.round)){
