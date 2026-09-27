@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -28,5 +28,11 @@
     "host_authoritative": true
   },
   "loading_behavior": "Round timer starts only after the scene image has loaded; remote matches wait for both players to report scene readiness.",
-  "hider_controls": "Visible outlined figure, direct drag placement, size slider, rotation slider, pose selection, sampling and painting."
+  "hider_controls": "Gesture-first: drag figure to place, pinch figure to resize/rotate, drag background to pan, pinch background to zoom, plus Sample/Paint/Pose/Lock controls.",
+  "seeker_controls": "Quick tap guesses, drag pans, pinch zooms. Wrong guesses remove 5 seconds and do not directly subtract score points.",
+  "figure_scale": {
+    "min": 0.08,
+    "default": 0.11,
+    "max": 0.18
+  }
 }
