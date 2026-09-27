@@ -274,17 +274,14 @@ function leaveRoom(reload=true){
 function refreshAvatarUi(state=getState()){
   if(!window.StreetblendAvatar) return;
   if(state?.players) StreetblendAvatar.setMatchAvatars(state.players);
-  const waiting = state && (
-    (state.phase==='hide' && state.hiderSeat!==seat) ||
-    (state.phase==='seek' && state.seekerSeat!==seat && !solo)
-  );
-  StreetblendAvatar.setStudioVisible(!!waiting);
-  if(waiting && state.phase==='seek'){
+  const seekerWaiting=state&&[PHASES.HIDE_PREPARE,PHASES.HIDE].includes(state.phase)&&state.hiderSeat!==seat;
+  const hiderWaiting=state&&[PHASES.SEEK_PREPARE,PHASES.SEEK].includes(state.phase)&&state.seekerSeat!==seat&&!solo;
+  const waiting=!!(seekerWaiting||hiderWaiting);
+  StreetblendAvatar.setStudioVisible(waiting);
+  if(hiderWaiting){
     const opponent=state.players?.[state.seekerSeat];
     StreetblendAvatar.setOpponent(opponent?.avatar,opponent?.name||'Seeker');
-  }else{
-    StreetblendAvatar.setOpponent(null);
-  }
+  }else StreetblendAvatar.setOpponent(null);
 }
 
 function onAvatarChanged(data){
@@ -960,16 +957,6 @@ function resumeMatch(){
 
 function getState(){
   return role === 'host' ? hostState : remoteState;
-}
-
-async function applyHostView(){
-  if(!hostState) return;
-  await applyStateToUI(hostState,true);
-}
-
-async function applyRemoteView(){
-  if(!remoteState) return;
-  await applyStateToUI(remoteState,false);
 }
 
 async function applyStateToUI(state,isHost){
@@ -1934,27 +1921,49 @@ function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function tick(){
   const state=getState();
   if(!state) return;
-  if(role==='host' && hostState && ['hide','seek'].includes(hostState.phase) && !hostState.paused && hostState.timerStarted){
-    const remaining=Math.max(0,hostState.deadline-Date.now());
-    updateClock(remaining);
-    const sec=Math.ceil(remaining/1000);
-    if(!solo && session && connected && sec!==lastTickSent){
-      lastTickSent=sec;
-      session.sendTo(1,{type:'sb:tick',remaining,round:hostState.round,phase:hostState.phase,syncSeq});
+  const now=Date.now();
+
+  if(role==='host'&&hostState){
+    const timed=[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase);
+    const remaining=hostState.paused
+      ? Math.max(0,hostState.pauseRemaining||0)
+      : hostState.timerStarted
+        ? Math.max(0,hostState.deadline-now)
+        : null;
+
+    if(!solo&&session&&connected&&now-lastPulseAt>=1000){
+      lastPulseAt=now;
+      session.sendTo(1,{
+        type:'sb:pulse',
+        syncSeq,
+        round:hostState.round,
+        phase:hostState.phase,
+        phaseToken:hostState.phaseToken,
+        timerStarted:!!hostState.timerStarted,
+        paused:!!hostState.paused,
+        remaining
+      });
     }
-    if(remaining<=0){
-      if(hostState.phase==='hide'){
-        const candidate=hostState.hiderSeat===0 ? exportFigure() : hostState.lastDraft;
-        lockFigure(candidate||defaultFigure());
-        toast('Hide time expired. Spot locked.');
-      }else if(hostState.phase==='seek'){
-        finishRound(false);
+
+    if(timed&&hostState.timerStarted&&!hostState.paused){
+      updateClock(remaining);
+      if(remaining<=0){
+        if(hostState.phase===PHASES.HIDE){
+          const candidate=hostState.hiderSeat===0?exportFigure():hostState.lastDraft;
+          lockFigure(candidate||defaultFigure());
+          toast('Hide time expired. Spot locked.');
+        }else finishRound(false);
       }
     }
-  }else if(role==='guest' && remoteState && ['hide','seek'].includes(remoteState.phase) && remoteState.timerStarted){
-    if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
-    updateClock(remoteState.remaining||0);
-    if(remoteState.remaining<=0) requestResync();
+    return;
+  }
+
+  if(role==='guest'&&remoteState){
+    if(remoteState.timerStarted&&!remoteState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(remoteState.phase)){
+      if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
+      updateClock(remoteState.remaining||0);
+      if(remoteState.remaining<=0) requestResync();
+    }
   }
 }
 
