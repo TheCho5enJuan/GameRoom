@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -93,5 +93,25 @@
     "minimum": "1px exact source pixel",
     "aggregation": "Mean RGB across all non-transparent source pixels inside the circular footprint.",
     "loupe": "Shows the sampled footprint and aggregated hex color."
+  },
+  "ui_audit": {
+    "primary_hider_tools": [
+      "Place",
+      "Sample",
+      "Paint"
+    ],
+    "figure_options": [
+      "Pose select",
+      "Build select"
+    ],
+    "floating_view_controls": [
+      "Focus Player",
+      "Fit Artwork"
+    ],
+    "brush_readout": true,
+    "transform_chrome": "Visible only in Place mode",
+    "artwork_bounds": "Figure is clamped fully inside the artwork",
+    "metadata_cleanup": true,
+    "dom_integrity_validation": true
   }
 }
