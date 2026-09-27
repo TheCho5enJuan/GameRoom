@@ -433,10 +433,14 @@
           $('roomRules').textContent='Host settings apply';
           setNetStatus('Connected','Waiting for the host to start.');
         }else if(info.state === 'disconnected'){
-          connected = false;
+          connected=false;
+          $('connectedBox').hidden=true;
+          $('joinPane').hidden=false;
           setNetStatus('Disconnected','The host connection closed.');
           if(!document.hidden) toast('Host disconnected.');
         }else if(info.state === 'full'){
+          $('connectedBox').hidden=true;
+          $('joinPane').hidden=false;
           setNetStatus('Room full','This Streetblend room already has two players.');
         }
       },
@@ -719,14 +723,20 @@
       finishRound(true);
     }else{
       hostState.wrong += 1;
-      hostState.deadline = Math.max(Date.now(),hostState.deadline-5000);
+      const penaltySeconds=hostState.config.wrongPenaltyMode==='time'
+        ? Math.max(0,Number(hostState.config.wrongPenaltySeconds)||0)
+        : 0;
+      if(penaltySeconds>0){
+        hostState.deadline=Math.max(Date.now(),hostState.deadline-penaltySeconds*1000);
+      }
+      const missText=penaltySeconds>0 ? 'MISS · −'+penaltySeconds+' sec' : 'MISS';
       if(role === 'host') {
         guessMarks = hostState.guessMarks.slice();
-        flashGuess('MISS · −5 SECONDS',false);
+        flashGuess(missText.toUpperCase(),false);
         updateScoreboard(hostState);
         markDirty();
       }
-      if(!solo && session) session.sendTo(1,{type:'sb:toast',message:'MISS · −5 sec'});
+      if(!solo && session) session.sendTo(1,{type:'sb:toast',message:missText});
       sendGuestPhase();
     }
   }
@@ -868,7 +878,12 @@
       if(state.seekerSeat === seat || solo){
         if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
         $('wrongCount').textContent=String(state.wrong||0);
-        $('seekHint').textContent='Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −5 sec.';
+        const penaltySeconds=state.config?.wrongPenaltyMode==='time' ? Number(state.config.wrongPenaltySeconds)||0 : 0;
+        $('penaltyValue').textContent=penaltySeconds>0 ? '−'+penaltySeconds+' sec' : 'None';
+        $('penaltyLabel').textContent=penaltySeconds>0 ? 'per wrong tap' : 'wrong-tap penalty';
+        $('seekHint').textContent=penaltySeconds>0
+          ? 'Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −'+penaltySeconds+' sec.'
+          : 'Quick tap = guess · drag = pan · pinch = zoom.';
         $('seekerControls').hidden=false;
       }else{
         if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
@@ -1499,8 +1514,20 @@
   function bind(){
     $('roomCode').addEventListener('input',cleanCode);
     $('createRoom').addEventListener('click',createRoom);
+    $('showJoin').addEventListener('click',showJoinPane);
+    $('joinBack').addEventListener('click',showStartMenu);
     $('joinRoom').addEventListener('click',joinRoom);
     $('localDemo').addEventListener('click',startSolo);
+    $('openSettings').addEventListener('click',openSettings);
+    $('closeSettings').addEventListener('click',closeSettings);
+    $('saveSettings').addEventListener('click',saveSettings);
+    $('resetSettings').addEventListener('click',restoreDefaultSettings);
+    $('settingPenaltyMode').addEventListener('change',()=>{
+      $('penaltySecondsField').hidden=$('settingPenaltyMode').value==='none';
+    });
+    $('settingsOverlay').addEventListener('click',event=>{
+      if(event.target===$('settingsOverlay')) closeSettings();
+    });
     $('shareInvite').addEventListener('click',shareInvite);
     $('leaveRoom').addEventListener('click',()=>leaveRoom(true));
     $('startMatch').addEventListener('click',startMatch);
@@ -1549,12 +1576,16 @@
     window.addEventListener('beforeunload',()=>{try{session?.close();}catch(_){}});
 
     const invite=net.cleanCode(new URLSearchParams(location.search).get('room'));
+    syncSettingsForm();
+    updateSettingsSummary();
     if(invite.length===6){
       $('roomCode').value=invite;
-      $('hostOptions').hidden=true;
-      $('lobbyActions').hidden=true;
+      $('startMenu').hidden=true;
+      $('joinPane').hidden=false;
       setNetStatus('Remote invite','Room '+invite+' is ready to join.');
       setTimeout(()=>$('playerName').focus(),150);
+    }else{
+      showStartMenu();
     }
 
     timerLoop=setInterval(tick,250);
