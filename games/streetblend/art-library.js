@@ -111,6 +111,29 @@ const ART_LIBRARY = [
     const license=plainText(meta?.LicenseShortName?.value||meta?.License?.value||meta?.UsageTerms?.value).toLowerCase();
     return license.includes('public domain') || license==='cc0' || license.startsWith('pd-') || license.includes('pd-old') || license.includes('pd-art');
   }
+
+  function cleanMetadataText(value){
+    let text=plainText(value);
+    text=text.replace(/\b(?:title|label|date)\s+QS:[\s\S]*$/i,'');
+    text=text.replace(/\bQS:[A-Z0-9][\s\S]*$/i,'');
+    text=text.replace(/\s*[|·]\s*$/,'').replace(/\s{2,}/g,' ').trim();
+    return text;
+  }
+
+  function cleanYear(value){
+    const text=cleanMetadataText(value);
+    const match=text.match(/\b(1[0-9]{3}|20[0-2][0-9])\b/);
+    return match?match[1]:'';
+  }
+
+  function fileTitle(pageTitle){
+    return String(pageTitle||'')
+      .replace(/^File:/i,'')
+      .replace(/\.[^.]+$/,'')
+      .replace(/[_]+/g,' ')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+  }
   
   async function fetchCommonsPaintings(query){
     const url=new URL('https://commons.wikimedia.org/w/api.php');
@@ -137,12 +160,14 @@ const ART_LIBRARY = [
       if((Number(info.width)||0)<900 || (Number(info.height)||0)<650) return null;
       const imageUrl=info.thumburl||info.url;
       if(!imageUrl) return null;
-      const rawTitle=plainText(meta.ObjectName?.value)||String(page.title||'').replace(/^File:/,'').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+      const titleFromFile=fileTitle(page.title);
+      const titleFromMeta=cleanMetadataText(meta.ObjectName?.value);
+      const safeMetaTitle=titleFromMeta && !/\bQS:|P\d{2,}/i.test(titleFromMeta) ? titleFromMeta : '';
       return {
         id:'commons-'+page.pageid,
-        title:rawTitle||'Untitled',
-        artist:plainText(meta.Artist?.value)||'Unknown artist',
-        date:plainText(meta.DateTimeOriginal?.value||meta.DateTime?.value)||'',
+        title:safeMetaTitle||titleFromFile||'Untitled',
+        artist:cleanMetadataText(meta.Artist?.value)||'Unknown artist',
+        date:cleanYear(meta.DateTimeOriginal?.value||meta.DateTime?.value),
         imageUrl,
         imageLarge:imageUrl,
         sourceUrl:info.descriptionurl||('https://commons.wikimedia.org/?curid='+page.pageid),
