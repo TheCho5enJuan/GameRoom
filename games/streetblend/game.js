@@ -1627,6 +1627,13 @@
     return {x:cx*sx,y:cy*sy,cx,cy};
   }
 
+  function cancelSampleHold(hide=true){
+    clearTimeout(sampleHoldTimer);
+    sampleHoldTimer=null;
+    sampleHold=null;
+    if(hide) hideSampleLoupe();
+  }
+
   function onPointerDown(e){
     stage.setPointerCapture?.(e.pointerId);
     const p=pointerXY(e);
@@ -1639,29 +1646,65 @@
     const state=getState();
 
     if(pointers.size===2){
+      cancelSampleHold();
       const pts=[...pointers.values()];
       const midpoint={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
       const d=distance(pts[0],pts[1]);
       const a=angleBetween(pts[0],pts[1]);
 
-      if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='place' && (draggingFigure || pointHitsFigure(midpoint.x,midpoint.y))){
+      if(
+        state?.phase==='hide' &&
+        state.hiderSeat===seat &&
+        activeTool==='place' &&
+        (draggingFigure || figureHandleDrag || pointHitsFigure(midpoint.x,midpoint.y))
+      ){
         figureTransform={distance:d,angle:a,scale:figure.scale,rotation:figure.rotation};
         draggingFigure=null;
+        figureHandleDrag=null;
         pinchStart=null;
       }else{
         pinchStart={distance:d,zoom:camera.zoom};
         figureTransform=null;
+        figureHandleDrag=null;
       }
       pointerStart=null;
       return;
     }
 
     if(state?.phase==='hide' && state.hiderSeat===seat){
-      if(activeTool==='place' && pointHitsFigure(p.x,p.y)){
-        draggingFigure={pointerId:e.pointerId};
+      if(activeTool==='place'){
+        const handle=figureHandleAt(p.x,p.y);
+        if(handle){
+          const m=figureMetrics();
+          const center=m?.p;
+          if(center){
+            figureHandleDrag={
+              type:handle,
+              pointerId:e.pointerId,
+              scale:figure.scale,
+              rotation:figure.rotation,
+              center:{x:center.x,y:center.y},
+              startDistance:Math.max(1,Math.hypot(p.x-center.x,p.y-center.y)),
+              startAngle:Math.atan2(p.y-center.y,p.x-center.x)
+            };
+            if(pointerStart) pointerStart.moved=true;
+          }
+        }else if(pointHitsFigure(p.x,p.y)){
+          draggingFigure={pointerId:e.pointerId};
+        }
       }else if(activeTool==='paint' && pointHitsFigure(p.x,p.y)){
         paintingPointer=e.pointerId;
         paintAt(p.x,p.y);
+      }else if(activeTool==='sample'){
+        sampleHold={pointerId:e.pointerId,latest:p,active:false};
+        clearTimeout(sampleHoldTimer);
+        sampleHoldTimer=setTimeout(()=>{
+          if(!sampleHold || sampleHold.pointerId!==e.pointerId || !pointers.has(e.pointerId)) return;
+          sampleHold.active=true;
+          if(pointerStart?.id===e.pointerId) pointerStart.moved=true;
+          const latest=sampleHold.latest;
+          sampleColor(screenToImage(latest.x,latest.y),latest,true);
+        },180);
       }
     }
   }
@@ -1689,6 +1732,36 @@
     }
 
     const state=getState();
+
+    if(sampleHold?.pointerId===e.pointerId){
+      sampleHold.latest=p;
+      if(sampleHold.active){
+        sampleColor(screenToImage(p.x,p.y),p,true);
+        if(pointerStart) pointerStart.moved=true;
+        return;
+      }
+      if(pointerStart && Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8){
+        clearTimeout(sampleHoldTimer);
+        sampleHoldTimer=null;
+        sampleHold=null;
+        hideSampleLoupe();
+      }
+    }
+
+    if(state?.phase==='hide' && state.hiderSeat===seat && figureHandleDrag?.pointerId===e.pointerId){
+      const h=figureHandleDrag;
+      if(h.type==='resize'){
+        const dist=Math.max(1,Math.hypot(p.x-h.center.x,p.y-h.center.y));
+        figure.scale=clamp(h.scale*(dist/h.startDistance),.10,.24);
+      }else if(h.type==='rotate'){
+        const angle=Math.atan2(p.y-h.center.y,p.x-h.center.x);
+        const delta=normalizeAngle((angle-h.startAngle)*180/Math.PI);
+        figure.rotation=clamp(h.rotation+delta,-70,70);
+      }
+      if(pointerStart) pointerStart.moved=true;
+      markDirty();
+      return;
+    }
 
     if(state?.phase==='hide' && state.hiderSeat===seat && draggingFigure?.pointerId===e.pointerId){
       const n=screenToImage(p.x,p.y);
@@ -1733,30 +1806,46 @@
     const p=pointerXY(e);
     const state=getState();
     const wasTap=!!(pointerStart && pointerStart.id===e.pointerId && !pointerStart.moved);
+    const activeSample=sampleHold?.pointerId===e.pointerId && sampleHold.active;
+
+    if(sampleHold?.pointerId===e.pointerId){
+      clearTimeout(sampleHoldTimer);
+      sampleHoldTimer=null;
+      if(activeSample){
+        sampleColor(screenToImage(p.x,p.y),p,true);
+        hideSampleLoupe();
+      }
+      sampleHold=null;
+    }
 
     if(figureTransform){
       figureTransform=null;
       sendDraft();
     }else if(state?.phase==='hide' && state.hiderSeat===seat){
-      if(draggingFigure?.pointerId===e.pointerId){
+      if(figureHandleDrag?.pointerId===e.pointerId){
+        figureHandleDrag=null;
+        sendDraft();
+      }else if(draggingFigure?.pointerId===e.pointerId){
         draggingFigure=null;
         sendDraft();
       }else if(activeTool==='paint' && paintingPointer===e.pointerId){
         paintingPointer=null;
         sendDraft();
       }else if(wasTap && activeTool==='place'){
-        if(!pointHitsFigure(p.x,p.y)){
+        if(!pointHitsFigure(p.x,p.y) && !figureHandleAt(p.x,p.y)){
           const n=screenToImage(p.x,p.y);
           if(n){figure.x=n.x;figure.y=n.y;sendDraft();markDirty();}
         }
-      }else if(wasTap && activeTool==='sample'){
-        sampleColor(screenToImage(p.x,p.y));
+      }else if(wasTap && activeTool==='sample' && !activeSample){
+        sampleColor(screenToImage(p.x,p.y),p,false);
+        hideSampleLoupe();
       }
     }else if(state?.phase==='seek' && (state.seekerSeat===seat || solo) && wasTap){
       const n=screenToImage(p.x,p.y);
       if(n) sendGuess(n);
     }
 
+    if(figureHandleDrag?.pointerId===e.pointerId) figureHandleDrag=null;
     if(draggingFigure?.pointerId===e.pointerId) draggingFigure=null;
     if(paintingPointer===e.pointerId) paintingPointer=null;
     pointers.delete(e.pointerId);
