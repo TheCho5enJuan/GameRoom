@@ -60,3 +60,20 @@ Streetblend v1.0.3 uses a curated set of public-domain reproductions hosted by W
 Each scene first attempts a CORS-enabled Wikimedia image load so the eyedropper can read image pixels. If pixel access is blocked, Streetblend retries the same image as a normal browser image so gameplay can continue; the paint swatch remains available as a manual color picker.
 
 The current catalog includes Paris Street; Rainy Day, A Sunday on La Grande Jatte, Water Lilies, Two Sisters, The Child's Bath, Arrival of the Normandy Train, and The Bedroom.
+
+## Touch controls (v1.1.0)
+
+### Hider
+- Drag the figure directly to move it.
+- Pinch on the figure to resize it; twisting the pinch rotates it.
+- Drag the painting background to pan.
+- Pinch the painting background to zoom.
+- Use **Sample** to pick a color and **Paint** to camouflage the figure.
+- Figure height is constrained to 8%–18% of the source image height so it cannot become microscopic.
+
+### Seeker
+- Drag to pan.
+- Pinch to zoom.
+- Quick tap to guess.
+- A wrong guess removes 5 seconds from the seek timer. It does not directly subtract score points.
+
