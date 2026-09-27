@@ -102,6 +102,7 @@
     const response = await fetch(url, {mode:'cors'});
     if(!response.ok) throw new Error('Artwork service returned '+response.status);
     const json = await response.json();
+    const iiifBase = String(json?.config?.iiif_url || IIIF).replace(/\/$/,'');
     const rows = (json.data||[]).filter(x => x && x.image_id && x.is_public_domain === true && x.is_zoomable !== false);
     if(!rows.length) return null;
     const wanted = normalizeTitle(query);
@@ -116,8 +117,13 @@
       artist:x.artist_display || 'Unknown artist',
       date:x.date_display || '',
       imageId:x.image_id,
-      imageUrl:IIIF+'/'+x.image_id+'/full/2000,/0/default.jpg',
-      thumbUrl:IIIF+'/'+x.image_id+'/full/500,/0/default.jpg',
+      iiifBase,
+      imageUrls:[
+        iiifBase+'/'+x.image_id+'/full/1686,/0/default.jpg',
+        iiifBase+'/'+x.image_id+'/full/843,/0/default.jpg'
+      ],
+      imageUrl:iiifBase+'/'+x.image_id+'/full/1686,/0/default.jpg',
+      thumbUrl:iiifBase+'/'+x.image_id+'/full/400,/0/default.jpg',
       sourceUrl:'https://www.artic.edu/artworks/'+x.id,
       publicDomain:true
     };
@@ -757,27 +763,45 @@
     $('artSource').href=scene.sourceUrl || 'https://www.artic.edu/';
     showStageMessage('Loading painting','Retrieving the public-domain image…');
 
-    const img=new Image();
-    img.crossOrigin='anonymous';
-    const loaded=new Promise((resolve,reject)=>{
-      img.onload=()=>resolve();
-      img.onerror=()=>reject(new Error('Could not load painting image.'));
-    });
-    img.src=scene.imageUrl;
-    try{
-      await loaded;
-      if(token!==sceneToken) return;
-      sceneImage=img;
-      sceneBuffer.width=img.naturalWidth;
-      sceneBuffer.height=img.naturalHeight;
-      sceneBufferCtx.clearRect(0,0,sceneBuffer.width,sceneBuffer.height);
-      sceneBufferCtx.drawImage(img,0,0);
-      hideStageMessage();
-      markDirty();
-    }catch(error){
-      showStageMessage('Painting unavailable','Reload or start the next round.');
-      toast(error.message);
+    const candidates = Array.from(new Set(
+      (Array.isArray(scene.imageUrls) && scene.imageUrls.length ? scene.imageUrls : [scene.imageUrl])
+        .filter(Boolean)
+    ));
+
+    let img = null;
+    let lastError = null;
+
+    for(const url of candidates){
+      try{
+        const candidate = new Image();
+        candidate.crossOrigin='anonymous';
+        await new Promise((resolve,reject)=>{
+          candidate.onload=()=>resolve();
+          candidate.onerror=()=>reject(new Error('Image request failed.'));
+          candidate.src=url;
+        });
+        if(token!==sceneToken) return;
+        img=candidate;
+        break;
+      }catch(error){
+        lastError=error;
+      }
     }
+
+    if(!img){
+      showStageMessage('Painting unavailable','The museum image service did not return this painting. Start another round or reload.');
+      toast('Could not load painting image.');
+      console.warn('Streetblend IIIF image failed', {scene, error:lastError});
+      return;
+    }
+
+    sceneImage=img;
+    sceneBuffer.width=img.naturalWidth;
+    sceneBuffer.height=img.naturalHeight;
+    sceneBufferCtx.clearRect(0,0,sceneBuffer.width,sceneBuffer.height);
+    sceneBufferCtx.drawImage(img,0,0);
+    hideStageMessage();
+    markDirty();
   }
 
   function resizeStage(){
