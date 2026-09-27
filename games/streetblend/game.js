@@ -4,6 +4,7 @@
 const $ = id => document.getElementById(id);
 const net = window.GameRoomMultiplayer;
 const flow = window.StreetblendFlow;
+const view = window.StreetblendView;
 const PHASES = flow.PHASES;
 const PAINT_W = 96;
 const PAINT_H = 180;
@@ -1154,81 +1155,13 @@ function resetFigureForHide(){
   if(role==='host') hostState.lastDraft=exportFigure();
 }
 
-function updateScoreboard(state){
-  const players=state.players||[{name:'Player 1',score:0},{name:'Player 2',score:0}];
-  $('p0Match').querySelector('span').textContent=players[0].name;
-  $('p0Match').querySelector('b').textContent=players[0].score;
-  $('p1Match').querySelector('span').textContent=players[1].name;
-  $('p1Match').querySelector('b').textContent=players[1].score;
-  window.StreetblendAvatar?.setMatchAvatars(players);
-  $('p0Match').classList.toggle('active',state.hiderSeat===0 && state.phase==='hide' || state.seekerSeat===0 && state.phase==='seek');
-  $('p1Match').classList.toggle('active',state.hiderSeat===1 && state.phase==='hide' || state.seekerSeat===1 && state.phase==='seek');
-}
-
-function updateClock(ms){
-  let sec=Math.max(0,Math.ceil((Number(ms)||0)/1000));
-  $('clock').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
-  $('clock').style.color=sec<=10 && sec>0 ? 'var(--danger)' : '';
-}
-
-function showReveal(state,isHost){
-  $('revealControls').hidden=false;
-  const r=state.result||{};
-  $('revealTitle').textContent=r.found?'Found!':'Time ran out!';
-  $('revealText').textContent=r.found
-    ? 'The hidden figure is outlined. The Seeker found it with '+r.remaining+' seconds left.'
-    : 'The Hider survived the entire search.';
-  const h=state.players[state.hiderSeat], s=state.players[state.seekerSeat];
-  $('roundScore').innerHTML=
-    '<div><b>+'+(r.hiderPoints||0)+'</b><span>'+escapeHtml(h.name)+' · Hider</span></div>'+
-    '<div><b>+'+(r.seekerPoints||0)+'</b><span>'+escapeHtml(s.name)+' · Seeker</span></div>';
-  $('nextRound').hidden=!isHost;
-  if(isHost){
-    refreshNextRoundGate();
-  }else{
-    $('nextRoundWait').hidden=false;
-    $('nextRoundWait').textContent='Waiting for the host…';
-  }
-  markDirty();
-}
-
-function showFinal(state,isHost){
-  $('hiderControls').hidden=true;
-  $('seekerControls').hidden=true;
-  $('waitingControls').hidden=true;
-  $('revealControls').hidden=true;
-  $('finalControls').hidden=false;
-  $('viewControls').hidden=true;
-  const [a,b]=state.players;
-  const winner=a.score===b.score?'Tie game':(a.score>b.score?a.name:b.name)+' wins!';
-  $('finalTitle').textContent=winner;
-  $('finalScore').innerHTML=
-    '<div><b>'+a.score+'</b><span>'+escapeHtml(a.name)+'</span></div>'+
-    '<div><b>'+b.score+'</b><span>'+escapeHtml(b.name)+'</span></div>';
-  $('rematch').hidden=!isHost;
-  $('phaseLabel').textContent='FINAL';
-  updateClock(0);
-  reveal=true;
-  markDirty();
-}
-
-function showStageMessage(title,text){
-  $('stageMessageTitle').textContent=title;
-  $('stageMessageText').textContent=text;
-  $('stageMessage').hidden=false;
-  $('stageMessage').style.display='grid';
-}
-function hideStageMessage(){
-  $('stageMessage').hidden=true;
-  $('stageMessage').style.display='none';
-}
-
-function flashGuess(text,good){
-  $('guessFlash').textContent=text;
-  $('guessFlash').style.color=good?'var(--accent)':'var(--danger)';
-  $('guessFlash').hidden=false;
-  setTimeout(()=>$('guessFlash').hidden=true,1000);
-}
+function updateScoreboard(state){view.updateScoreboard(state,window.StreetblendAvatar)}
+function updateClock(ms){view.updateClock(ms)}
+function showReveal(state,isHost){view.showReveal(state,isHost,escapeHtml);if(isHost)refreshNextRoundGate();markDirty()}
+function showFinal(state,isHost){view.showFinal(state,isHost,escapeHtml);reveal=true;markDirty()}
+const showStageMessage=view.showStageMessage;
+const hideStageMessage=view.hideStageMessage;
+const flashGuess=view.flashGuess;
 
 function loadImageDirect(url,useCors){
   return new Promise((resolve,reject)=>{
