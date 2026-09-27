@@ -91,3 +91,11 @@ Host settings are saved locally and copied into each newly created match. Curren
 
 The settings model already includes game mode and player count. Classic currently supports two players; additional modes/player counts are surfaced as coming-soon options rather than pretending they are playable.
 
+
+## v1.3 artwork pool and figure builds
+
+Streetblend now builds a public-domain artwork catalog from Wikimedia Commons rather than relying on only the seven seed scenes. It searches multiple painting genres and public-domain master-painter queries, filters Commons metadata to public-domain/CC0 files, requires usable image dimensions, deduplicates results, and caches a successful catalog for seven days.
+
+The target catalog is at least 50 paintings. Match selection uses a cryptographically shuffled deck: every discovered scene is used once before the deck reshuffles, and the first scene of a new deck is prevented from immediately repeating the previous scene.
+
+Hider figures now support Slim, Regular, and Bold builds. Minimum figure height was raised to 10% of the source painting height, the default is 14%, and the maximum is 24%. Figure build affects silhouette thickness, rendered width, painting hit-testing, and Seeker hit detection.
