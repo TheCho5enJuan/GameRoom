@@ -1462,6 +1462,8 @@
       ctx.textBaseline='middle';
       ctx.font='900 '+(14*dpr)+'px sans-serif';
       ctx.fillText('↻',0,-h*.76);
+      ctx.font='800 '+(6*dpr)+'px sans-serif';
+      ctx.fillText('ROTATE',0,-h*.76-handleR-7*dpr);
 
       // Resize handle.
       ctx.fillStyle='rgba(8,13,20,.96)';
@@ -1470,6 +1472,8 @@
       ctx.fillStyle='#ffffff';
       ctx.font='900 '+(12*dpr)+'px sans-serif';
       ctx.fillText('⤢',w*.70,h*.64);
+      ctx.font='800 '+(6*dpr)+'px sans-serif';
+      ctx.fillText('SIZE',w*.70,h*.64+handleR+7*dpr);
 
       // Small drag cue in the middle of the selection box.
       ctx.fillStyle='rgba(8,13,20,.78)';
