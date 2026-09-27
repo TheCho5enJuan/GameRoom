@@ -105,7 +105,31 @@ function toast(message){
 }
 
 function setNetStatus(title,detail){
-  $('netStatus').innerHTML = '<strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(detail)+'</span>';
+  $('netStatus').innerHTML='<strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(detail)+'</span>';
+}
+
+function showConnectionBanner(title,text){
+  $('connectionBannerTitle').textContent=title;
+  $('connectionBannerText').textContent=text;
+  $('connectionBanner').hidden=false;
+}
+
+function hideConnectionBanner(){
+  $('connectionBanner').hidden=true;
+}
+
+function stablePlayerId(code){
+  const key='streetblend.player.'+String(code||'room');
+  try{
+    let id=sessionStorage.getItem(key);
+    if(!id){
+      id=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+      sessionStorage.setItem(key,id);
+    }
+    return id;
+  }catch(_){
+    return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+  }
 }
 
 function escapeHtml(v){
@@ -572,13 +596,14 @@ function sendGuestPhase(repeat=false){
 
 function publishHostState(){
   const snapshot=sendGuestPhase(false)||publicState();
-  if(!snapshot) return;
+  if(!snapshot) return 0;
   applyStateToUI(snapshot,true).then(()=>{
     if(Number(snapshot.syncSeq)===syncSeq){
       hostAppliedSeq=Math.max(hostAppliedSeq,Number(snapshot.syncSeq)||0);
       maybeStartTimedPhase();
     }
   });
+  return Number(snapshot.syncSeq)||0;
 }
 
 function resendHostState(){
@@ -887,10 +912,11 @@ function rematch(){
 }
 
 function pauseMatch(message){
-  if(!hostState||![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)||!hostState.timerStarted) return;
+  if(!hostState||![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)||!hostState.timerStarted||hostState.paused) return;
   hostState.paused=true;
   hostState.pauseRemaining=Math.max(0,hostState.deadline-Date.now());
   hostState.deadline=0;
+  publishHostState();
   toast(message);
 }
 
