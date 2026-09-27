@@ -169,6 +169,8 @@
   figureCanvas.width = PAINT_W;
   figureCanvas.height = PAINT_H;
   const figureCtx = figureCanvas.getContext('2d');
+  const sampleLoupeCanvas = $('sampleLoupeCanvas');
+  const sampleLoupeCtx = sampleLoupeCanvas.getContext('2d');
 
   let figure = defaultFigure();
   let paintColor = '#ffffff';
@@ -181,7 +183,10 @@
   let pinchStart = null;
   let paintingPointer = null;
   let draggingFigure = null;
+  let figureHandleDrag = null;
   let figureTransform = null;
+  let sampleHold = null;
+  let sampleHoldTimer = null;
   let lastUiPhaseKey = '';
 
   function defaultFigure(){
@@ -1271,6 +1276,27 @@
     camera.cx=clamp(camera.cx,margin,1-margin);
     camera.cy=clamp(camera.cy,margin,1-margin);
   }
+
+  function fitArtwork(){
+    camera={cx:.5,cy:.5,zoom:1};
+    markDirty();
+  }
+
+  function focusPlayer(){
+    if(!sceneImage || !figure) return;
+    resizeStage();
+    const t=getTransform();
+    if(!t) return;
+    const targetHeight=stage.height*.72;
+    const baseFigureHeight=Math.max(1,figure.scale*t.ih*t.fit);
+    camera.zoom=clamp(targetHeight/baseFigureHeight,1,5);
+    camera.cx=figure.x;
+    camera.cy=figure.y;
+    clampCamera();
+    markDirty();
+    toast('Player focused.');
+  }
+
 
   function draw(){
     raf=0;
