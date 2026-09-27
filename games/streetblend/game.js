@@ -295,9 +295,9 @@ function onAvatarChanged(data){
   }
   if(role==='host' && hostState){
     hostState.players[0].avatar=data;
-    if(connected && !solo) session?.sendTo(1,{type:'sb:avatar',seat:0,data});
-  }else if(role==='guest' && connected){
-    session?.send({type:'sb:avatar',seat:1,data});
+    if(!solo&&session?.connections?.size) session.broadcast({type:'sb:avatar',seat:0,data});
+  }else if(role==='guest'&&connected){
+    session?.send({type:'sb:avatar',seat,data});
   }
 }
 
@@ -345,7 +345,7 @@ function createRoom(){
         setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
         hostState=makeHostState(name,info.name||'Player 2');
         syncSeq=0;
-        guestAckSeq=0;
+        ackBySeat={};
         hostAppliedSeq=0;
         phaseSerial=0;
         $('roomRules').textContent=rulesText(hostState.config);
@@ -358,7 +358,7 @@ function createRoom(){
       $('gameShell').hidden=false;
       showConnectionBanner('Player reconnected','Restoring the authoritative game state before play resumes…');
       const seq=publishHostState();
-      if(hostState.paused) reconnectResumeSeq=seq;
+      if(hostState.paused) reconnectResumeBySeat[info.seat]=seq;
       else hideConnectionBanner();
     },
     onPlayerLeave(info){
