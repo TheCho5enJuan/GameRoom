@@ -14,11 +14,13 @@
     hideSeconds:60,
     seekSeconds:90,
     wrongPenaltyMode:'time',
-    wrongPenaltySeconds:5
+    wrongPenaltySeconds:5,
+    artCategory:'mixed'
   });
 
   function sanitizeSettings(raw={}){
     const rounds=[2,4,6], hide=[30,45,60,75,90], seek=[45,60,90,120,150], penalty=[3,5,10,15];
+    const artCategories=['mixed','impressionism','landscapes','city','interiors','people','water','gardens'];
     return {
       mode:'classic',
       players:2,
@@ -26,7 +28,8 @@
       hideSeconds:hide.includes(Number(raw.hideSeconds))?Number(raw.hideSeconds):DEFAULT_SETTINGS.hideSeconds,
       seekSeconds:seek.includes(Number(raw.seekSeconds))?Number(raw.seekSeconds):DEFAULT_SETTINGS.seekSeconds,
       wrongPenaltyMode:raw.wrongPenaltyMode==='none'?'none':'time',
-      wrongPenaltySeconds:penalty.includes(Number(raw.wrongPenaltySeconds))?Number(raw.wrongPenaltySeconds):DEFAULT_SETTINGS.wrongPenaltySeconds
+      wrongPenaltySeconds:penalty.includes(Number(raw.wrongPenaltySeconds))?Number(raw.wrongPenaltySeconds):DEFAULT_SETTINGS.wrongPenaltySeconds,
+      artCategory:artCategories.includes(raw.artCategory)?raw.artCategory:DEFAULT_SETTINGS.artCategory
     };
   }
 
@@ -42,6 +45,7 @@
 
   let artLibrary = [];
   let artLoadPromise = null;
+  let artLoadCategory = null;
   let sceneDeck = [];
   let lastSceneId = null;
   let session = null;
@@ -134,12 +138,16 @@
     return config.wrongPenaltyMode==='none' ? 'No miss penalty' : '−'+Number(config.wrongPenaltySeconds||0)+'s miss';
   }
 
+  function artCategoryText(config=appSettings){
+    return window.StreetblendArt?.categories?.[config.artCategory] || 'Mixed Collection';
+  }
+
   function rulesText(config=appSettings){
-    return 'Classic · '+config.players+' players · '+config.rounds+' rounds · '+config.hideSeconds+'s hide · '+config.seekSeconds+'s seek · '+penaltyText(config);
+    return 'Classic · '+artCategoryText(config)+' · '+config.players+' players · '+config.rounds+' rounds · '+config.hideSeconds+'s hide · '+config.seekSeconds+'s seek · '+penaltyText(config);
   }
 
   function updateSettingsSummary(){
-    if($('settingsSummary')) $('settingsSummary').textContent='Classic · '+appSettings.players+' players · '+appSettings.rounds+' rounds · '+penaltyText(appSettings);
+    if($('settingsSummary')) $('settingsSummary').textContent=artCategoryText(appSettings)+' · '+appSettings.players+' players · '+appSettings.rounds+' rounds · '+penaltyText(appSettings);
     if($('roomRules') && (!hostState || hostState.phase==='lobby')) $('roomRules').textContent=rulesText(appSettings);
   }
 
@@ -147,6 +155,7 @@
     $('settingMode').value=appSettings.mode;
     $('settingPlayers').value=String(appSettings.players);
     $('settingRounds').value=String(appSettings.rounds);
+    $('settingArtCategory').value=appSettings.artCategory;
     $('settingHideSeconds').value=String(appSettings.hideSeconds);
     $('settingSeekSeconds').value=String(appSettings.seekSeconds);
     $('settingPenaltyMode').value=appSettings.wrongPenaltyMode;
@@ -159,6 +168,7 @@
       mode:$('settingMode').value,
       players:Number($('settingPlayers').value),
       rounds:Number($('settingRounds').value),
+      artCategory:$('settingArtCategory').value,
       hideSeconds:Number($('settingHideSeconds').value),
       seekSeconds:Number($('settingSeekSeconds').value),
       wrongPenaltyMode:$('settingPenaltyMode').value,
@@ -206,12 +216,15 @@
     setTimeout(()=>$('roomCode').focus(),50);
   }
 
-  async function loadArtLibrary(){
-    if(artLoadPromise) return artLoadPromise;
+  async function loadArtLibrary(category=appSettings.artCategory){
+    category=category||'mixed';
+    if(artLoadPromise && artLoadCategory===category) return artLoadPromise;
     if(!window.StreetblendArt?.load) throw new Error('Streetblend artwork module is unavailable.');
-    artLoadPromise=window.StreetblendArt.load((title,detail)=>setNetStatus(title,detail))
+    artLoadCategory=category;
+    artLoadPromise=window.StreetblendArt.load(category,(title,detail)=>setNetStatus(title,detail))
       .then(items=>{
         artLibrary=Array.isArray(items)?items:[];
+        sceneDeck=[];
         return artLibrary;
       });
     return artLoadPromise;
@@ -303,7 +316,7 @@
   }
 
   function createRoom(){
-    loadArtLibrary().catch(()=>{});
+    loadArtLibrary(appSettings.artCategory).catch(()=>{});
     leaveRoom(false);
     role = 'host';
     seat = 0;
@@ -365,7 +378,6 @@
   }
 
   function joinRoom(){
-    loadArtLibrary().catch(()=>{});
     leaveRoom(false);
     const code = net.cleanCode($('roomCode').value);
     if(code.length !== 6){
@@ -443,7 +455,7 @@
 
   async function startMatch(){
     try{
-      await loadArtLibrary();
+      await loadArtLibrary(hostState?.config?.artCategory || appSettings.artCategory);
     }catch(error){
       toast(error.message);
       return;
@@ -460,7 +472,7 @@
   }
 
   async function startSolo(){
-    try{await loadArtLibrary();}catch(error){toast(error.message);return;}
+    try{await loadArtLibrary(appSettings.artCategory);}catch(error){toast(error.message);return;}
     leaveRoom(false);
     solo = true;
     role = 'host';
@@ -1431,6 +1443,12 @@
     }
   }
 
+  function enterPaintAfterSample(){
+    activeTool='paint';
+    setToolButtons();
+    $('hiderHint').textContent='Paint with '+paintColor+' · drag over your player to apply the sampled color.';
+  }
+
   function paintAt(px,py){
     const t=getTransform();
     const p=imageToScreen(figure.x,figure.y);
@@ -1445,10 +1463,13 @@
     const fx=(lx/w+.5)*PAINT_W;
     const fy=(ly/h+.5)*PAINT_H;
     if(fx<0||fy<0||fx>PAINT_W||fy>PAINT_H) return;
+    paintCtx.save();
+    paintCtx.globalAlpha=clamp((Number($('paintOpacity').value)||100)/100,.1,1);
     paintCtx.fillStyle=paintColor;
     paintCtx.beginPath();
     paintCtx.arc(fx,fy,Number($('brushSize').value)||14,0,Math.PI*2);
     paintCtx.fill();
+    paintCtx.restore();
     markDirty();
   }
 
@@ -1658,8 +1679,9 @@
       clearTimeout(sampleHoldTimer);
       sampleHoldTimer=null;
       if(activeSample){
-        sampleColor(screenToImage(p.x,p.y),p,true);
+        const sampled=sampleColor(screenToImage(p.x,p.y),p,true);
         hideSampleLoupe();
+        if(sampled) enterPaintAfterSample();
       }
       sampleHold=null;
     }
@@ -1689,8 +1711,9 @@
           }
         }
       }else if(wasTap && activeTool==='sample' && !activeSample){
-        sampleColor(screenToImage(p.x,p.y),p,false);
+        const sampled=sampleColor(screenToImage(p.x,p.y),p,false);
         hideSampleLoupe();
+        if(sampled) enterPaintAfterSample();
       }
     }else if(state?.phase==='seek' && (state.seekerSeat===seat || solo) && wasTap){
       const n=screenToImage(p.x,p.y);
@@ -1799,7 +1822,10 @@
       $('brushValue').textContent=String(currentSampleDiameter())+'px';
     });
     $('brushValue').textContent=String(currentSampleDiameter())+'px';
-    $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
+    $('paintOpacity').addEventListener('input',()=>{
+      $('opacityValue').textContent=String(Number($('paintOpacity').value)||100)+'%';
+    });
+    $('opacityValue').textContent=String(Number($('paintOpacity').value)||100)+'%';
     const colorPicker=document.createElement('input');
     colorPicker.type='color';
     colorPicker.value=paintColor;
@@ -1813,7 +1839,7 @@
     colorPicker.addEventListener('input',()=>{
       paintColor=colorPicker.value.toUpperCase();
       $('paintSwatch').style.background=paintColor;
-      $('hiderHint').textContent='Selected '+paintColor+'. Choose Paint when you are ready to apply it.';
+      enterPaintAfterSample();
     });
 
     stage.addEventListener('pointerdown',onPointerDown);
