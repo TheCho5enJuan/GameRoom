@@ -3,21 +3,88 @@
 (() => {
   const $ = id => document.getElementById(id);
   const net = window.GameRoomMultiplayer;
-  const ART_QUERIES = [
-    'Paris Street; Rainy Day',
-    'A Sunday on La Grande Jatte',
-    'Arrival of the Normandy Train, Gare Saint-Lazare',
-    "The Child's Bath",
-    'The Bedroom',
-    'Cliff Walk at Pourville',
-    'Water Lilies',
-    'At the Moulin Rouge'
+  const ART_LIBRARY = [
+    {
+      id:20684,
+      title:'Paris Street; Rainy Day',
+      artist:'Gustave Caillebotte',
+      date:'1877',
+      imageId:'f8fd76e9-c396-5678-36ed-6a348c904d27',
+      imageUrl:'https://www.artic.edu/iiif/2/f8fd76e9-c396-5678-36ed-6a348c904d27/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/f8fd76e9-c396-5678-36ed-6a348c904d27/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/20684',
+      publicDomain:true
+    },
+    {
+      id:27992,
+      title:'A Sunday on La Grande Jatte — 1884',
+      artist:'Georges Seurat',
+      date:'1884–86, border added 1888–89',
+      imageId:'2d484387-2509-5e8e-2c43-22f9981972eb',
+      imageUrl:'https://www.artic.edu/iiif/2/2d484387-2509-5e8e-2c43-22f9981972eb/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/2d484387-2509-5e8e-2c43-22f9981972eb/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/27992',
+      publicDomain:true
+    },
+    {
+      id:16568,
+      title:'Water Lilies',
+      artist:'Claude Monet',
+      date:'1906',
+      imageId:'3c27b499-af56-f0d5-93b5-a7f2f1ad5813',
+      imageUrl:'https://www.artic.edu/iiif/2/3c27b499-af56-f0d5-93b5-a7f2f1ad5813/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/3c27b499-af56-f0d5-93b5-a7f2f1ad5813/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/16568',
+      publicDomain:true
+    },
+    {
+      id:14655,
+      title:'Two Sisters (On the Terrace)',
+      artist:'Pierre-Auguste Renoir',
+      date:'1881',
+      imageId:'3a608f55-d76e-fa96-d0b1-0789fbc48f1e',
+      imageUrl:'https://www.artic.edu/iiif/2/3a608f55-d76e-fa96-d0b1-0789fbc48f1e/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/3a608f55-d76e-fa96-d0b1-0789fbc48f1e/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/14655',
+      publicDomain:true
+    },
+    {
+      id:111442,
+      title:"The Child's Bath",
+      artist:'Mary Cassatt',
+      date:'1893',
+      imageId:'3b885ae0-4d46-5fe4-d70a-00474827f02c',
+      imageUrl:'https://www.artic.edu/iiif/2/3b885ae0-4d46-5fe4-d70a-00474827f02c/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/3b885ae0-4d46-5fe4-d70a-00474827f02c/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/111442',
+      publicDomain:true
+    },
+    {
+      id:16571,
+      title:'Arrival of the Normandy Train, Gare Saint-Lazare',
+      artist:'Claude Monet',
+      date:'1877',
+      imageId:'0f1cc0e0-e42e-be16-3f71-2022da38cb93',
+      imageUrl:'https://www.artic.edu/iiif/2/0f1cc0e0-e42e-be16-3f71-2022da38cb93/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/0f1cc0e0-e42e-be16-3f71-2022da38cb93/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/16571',
+      publicDomain:true
+    },
+    {
+      id:28560,
+      title:'The Bedroom',
+      artist:'Vincent van Gogh',
+      date:'1889',
+      imageId:'6644829f-f292-c5c4-a73c-0356a6fdbf0d',
+      imageUrl:'https://www.artic.edu/iiif/2/6644829f-f292-c5c4-a73c-0356a6fdbf0d/full/843,/0/default.jpg',
+      imageLarge:'https://www.artic.edu/iiif/2/6644829f-f292-c5c4-a73c-0356a6fdbf0d/full/1686,/0/default.jpg',
+      sourceUrl:'https://www.artic.edu/artworks/28560',
+      publicDomain:true
+    }
   ];
-  const API = 'https://api.artic.edu/api/v1/artworks/search';
-  const IIIF = 'https://www.artic.edu/iiif/2';
   const PAINT_W = 96;
   const PAINT_H = 180;
-
+  let artLibrary = [];
   let artLibrary = [];
   let artLoading = null;
   let session = null;
@@ -32,6 +99,7 @@
   let sceneBuffer = document.createElement('canvas');
   let sceneBufferCtx = sceneBuffer.getContext('2d', {willReadFrequently:true});
   let sceneToken = 0;
+  let sceneSamplingAvailable = false;
   let dirty = true;
   let raf = 0;
   let timerLoop = null;
@@ -95,58 +163,10 @@
     return String(s||'').toLowerCase().replace(/[—–]/g,'-').replace(/[^a-z0-9]+/g,' ').trim();
   }
 
-  async function fetchArtwork(query){
-    const url = API+'?q='+encodeURIComponent(query)
-      +'&query%5Bterm%5D%5Bis_public_domain%5D=true'
-      +'&limit=8&fields=id,title,artist_display,date_display,image_id,is_public_domain,is_zoomable,thumbnail';
-    const response = await fetch(url, {mode:'cors'});
-    if(!response.ok) throw new Error('Artwork service returned '+response.status);
-    const json = await response.json();
-    const iiifBase = String(json?.config?.iiif_url || IIIF).replace(/\/$/,'');
-    const rows = (json.data||[]).filter(x => x && x.image_id && x.is_public_domain === true && x.is_zoomable !== false);
-    if(!rows.length) return null;
-    const wanted = normalizeTitle(query);
-    const exact = rows.find(x => {
-      const t = normalizeTitle(x.title);
-      return t === wanted || t.startsWith(wanted) || wanted.startsWith(t);
-    });
-    const x = exact || rows[0];
-    return {
-      id:x.id,
-      title:x.title,
-      artist:x.artist_display || 'Unknown artist',
-      date:x.date_display || '',
-      imageId:x.image_id,
-      iiifBase,
-      imageUrls:[
-        iiifBase+'/'+x.image_id+'/full/1686,/0/default.jpg',
-        iiifBase+'/'+x.image_id+'/full/843,/0/default.jpg'
-      ],
-      imageUrl:iiifBase+'/'+x.image_id+'/full/1686,/0/default.jpg',
-      thumbUrl:iiifBase+'/'+x.image_id+'/full/400,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/'+x.id,
-      publicDomain:true
-    };
-  }
-
-  async function loadArtLibrary(force=false){
-    if(artLoading && !force) return artLoading;
-    artLoading = (async () => {
-      setNetStatus('Loading painting library','Finding public-domain Art Institute works…');
-      const settled = await Promise.allSettled(ART_QUERIES.map(fetchArtwork));
-      const seen = new Set();
-      artLibrary = settled
-        .filter(r => r.status === 'fulfilled' && r.value)
-        .map(r => r.value)
-        .filter(a => !seen.has(a.id) && seen.add(a.id));
-      if(!artLibrary.length){
-        setNetStatus('Painting library unavailable','Could not reach the Art Institute Open Access API. Retry by reloading.');
-        throw new Error('No public-domain paintings loaded.');
-      }
-      setNetStatus('Ready',artLibrary.length+' public-domain paintings loaded.');
-      return artLibrary;
-    })();
-    return artLoading;
+  async function loadArtLibrary(){
+    artLibrary = ART_LIBRARY.slice();
+    setNetStatus('Ready',artLibrary.length+' public-domain paintings ready.');
+    return artLibrary;
   }
 
   function playerName(){
@@ -754,52 +774,79 @@
     setTimeout(()=>$('guessFlash').hidden=true,1000);
   }
 
+  function loadImageDirect(url,useCors){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      if(useCors) img.crossOrigin='anonymous';
+      img.onload=()=>resolve(img);
+      img.onerror=()=>reject(new Error('Image request failed.'));
+      img.src=url;
+    });
+  }
+
   async function loadScene(nextScene){
     if(!nextScene) return;
     scene=nextScene;
     const token=++sceneToken;
+    sceneImage=null;
+    sceneSamplingAvailable=false;
     $('artTitle').textContent=scene.title || 'Loading artwork…';
     $('artArtist').textContent=[scene.artist,scene.date].filter(Boolean).join(' · ');
     $('artSource').href=scene.sourceUrl || 'https://www.artic.edu/';
-    showStageMessage('Loading painting','Retrieving the public-domain image…');
+    showStageMessage('Loading painting','Loading the direct museum image…');
 
-    const candidates = Array.from(new Set(
-      (Array.isArray(scene.imageUrls) && scene.imageUrls.length ? scene.imageUrls : [scene.imageUrl])
-        .filter(Boolean)
-    ));
+    const urls=Array.from(new Set([scene.imageUrl,scene.imageLarge].filter(Boolean)));
+    let img=null;
+    let corsLoaded=false;
 
-    let img = null;
-    let lastError = null;
-
-    for(const url of candidates){
+    // Preferred path: CORS-enabled direct IIIF image. This keeps the eyedropper working.
+    for(const url of urls){
       try{
-        const candidate = new Image();
-        candidate.crossOrigin='anonymous';
-        await new Promise((resolve,reject)=>{
-          candidate.onload=()=>resolve();
-          candidate.onerror=()=>reject(new Error('Image request failed.'));
-          candidate.src=url;
-        });
-        if(token!==sceneToken) return;
-        img=candidate;
+        img=await loadImageDirect(url,true);
+        corsLoaded=true;
         break;
-      }catch(error){
-        lastError=error;
+      }catch(_){}
+    }
+
+    // Fallback: load the exact same direct IIIF URL as a normal browser image.
+    // This always favors displaying the painting over failing the round.
+    if(!img){
+      for(const url of urls){
+        try{
+          img=await loadImageDirect(url,false);
+          corsLoaded=false;
+          break;
+        }catch(_){}
       }
     }
 
+    if(token!==sceneToken) return;
+
     if(!img){
-      showStageMessage('Painting unavailable','The museum image service did not return this painting. Start another round or reload.');
+      showStageMessage('Painting unavailable','This direct museum image could not be loaded. Try another round or reload.');
       toast('Could not load painting image.');
-      console.warn('Streetblend IIIF image failed', {scene, error:lastError});
       return;
     }
 
     sceneImage=img;
+    sceneSamplingAvailable=corsLoaded;
+
     sceneBuffer.width=img.naturalWidth;
     sceneBuffer.height=img.naturalHeight;
     sceneBufferCtx.clearRect(0,0,sceneBuffer.width,sceneBuffer.height);
-    sceneBufferCtx.drawImage(img,0,0);
+    try{
+      sceneBufferCtx.drawImage(img,0,0);
+      if(corsLoaded){
+        // Verify that pixel access is actually allowed before advertising sampling.
+        sceneBufferCtx.getImageData(0,0,1,1);
+      }
+    }catch(_){
+      sceneSamplingAvailable=false;
+    }
+
+    $('hiderHint').textContent=sceneSamplingAvailable
+      ? 'Tap the painting to position your figure. Use Sample, then Paint to camouflage it.'
+      : 'Tap to position your figure. Direct image loaded; choose paint colors manually if sampling is blocked.';
     hideStageMessage();
     markDirty();
   }
@@ -993,7 +1040,8 @@
       $('hiderHint').textContent='Color sampled. Paint directly over your figure.';
       toast('Color sampled.');
     }catch(_){
-      toast('This image cannot be sampled on this browser.');
+      sceneSamplingAvailable=false;
+      toast('Color sampling is blocked for this image. Tap the color swatch to choose a paint color.');
     }
   }
 
@@ -1191,6 +1239,22 @@
     $('figureScale').addEventListener('input',updateFromControls);
     $('figureRotation').addEventListener('input',updateFromControls);
     $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
+    const colorPicker=document.createElement('input');
+    colorPicker.type='color';
+    colorPicker.value=paintColor;
+    colorPicker.style.position='fixed';
+    colorPicker.style.left='-9999px';
+    colorPicker.setAttribute('aria-label','Choose paint color');
+    document.body.appendChild(colorPicker);
+    $('paintSwatch').style.cursor='pointer';
+    $('paintSwatch').title='Tap to choose a paint color';
+    $('paintSwatch').addEventListener('click',()=>colorPicker.click());
+    colorPicker.addEventListener('input',()=>{
+      paintColor=colorPicker.value;
+      $('paintSwatch').style.background=paintColor;
+      activeTool='paint';
+      setToolButtons();
+    });
 
     $('zoom').addEventListener('input',()=>{camera.zoom=Number($('zoom').value)||1;clampCamera();markDirty();});
     $('zoomOut').addEventListener('click',()=>{camera.zoom=clamp(camera.zoom-.35,1,5);$('zoom').value=String(camera.zoom);clampCamera();markDirty();});
