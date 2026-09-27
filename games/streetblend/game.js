@@ -646,9 +646,13 @@ function publishHostState(){
   return Number(snapshot.syncSeq)||0;
 }
 
-function resendHostState(){
-  const snapshot=sendGuestPhase(true);
-  if(snapshot && role==='host') markDirty();
+function resendHostState(targetSeat=null){
+  if(!hostState||role!=='host'||solo||!session) return;
+  const state=publicState(true);
+  state.syncSeq=syncSeq;
+  if(targetSeat===null) session.broadcast({type:'sb:state',state});
+  else session.sendTo(targetSeat,{type:'sb:state',state});
+  markDirty();
 }
 
 function requestResync(){
@@ -745,7 +749,7 @@ function handleHostMessage(message,meta){
     return;
   }
   if(message.type==='sb:resync'){
-    resendHostState();
+    resendHostState(sender);
     return;
   }
   if(message.type==='sb:avatar'){
@@ -764,7 +768,7 @@ function handleHostMessage(message,meta){
   if(message.actionId&&seenActionIds.has(actionKey)) return;
   if(message.actionId) seenActionIds.add(actionKey);
   if(!flow.actionAllowed(hostState,sender,action,message)){
-    resendHostState();
+    resendHostState(sender);
     return;
   }
   if(action==='phase-ready'){
