@@ -409,9 +409,13 @@ function joinRoom(){
 function makeHostState(name0,name1){
   return {
     players:[{name:name0,score:0,avatar:localAvatar},{name:name1,score:0,avatar:null}],
+    activeSeats:[0,1],
     config:{...appSettings},
     round:0,
-    phase:'lobby',
+    phase:PHASES.LOBBY,
+    phaseToken:'lobby:0',
+    readyBySeat:{},
+    syncSeq:0,
     scene:null,
     hiderSeat:0,
     seekerSeat:1,
@@ -420,8 +424,10 @@ function makeHostState(name0,name1){
     lastDraft:null,
     guessMarks:[],
     deadline:0,
+    timerStarted:false,
     result:null,
-    paused:false
+    paused:false,
+    pauseRemaining:0
   };
 }
 
@@ -451,6 +457,7 @@ async function startSolo(){
   seat = 0;
   connected = true;
   hostState=makeHostState(playerName(),'Practice');
+  hostState.activeSeats=[0];
   resetSceneDeck();
   beginRound(0);
 }
