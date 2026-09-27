@@ -401,6 +401,20 @@
         artLibrary=mergeArtworks(artLibrary,broad.flatMap(result=>result.status==='fulfilled'?result.value:[]));
       }
 
+      if(artLibrary.length<50){
+        const masters=await Promise.allSettled([
+          'Claude Monet painting',
+          'Pierre-Auguste Renoir painting',
+          'Vincent van Gogh painting',
+          'Camille Pissarro painting',
+          'Alfred Sisley painting',
+          'Edgar Degas painting',
+          'Mary Cassatt painting',
+          'J. M. W. Turner painting'
+        ].map(fetchCommonsPaintings));
+        artLibrary=mergeArtworks(artLibrary,masters.flatMap(result=>result.status==='fulfilled'?result.value:[]));
+      }
+
       if(artLibrary.length>=50) writeArtCache(artLibrary);
       setNetStatus('Ready',artLibrary.length+' public-domain paintings ready.');
       return artLibrary;
@@ -1464,7 +1478,8 @@
     const p=imageToScreen(figure.x,figure.y);
     if(!t || !p) return;
     const h=figure.scale*t.ih*t.scale;
-    const w=h*(PAINT_W/PAINT_H);
+    const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
+    const w=h*(PAINT_W/PAINT_H)*widthFactor;
     const dx=px-p.x,dy=py-p.y;
     const a=-figure.rotation*Math.PI/180;
     const lx=dx*Math.cos(a)-dy*Math.sin(a);
