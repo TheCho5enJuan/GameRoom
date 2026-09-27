@@ -491,7 +491,7 @@ const remaining=hostState.paused
 ? Math.max(0,hostState.deadline-Date.now())
 : null;
 const state={
-players:hostState.players,
+players:hostState.players.map(p=>includeFigure?{...p}:{name:p.name,score:p.score}),
 activeSeats:hostState.activeSeats,
 config:hostState.config,
 round:hostState.round,
@@ -518,7 +518,7 @@ if(!repeat) syncSeq++;
 hostState.syncSeq=syncSeq;
 const state=publicState(repeat);
 if(role==='host'&&!solo&&session?.connections?.size) session.broadcast({type:'sb:state',state});
-return state;
+return publicState(true);
 }
 function publishHostState(){
 const snapshot=sendGuestPhase(false)||publicState();
@@ -675,6 +675,9 @@ processGuess(message.x,message.y);
 if(message.actionId)session?.sendTo(sender,{type:'sb:action-ack',actionId:message.actionId});
 }
 function queueRemoteState(state){
+if(remoteState?.players&&state?.players){
+state={...state,players:state.players.map((p,i)=>({...p,avatar:p.avatar||remoteState.players[i]?.avatar||null}))};
+}
 if(!state?.figure&&remoteState?.figure&&Number(state?.round)===Number(remoteState?.round)){
 state={...state,figure:remoteState.figure};
 }
