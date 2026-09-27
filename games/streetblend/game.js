@@ -306,26 +306,28 @@ function onAvatarChanged(data){
 function createRoom(){
   loadArtLibrary(appSettings.artCategory).catch(()=>{});
   leaveRoom(false);
-  role = 'host';
-  seat = 0;
-  connected = false;
-  solo = false;
-  const name = playerName();
+  role='host';
+  seat=0;
+  connected=false;
+  solo=false;
+  const name=playerName();
   $('startMenu').hidden=true;
   $('joinPane').hidden=true;
   $('roomBox').hidden=true;
   $('connectedBox').hidden=true;
+  hideConnectionBanner();
   setNetStatus('Creating room','Connecting to the signaling service…');
 
-  session = net.host({
+  session=net.host({
     gameKey:'streetblend',
     maxPlayers:appSettings.players,
     onStatus(info){
-      if(info.state === 'retrying'){
-        setNetStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…');
-      }else if(info.state === 'waiting' && !connected){
+      if(info.state==='retrying'){
+        if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Reconnecting…','The host connection is recovering. Game time is paused.');
+        else setNetStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…');
+      }else if(info.state==='waiting'&&!connected&&(!hostState||hostState.phase===PHASES.LOBBY)){
         history.replaceState({},'',inviteUrl(session.code));
-        $('roomCodeDisplay').textContent = session.code;
+        $('roomCodeDisplay').textContent=session.code;
         $('roomBox').hidden=false;
         $('startMenu').hidden=true;
         $('joinPane').hidden=true;
@@ -333,50 +335,59 @@ function createRoom(){
       }
     },
     onPlayerJoin(info){
-      connected = true;
-      $('roomBox').hidden = true;
-      $('connectedBox').hidden = false;
-      $('p0Lobby').textContent = name;
-      $('p1Lobby').textContent = info.name || 'Player 2';
-      $('startMatch').hidden = false;
-      $('guestWait').hidden = true;
-      setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
-      if(!hostState || hostState.phase==='lobby'){
+      connected=true;
+      if(!hostState||hostState.phase===PHASES.LOBBY){
+        hideConnectionBanner();
+        $('roomBox').hidden=true;
+        $('connectedBox').hidden=false;
+        $('p0Lobby').textContent=name;
+        $('p1Lobby').textContent=info.name||'Player 2';
+        $('startMatch').hidden=false;
+        $('guestWait').hidden=true;
+        setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
         hostState=makeHostState(name,info.name||'Player 2');
         syncSeq=0;
         guestAckSeq=0;
+        hostAppliedSeq=0;
+        phaseSerial=0;
         $('roomRules').textContent=rulesText(hostState.config);
-        session.sendTo(1,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
-      }else{
-        hostState.players[1].name=info.name||hostState.players[1].name||'Player 2';
-        if(hostState.paused) resumeMatch();
-        sendGuestPhase(true);
+        session.sendTo(info.seat,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
+        return;
       }
+
+      hostState.players[info.seat].name=info.name||hostState.players[info.seat]?.name||('Player '+(info.seat+1));
+      $('connectedBox').hidden=true;
+      $('gameShell').hidden=false;
+      showConnectionBanner('Player reconnected','Restoring the authoritative game state before play resumes…');
+      const seq=publishHostState();
+      if(hostState.paused) reconnectResumeSeq=seq;
+      else hideConnectionBanner();
     },
-    onPlayerLeave(){
-      connected = false;
-      if(hostState && hostState.phase !== 'lobby') pauseMatch('Player 2 disconnected.');
-      $('connectedBox').hidden=false;
-      $('roomBox').hidden=true;
-      $('startMenu').hidden=true;
-      $('joinPane').hidden=true;
+    onPlayerLeave(info){
+      connected=false;
+      if(hostState&&hostState.phase!==PHASES.LOBBY){
+        pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.');
+        showConnectionBanner('Connection lost','Game time is paused. Waiting for the other player to reconnect…');
+        $('gameShell').hidden=false;
+        return;
+      }
+      $('connectedBox').hidden=true;
+      $('roomBox').hidden=false;
       $('guestWait').hidden=false;
-      $('guestWait').textContent='Player 2 disconnected. Waiting for them to reconnect…';
-      setNetStatus('Player disconnected','Waiting for Player 2 to reconnect…');
+      setNetStatus('Player disconnected','Waiting for a player to reconnect…');
     },
-    onMessage(message,meta){
-      handleHostMessage(message,meta);
-    },
+    onMessage(message,meta){handleHostMessage(message,meta);},
     onError(error){
-      setNetStatus('Connection error',error?.type || error?.message || 'Could not create room.');
+      if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Connection problem',error?.type||error?.message||'Recovering connection…');
+      else setNetStatus('Connection error',error?.type||error?.message||'Could not create room.');
     }
   });
 }
 
 function joinRoom(){
   leaveRoom(false);
-  const code = net.cleanCode($('roomCode').value);
-  if(code.length !== 6){
+  const code=net.cleanCode($('roomCode').value);
+  if(code.length!==6){
     setNetStatus('Enter a room code','Room codes contain six characters.');
     return;
   }
@@ -388,44 +399,62 @@ function joinRoom(){
   $('joinPane').hidden=true;
   $('roomBox').hidden=true;
   $('connectedBox').hidden=true;
+  hideConnectionBanner();
   setNetStatus('Connecting','Looking for room '+code+'…');
 
-  session = net.join({
+  session=net.join({
     gameKey:'streetblend',
     code,
     name:playerName(),
+    playerId:stablePlayerId(code),
+    autoReconnect:true,
     maxPlayers:2,
+    onWelcome(info){seat=Number(info.seat)||1;},
     onStatus(info){
-      if(info.state === 'retrying') setNetStatus('Reconnecting','Signaling retry '+(info.attempt||1)+'…');
-      else if(info.state === 'connected'){
-        connected = true;
-        $('connectedBox').hidden=false;
-        $('startMenu').hidden=true;
-        $('joinPane').hidden=true;
-        $('startMatch').hidden=true;
-        $('guestWait').hidden=false;
-        $('guestWait').textContent='Waiting for the host to start the match…';
-        $('p0Lobby').textContent='Host';
-        $('p1Lobby').textContent=playerName();
-        $('roomRules').textContent='Host settings apply';
-        setNetStatus('Connected','Waiting for the host to start.');
-      }else if(info.state === 'disconnected'){
+      if(info.state==='retrying'){
+        connected=false;
+        if(remoteState){
+          showConnectionBanner('Reconnecting…','Game time is paused while the connection recovers.');
+          $('gameShell').hidden=false;
+        }else setNetStatus('Reconnecting','Connection retry '+(info.attempt||1)+'…');
+      }else if(info.state==='connected'){
+        connected=true;
+        seat=Number(info.seat??seat);
+        if(remoteState){
+          $('connectedBox').hidden=true;
+          $('gameShell').hidden=false;
+          showConnectionBanner('Connected','Synchronizing the latest game state…');
+          requestResync();
+        }else{
+          hideConnectionBanner();
+          $('connectedBox').hidden=false;
+          $('startMenu').hidden=true;
+          $('joinPane').hidden=true;
+          $('startMatch').hidden=true;
+          $('guestWait').hidden=false;
+          $('guestWait').textContent='Waiting for the host to start the match…';
+          $('p0Lobby').textContent='Host';
+          $('p1Lobby').textContent=playerName();
+          $('roomRules').textContent='Host settings apply';
+          setNetStatus('Connected','Waiting for the host to start.');
+        }
+      }else if(info.state==='disconnected'){
+        connected=false;
+        if(remoteState){
+          showConnectionBanner('Connection lost','Trying to reconnect automatically. Game time is paused.');
+          $('gameShell').hidden=false;
+        }else setNetStatus('Disconnected','Trying to reconnect to the host…');
+      }else if(info.state==='full'){
         connected=false;
         $('connectedBox').hidden=true;
         $('joinPane').hidden=false;
-        setNetStatus('Disconnected','The host connection closed.');
-        if(!document.hidden) toast('Host disconnected.');
-      }else if(info.state === 'full'){
-        $('connectedBox').hidden=true;
-        $('joinPane').hidden=false;
-        setNetStatus('Room full','This Streetblend room already has two players.');
+        setNetStatus('Room full','This Streetblend room already has all player seats occupied.');
       }
     },
-    onMessage(message){
-      handleGuestMessage(message);
-    },
+    onMessage(message){handleGuestMessage(message);},
     onError(error){
-      setNetStatus('Connection error',error?.type || error?.message || 'Could not join room.');
+      if(remoteState) showConnectionBanner('Connection problem',error?.type||error?.message||'Trying to recover…');
+      else setNetStatus('Connection error',error?.type||error?.message||'Could not join room.');
     }
   });
 }
