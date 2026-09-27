@@ -194,6 +194,11 @@
           <div class="match-player right" id="p1Match"><img class="match-avatar" id="p1AvatarMatch" alt=""><span>Player 2</span><b>0</b></div>
         </div>
 
+        <div class="connection-banner" id="connectionBanner" hidden>
+          <strong id="connectionBannerTitle">Reconnecting…</strong>
+          <span id="connectionBannerText">Game time is paused while the connection recovers.</span>
+        </div>
+
         <section class="art-card">
           <div class="art-meta">
             <div>
@@ -318,8 +323,10 @@
   </div>
 
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
-  <script src="../../shared/multiplayer-room.js?v=2"></script>
+  <script src="../../shared/multiplayer-room.js?v=3"></script>
   <script src="./art-library.js?v=1.8.0"></script>
+  <script src="./settings.js?v=1.9.0"></script>
+  <script src="./flow.js?v=1.9.0"></script>
   <script src="./avatar-studio.js?v=1.8.0"></script>
   <script src="./sample-utils.js?v=1.8.0"></script>
   <script src="./game.js?v=1.8.0"></script>
