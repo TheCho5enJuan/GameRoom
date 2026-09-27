@@ -142,8 +142,17 @@ Streetblend v1.6 received a full control/visual pass.
 - Focus Player and Fit Artwork were moved from the control panel onto the artwork as small floating view controls.
 - Transform handles and the player selection box are visible only in Place mode, keeping Sample and Paint visually clean.
 - The player is clamped fully inside the source artwork so a hiding position cannot be moved partly off-canvas.
-- The paint-color swatch is now a real button, and Reset White was renamed Clear Paint.
+- The paint-color swatch is a real button for manual color selection.
 - Brush size now displays its live pixel value because the same value controls eyedropper aggregation.
 - Commons titles/artist/year metadata are sanitized before display, and the artwork cache version was advanced so old malformed metadata is discarded.
 - Obsolete lobby CSS was removed.
 - Streetblend is included in the repository validation suite, including a control-ID integrity check for missing/duplicate DOM IDs.
+
+## v1.7 painting workflow and artwork categories
+
+- Releasing a sampled color now automatically switches the Hider into Paint mode.
+- Manual color selection also switches directly into Paint mode.
+- Paint opacity is adjustable from 10% to 100% in 5% steps.
+- The former Reset White / Clear Paint control was removed.
+- Host Settings now include an Artwork category. Available categories are Mixed Collection, Impressionism, Landscapes, City & Street, Interiors, People & Markets, Water & Coast, and Gardens & Parks.
+- Each category builds and caches its own randomized public-domain Wikimedia Commons pool. Mixed Collection continues to use the curated seed paintings as fallbacks.
