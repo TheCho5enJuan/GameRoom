@@ -118,7 +118,27 @@
   }
 
   let appSettings=loadSavedSettings();
+
+  const ART_CACHE_KEY='streetblend.commons.catalog.v1';
+  const ART_CACHE_MAX_AGE=7*24*60*60*1000;
+  const COMMONS_SEARCHES=[
+    'painting landscape',
+    'painting city street',
+    'painting interior room',
+    'painting crowd market',
+    'painting harbor river',
+    'painting garden park',
+    'painting village architecture',
+    'painting railway station',
+    'painting beach coast',
+    'painting forest',
+    'painting festival',
+    'painting cafe'
+  ];
   let artLibrary = [];
+  let artLoadPromise = null;
+  let sceneDeck = [];
+  let lastSceneId = null;
   let session = null;
   let role = 'local';
   let seat = 0;
@@ -165,7 +185,7 @@
   let lastUiPhaseKey = '';
 
   function defaultFigure(){
-    return {x:.5,y:.58,scale:.11,rotation:0,pose:'stand',paintData:null};
+    return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
   }
 
   function resetPaint(){
@@ -275,10 +295,117 @@
     setTimeout(()=>$('roomCode').focus(),50);
   }
 
+  function plainText(value){
+    const box=document.createElement('div');
+    box.innerHTML=String(value||'');
+    return (box.textContent||box.innerText||'').replace(/\s+/g,' ').trim();
+  }
+
+  function isPublicDomainMetadata(meta){
+    const license=plainText(meta?.LicenseShortName?.value||meta?.License?.value||meta?.UsageTerms?.value).toLowerCase();
+    return license.includes('public domain') || license==='cc0' || license.startsWith('pd-') || license.includes('pd-old') || license.includes('pd-art');
+  }
+
+  async function fetchCommonsPaintings(query){
+    const url=new URL('https://commons.wikimedia.org/w/api.php');
+    url.searchParams.set('action','query');
+    url.searchParams.set('format','json');
+    url.searchParams.set('origin','*');
+    url.searchParams.set('generator','search');
+    url.searchParams.set('gsrnamespace','6');
+    url.searchParams.set('gsrlimit','40');
+    url.searchParams.set('gsrsearch',query);
+    url.searchParams.set('prop','imageinfo');
+    url.searchParams.set('iiprop','url|mime|size|extmetadata');
+    url.searchParams.set('iiurlwidth','1600');
+
+    const response=await fetch(url.toString(),{mode:'cors'});
+    if(!response.ok) throw new Error('Commons catalog returned '+response.status);
+    const json=await response.json();
+    const pages=Object.values(json?.query?.pages||{});
+    return pages.map(page=>{
+      const info=page?.imageinfo?.[0];
+      const meta=info?.extmetadata||{};
+      if(!info || !isPublicDomainMetadata(meta)) return null;
+      if(!String(info.mime||'').startsWith('image/')) return null;
+      if((Number(info.width)||0)<900 || (Number(info.height)||0)<650) return null;
+      const imageUrl=info.thumburl||info.url;
+      if(!imageUrl) return null;
+      const rawTitle=plainText(meta.ObjectName?.value)||String(page.title||'').replace(/^File:/,'').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+      return {
+        id:'commons-'+page.pageid,
+        title:rawTitle||'Untitled',
+        artist:plainText(meta.Artist?.value)||'Unknown artist',
+        date:plainText(meta.DateTimeOriginal?.value||meta.DateTime?.value)||'',
+        imageUrl,
+        imageLarge:imageUrl,
+        sourceUrl:info.descriptionurl||('https://commons.wikimedia.org/?curid='+page.pageid),
+        publicDomain:true
+      };
+    }).filter(Boolean);
+  }
+
+  function mergeArtworks(...groups){
+    const out=[];
+    const seen=new Set();
+    for(const group of groups){
+      for(const art of group||[]){
+        const key=String(art.sourceUrl||art.imageUrl||art.id);
+        if(!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(art);
+      }
+    }
+    return out;
+  }
+
+  function readArtCache(){
+    try{
+      const cached=JSON.parse(localStorage.getItem(ART_CACHE_KEY)||'null');
+      if(!cached || !Array.isArray(cached.items) || cached.items.length<50) return null;
+      if(Date.now()-Number(cached.savedAt||0)>ART_CACHE_MAX_AGE) return null;
+      return cached.items;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function writeArtCache(items){
+    try{
+      localStorage.setItem(ART_CACHE_KEY,JSON.stringify({savedAt:Date.now(),items:items.slice(0,120)}));
+    }catch(_){}
+  }
+
   async function loadArtLibrary(){
-    artLibrary = ART_LIBRARY.slice();
-    setNetStatus('Ready',artLibrary.length+' public-domain paintings ready.');
-    return artLibrary;
+    if(artLoadPromise) return artLoadPromise;
+    artLoadPromise=(async()=>{
+      const cached=readArtCache();
+      if(cached){
+        artLibrary=mergeArtworks(ART_LIBRARY,cached);
+        setNetStatus('Ready',artLibrary.length+' public-domain paintings ready.');
+        return artLibrary;
+      }
+
+      setNetStatus('Loading art library','Building a public-domain painting catalog…');
+      const batches=await Promise.allSettled(COMMONS_SEARCHES.map(fetchCommonsPaintings));
+      const discovered=batches.flatMap(result=>result.status==='fulfilled'?result.value:[]);
+      artLibrary=mergeArtworks(ART_LIBRARY,discovered);
+
+      if(artLibrary.length<50){
+        const broad=await Promise.allSettled([
+          fetchCommonsPaintings('oil painting'),
+          fetchCommonsPaintings('impressionist painting'),
+          fetchCommonsPaintings('genre painting'),
+          fetchCommonsPaintings('historical painting')
+        ]);
+        artLibrary=mergeArtworks(artLibrary,broad.flatMap(result=>result.status==='fulfilled'?result.value:[]));
+      }
+
+      if(artLibrary.length>=50) writeArtCache(artLibrary);
+      setNetStatus('Ready',artLibrary.length+' public-domain paintings ready.');
+      return artLibrary;
+    })();
+    return artLoadPromise;
   }
 
   function playerName(){
@@ -482,6 +609,7 @@
     if(role === 'host'){
       if(!connected || !hostState) return;
       hostState.players[0].name = playerName();
+      resetSceneDeck();
       beginRound(0);
     }else if(solo){
       if(!hostState) hostState = makeHostState(playerName(),'Practice Seeker');
@@ -497,13 +625,41 @@
     seat = 0;
     connected = true;
     hostState=makeHostState(playerName(),'Practice');
+    resetSceneDeck();
     beginRound(0);
   }
 
-  function shuffledScene(round){
+  function randomUnit(){
+    if(window.crypto?.getRandomValues){
+      const data=new Uint32Array(1);
+      window.crypto.getRandomValues(data);
+      return data[0]/4294967296;
+    }
+    return Math.random();
+  }
+
+  function secureShuffle(items){
+    const list=items.slice();
+    for(let i=list.length-1;i>0;i--){
+      const j=Math.floor(randomUnit()*(i+1));
+      [list[i],list[j]]=[list[j],list[i]];
+    }
+    return list;
+  }
+
+  function resetSceneDeck(){
+    sceneDeck=secureShuffle(artLibrary);
+    if(sceneDeck.length>1 && lastSceneId!=null && String(sceneDeck[0].id)===String(lastSceneId)){
+      [sceneDeck[0],sceneDeck[1]]=[sceneDeck[1],sceneDeck[0]];
+    }
+  }
+
+  function shuffledScene(){
     if(!artLibrary.length) return null;
-    const index = (round * 3 + Math.floor(Math.random()*artLibrary.length)) % artLibrary.length;
-    return artLibrary[index];
+    if(!sceneDeck.length) resetSceneDeck();
+    const selected=sceneDeck.shift()||artLibrary[0];
+    lastSceneId=selected?.id??null;
+    return selected;
   }
 
   function beginRound(roundIndex){
@@ -512,7 +668,7 @@
     hostState.phase = 'hide';
     hostState.hiderSeat = roundIndex % 2;
     hostState.seekerSeat = 1 - hostState.hiderSeat;
-    hostState.scene = shuffledScene(roundIndex);
+    hostState.scene = shuffledScene();
     hostState.wrong = 0;
     hostState.figure = null;
     hostState.lastDraft = null;
@@ -655,16 +811,17 @@
     return {
       x:clamp(Number(f.x)||.5,.02,.98),
       y:clamp(Number(f.y)||.5,.02,.98),
-      scale:clamp(Number(f.scale)||.11,.08,.18),
+      scale:clamp(Number(f.scale)||.14,.10,.24),
       rotation:clamp(Number(f.rotation)||0,-70,70),
       pose:['stand','lean','crouch','wide'].includes(f.pose)?f.pose:'stand',
+      build:['slim','regular','bold'].includes(f.build)?f.build:'regular',
       paintData:typeof f.paintData === 'string' && f.paintData.length < 150000 ? f.paintData : null
     };
   }
 
   function exportFigure(){
     return {
-      x:figure.x,y:figure.y,scale:figure.scale,rotation:figure.rotation,pose:figure.pose,
+      x:figure.x,y:figure.y,scale:figure.scale,rotation:figure.rotation,pose:figure.pose,build:figure.build,
       paintData:paintCanvas.toDataURL('image/png')
     };
   }
@@ -713,8 +870,9 @@
     x=clamp(Number(x)||0,0,1); y=clamp(Number(y)||0,0,1);
     const f=hostState.figure;
     const ratio = sceneImage?.naturalWidth && sceneImage?.naturalHeight ? sceneImage.naturalHeight/sceneImage.naturalWidth : .75;
-    const rx = Math.max(.018,f.scale*ratio*.42);
-    const ry = Math.max(.025,f.scale*.52);
+    const buildWidth=f.build==='bold'?1.28:(f.build==='slim'?.90:1.08);
+    const rx = Math.max(.022,f.scale*ratio*.42*buildWidth);
+    const ry = Math.max(.03,f.scale*.52);
     const dx=(x-f.x)/rx, dy=(y-f.y)/ry;
     const hit=dx*dx+dy*dy <= 1.15;
 
@@ -906,6 +1064,7 @@
     paintColor='#ffffff';
     $('paintSwatch').style.background=paintColor;
     document.querySelectorAll('.pose').forEach(b=>b.classList.toggle('active',b.dataset.pose==='stand'));
+    document.querySelectorAll('.build').forEach(b=>b.classList.toggle('active',b.dataset.build==='regular'));
     if(role==='host') hostState.lastDraft=exportFigure();
   }
 
@@ -1133,7 +1292,7 @@
     figureCtx.globalCompositeOperation='source-over';
     figureCtx.fillStyle='#fff';
     figureCtx.strokeStyle='#fff';
-    drawSilhouette(figureCtx,figure.pose,PAINT_W,PAINT_H);
+    drawSilhouette(figureCtx,figure.pose,PAINT_W,PAINT_H,figure.build);
 
     // Then keep the paint only where that silhouette exists.
     figureCtx.globalCompositeOperation='source-in';
@@ -1142,23 +1301,24 @@
     figureCtx.globalCompositeOperation='source-over';
   }
 
-  function drawSilhouette(c,pose,w,h){
+  function drawSilhouette(c,pose,w,h,build='regular'){
     c.save();
     c.lineCap='round';
     c.lineJoin='round';
     c.strokeStyle='#fff';
     c.fillStyle='#fff';
+    const thickness=build==='bold'?1.55:(build==='slim'?.82:1.15);
     const headY=pose==='crouch'?38:24;
-    c.beginPath();c.arc(w*.5,headY,w*.12,0,Math.PI*2);c.fill();
+    c.beginPath();c.arc(w*.5,headY,w*.12*Math.sqrt(thickness),0,Math.PI*2);c.fill();
 
-    c.lineWidth=w*.17;
+    c.lineWidth=w*.17*thickness;
     c.beginPath();
     if(pose==='lean'){c.moveTo(w*.48,headY+w*.13);c.lineTo(w*.61,h*.55);}
     else if(pose==='crouch'){c.moveTo(w*.5,headY+w*.12);c.lineTo(w*.47,h*.48);}
     else {c.moveTo(w*.5,headY+w*.12);c.lineTo(w*.5,h*.58);}
     c.stroke();
 
-    c.lineWidth=w*.10;
+    c.lineWidth=w*.10*thickness;
     c.beginPath();
     if(pose==='wide'){
       c.moveTo(w*.48,h*.25);c.lineTo(w*.18,h*.43);
@@ -1190,7 +1350,8 @@
     const p=imageToScreen(figure.x,figure.y);
     if(!t || !p) return null;
     const h=figure.scale*t.ih*t.scale;
-    const w=h*(PAINT_W/PAINT_H);
+    const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
+    const w=h*(PAINT_W/PAINT_H)*widthFactor;
     return {t,p,w,h};
   }
 
@@ -1210,7 +1371,8 @@
     const p=imageToScreen(figure.x,figure.y);
     if(!p) return;
     const h=figure.scale*t.ih*t.scale;
-    const w=h*(PAINT_W/PAINT_H);
+    const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
+    const w=h*(PAINT_W/PAINT_H)*widthFactor;
     const dpr=window.devicePixelRatio||1;
 
     ctx.save();
@@ -1384,7 +1546,7 @@
       if(figureTransform){
         const ratio=distance(pts[0],pts[1])/Math.max(1,figureTransform.distance);
         const angleDelta=(angleBetween(pts[0],pts[1])-figureTransform.angle)*180/Math.PI;
-        figure.scale=clamp(figureTransform.scale*ratio,.08,.18);
+        figure.scale=clamp(figureTransform.scale*ratio,.10,.24);
         figure.rotation=clamp(figureTransform.rotation+normalizeAngle(angleDelta),-70,70);
         markDirty();
       }else if(pinchStart){
@@ -1548,6 +1710,13 @@
       figure.pose=b.dataset.pose;
       document.querySelectorAll('.pose').forEach(x=>x.classList.toggle('active',x===b));
       markDirty();sendDraft();
+    }));
+
+    document.querySelectorAll('.build').forEach(b=>b.addEventListener('click',()=>{
+      figure.build=b.dataset.build;
+      document.querySelectorAll('.build').forEach(x=>x.classList.toggle('active',x===b));
+      markDirty();
+      sendDraft();
     }));
 
     $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
