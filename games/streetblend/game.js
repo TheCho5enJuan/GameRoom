@@ -1013,7 +1013,7 @@
 
   function sendGuess(norm){
     const state=getState();
-    if(!state || state.phase!=='seek' || state.seekerSeat!==seat) return;
+    if(!state || state.phase!=='seek' || (state.seekerSeat!==seat && !solo)) return;
     guessArmed=false;
     $('guessMode').classList.remove('armed');
     $('guessMode').textContent='Make a Guess';
