@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -10,7 +10,7 @@
     "remote": true,
     "soloPractice": true
   },
-  "description": "Two-player camouflage hide-and-seek using public-domain paintings from the Art Institute of Chicago Open Access collection.",
+  "description": "Host-authoritative remote camouflage hide-and-seek using randomized public-domain paintings from Wikimedia Commons.",
   "entry": "index.html",
   "artwork": {
     "provider": "Wikimedia Commons",
@@ -25,21 +25,19 @@
     "signaling": "PeerJS Cloud",
     "room_codes": true,
     "invite_links": true,
-    "host_authoritative": true
+    "host_authoritative": true,
+    "automatic_guest_reconnect": true,
+    "stable_seat_identity": true,
+    "host_migration": false
   },
-  "loading_behavior": "Round timer starts only after the scene image has loaded; remote matches wait for both players to report scene readiness.",
+  "loading_behavior": "Each round uses explicit HIDE_PREPARE and SEEK_PREPARE barriers. Hiding waits for the shared artwork to render on required seats; seeking waits for the final painted figure to render on all active Seeker seats. Timers start only after the active role screens acknowledge the authoritative phase.",
   "hider_controls": {
     "placement": "Drag player body",
     "resize_rotate": "Visible interactive SIZE and ROTATE handles plus two-finger pinch/twist",
     "view": "Focus Player and Fit Artwork buttons",
     "sampling": "Tap to sample or long-press and slide for continuous magnified eyedropper sampling"
   },
-  "seeker_controls": "Quick tap guesses, drag pans, pinch zooms. Wrong guesses remove 5 seconds and do not directly subtract score points.",
-  "figure_scale": {
-    "min": 0.08,
-    "default": 0.11,
-    "max": 0.18
-  },
+  "seeker_controls": "Quick tap guesses, drag pans, pinch zooms. Wrong-guess time penalties are configurable by the host.",
   "settings": {
     "persistent": true,
     "storage": "localStorage",
@@ -50,7 +48,8 @@
       "hideSeconds",
       "seekSeconds",
       "wrongPenaltyMode",
-      "wrongPenaltySeconds"
+      "wrongPenaltySeconds",
+      "artCategory"
     ],
     "future_ready": [
       "gameMode",
@@ -58,8 +57,8 @@
     ]
   },
   "controls": {
-    "hider": "Drag figure to place; pinch figure to resize/rotate; drag background to pan; pinch background to zoom; Sample/Paint/Pose/Lock buttons.",
-    "seeker": "Quick tap guesses; drag pans; pinch zooms."
+    "hider": "Drag the player to place it; pinch/twist or use SIZE/ROTATE handles; pan/zoom the artwork; Sample automatically enters Paint; adjust brush size and opacity; Lock Hiding Spot when finished.",
+    "seeker": "Quick tap guesses; drag pans; pinch zooms. Search controls are not enabled until the authoritative Seek phase and timer are active."
   },
   "figure": {
     "scale": {
@@ -77,6 +76,10 @@
   },
   "modules": [
     "art-library.js",
+    "settings.js",
+    "settings-ui.js",
+    "flow.js",
+    "view-ui.js",
     "avatar-studio.js",
     "sample-utils.js",
     "game.js"
@@ -138,12 +141,20 @@
   },
   "multiplayer_sync": {
     "authority": "host",
-    "full_state_sequence": true,
+    "state_revision": "Monotonic syncSeq plus round and phaseToken",
     "stale_state_rejection": true,
     "asynchronous_render_cancellation": true,
-    "zero_timer_resync": true,
-    "reveal_ack_required_before_next_round": true,
-    "reconnect_resume": true
+    "hide_prepare_barrier": "All active seats must load/render the selected artwork before HIDE.",
+    "seek_prepare_barrier": "All active Seeker seats must load/render the final painted figure before SEEK.",
+    "timer_start_barrier": "Timed phase starts only after active role screens acknowledge the phase.",
+    "critical_action_protocol": "Lock and Guess use action IDs, host acknowledgements, retry, and duplicate suppression.",
+    "heartbeat": "Two-way pulse/pong repeats applied state acknowledgement and readiness.",
+    "reconnect": "Stable per-room player identity reclaims the same seat and receives a full recovery snapshot.",
+    "disconnect_timer_behavior": "Authoritative timer pauses during detected disconnect, heartbeat failure, host backgrounding, or offline state.",
+    "reveal_barrier": "Next round remains blocked until all active remote seats acknowledge Reveal.",
+    "payload_strategy": "Large figure and avatar assets are excluded from routine state snapshots.",
+    "future_multi_seat": true,
+    "host_migration": false
   },
   "timers": {
     "default_hide_seconds": 180,
@@ -167,5 +178,15 @@
       450,
       600
     ]
-  }
+  },
+  "protocol_phases": [
+    "lobby",
+    "hide_prepare",
+    "hide",
+    "seek_prepare",
+    "seek",
+    "reveal",
+    "final"
+  ],
+  "protocol_document": "MULTIPLAYER.md"
 }
