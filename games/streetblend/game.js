@@ -85,8 +85,6 @@
   const PAINT_W = 96;
   const PAINT_H = 180;
   let artLibrary = [];
-  let artLibrary = [];
-  let artLoading = null;
   let session = null;
   let role = 'local';
   let seat = 0;
