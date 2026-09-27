@@ -341,23 +341,24 @@
     connected = false;
     solo = false;
     const name = playerName();
-    $('roomBox').hidden = true;
-    $('connectedBox').hidden = true;
+    $('startMenu').hidden=true;
+    $('joinPane').hidden=true;
+    $('roomBox').hidden=true;
+    $('connectedBox').hidden=true;
     setNetStatus('Creating room','Connecting to the signaling service…');
 
     session = net.host({
       gameKey:'streetblend',
-      maxPlayers:2,
+      maxPlayers:appSettings.players,
       onStatus(info){
         if(info.state === 'retrying'){
           setNetStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…');
         }else if(info.state === 'waiting' && !connected){
           history.replaceState({},'',inviteUrl(session.code));
           $('roomCodeDisplay').textContent = session.code;
-          $('roomBox').hidden = false;
-          $('joinBox').hidden = true;
-          $('lobbyActions').hidden = true;
-          $('hostOptions').hidden = false;
+          $('roomBox').hidden=false;
+          $('startMenu').hidden=true;
+          $('joinPane').hidden=true;
           setNetStatus('Room '+session.code,'Share the invite and wait for Player 2.');
         }
       },
@@ -371,12 +372,18 @@
         $('guestWait').hidden = true;
         setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
         hostState = makeHostState(name,info.name||'Player 2');
+        $('roomRules').textContent=rulesText(hostState.config);
+        session.sendTo(1,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
       },
       onPlayerLeave(){
         connected = false;
         if(hostState && hostState.phase !== 'lobby') pauseMatch('Player 2 disconnected.');
-        $('connectedBox').hidden = true;
-        $('roomBox').hidden = false;
+        $('connectedBox').hidden=false;
+        $('roomBox').hidden=true;
+        $('startMenu').hidden=true;
+        $('joinPane').hidden=true;
+        $('guestWait').hidden=false;
+        $('guestWait').textContent='Player 2 disconnected. Waiting for them to reconnect…';
         setNetStatus('Player disconnected','Waiting for Player 2 to reconnect…');
       },
       onMessage(message,meta){
@@ -396,12 +403,14 @@
       setNetStatus('Enter a room code','Room codes contain six characters.');
       return;
     }
-    role = 'guest';
-    seat = 1;
-    connected = false;
-    solo = false;
-    $('hostOptions').hidden = true;
-    $('lobbyActions').hidden = true;
+    role='guest';
+    seat=1;
+    connected=false;
+    solo=false;
+    $('startMenu').hidden=true;
+    $('joinPane').hidden=true;
+    $('roomBox').hidden=true;
+    $('connectedBox').hidden=true;
     setNetStatus('Connecting','Looking for room '+code+'…');
 
     session = net.join({
@@ -413,12 +422,15 @@
         if(info.state === 'retrying') setNetStatus('Reconnecting','Signaling retry '+(info.attempt||1)+'…');
         else if(info.state === 'connected'){
           connected = true;
-          $('connectedBox').hidden = false;
-          $('joinBox').hidden = true;
-          $('startMatch').hidden = true;
-          $('guestWait').hidden = false;
-          $('p0Lobby').textContent = 'Host';
-          $('p1Lobby').textContent = playerName();
+          $('connectedBox').hidden=false;
+          $('startMenu').hidden=true;
+          $('joinPane').hidden=true;
+          $('startMatch').hidden=true;
+          $('guestWait').hidden=false;
+          $('guestWait').textContent='Waiting for the host to start the match…';
+          $('p0Lobby').textContent='Host';
+          $('p1Lobby').textContent=playerName();
+          $('roomRules').textContent='Host settings apply';
           setNetStatus('Connected','Waiting for the host to start.');
         }else if(info.state === 'disconnected'){
           connected = false;
@@ -440,11 +452,7 @@
   function makeHostState(name0,name1){
     return {
       players:[{name:name0,score:0},{name:name1,score:0}],
-      config:{
-        rounds:Number($('roundCount').value)||4,
-        hideSeconds:Number($('hideSeconds').value)||60,
-        seekSeconds:Number($('seekSeconds').value)||90
-      },
+      config:{...appSettings},
       round:0,
       phase:'lobby',
       scene:null,
@@ -484,10 +492,7 @@
     role = 'host';
     seat = 0;
     connected = true;
-    hostState = makeHostState(playerName(),'Practice');
-    hostState.config.rounds = 2;
-    hostState.config.hideSeconds = Number($('hideSeconds').value)||60;
-    hostState.config.seekSeconds = Number($('seekSeconds').value)||90;
+    hostState=makeHostState(playerName(),'Practice');
     beginRound(0);
   }
 
@@ -584,6 +589,14 @@
 
   async function handleGuestMessage(message){
     if(!message?.type) return;
+    if(message.type==='sb:lobby-config'){
+      if(message.config) $('roomRules').textContent=rulesText(sanitizeSettings(message.config));
+      if(Array.isArray(message.players) && message.players.length>=2){
+        $('p0Lobby').textContent=message.players[0]?.name||'Host';
+        $('p1Lobby').textContent=message.players[1]?.name||playerName();
+      }
+      return;
+    }
     if(message.type === 'sb:state'){
       remoteState = message.state;
       await applyRemoteView();
