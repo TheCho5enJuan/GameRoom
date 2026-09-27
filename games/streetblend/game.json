@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -82,11 +82,12 @@
     "game.js"
   ],
   "waiting_activity": {
-    "type": "player icon drawing",
-    "seeker_during_hide": true,
-    "hider_during_seek": true,
+    "type": "player icon painting",
+    "paint_mask": "white player silhouette only",
+    "canvas_size": 192,
     "synchronized": true,
-    "displayed_in_match_header": true
+    "seeker_during_hide": true,
+    "hider_during_seek": true
   },
   "eyedropper": {
     "footprint": "Circular sampling area driven by the current brush-size slider.",
@@ -134,5 +135,37 @@
     },
     "sample_to_paint": true,
     "reset_button": false
+  },
+  "multiplayer_sync": {
+    "authority": "host",
+    "full_state_sequence": true,
+    "stale_state_rejection": true,
+    "asynchronous_render_cancellation": true,
+    "zero_timer_resync": true,
+    "reveal_ack_required_before_next_round": true,
+    "reconnect_resume": true
+  },
+  "timers": {
+    "default_hide_seconds": 180,
+    "default_seek_seconds": 240,
+    "hide_choices_seconds": [
+      60,
+      90,
+      120,
+      180,
+      240,
+      300,
+      450,
+      600
+    ],
+    "seek_choices_seconds": [
+      90,
+      120,
+      180,
+      240,
+      300,
+      450,
+      600
+    ]
   }
 }
