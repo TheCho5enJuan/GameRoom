@@ -180,7 +180,7 @@
           <div class="art-meta">
             <div>
               <strong id="artTitle">Loading artwork…</strong>
-              <span id="artArtist">Art Institute of Chicago Open Access</span>
+              <span id="artArtist">Public-domain artwork</span>
             </div>
             <a id="artSource" href="https://www.artic.edu/" target="_blank" rel="noopener">Artwork ↗</a>
           </div>
@@ -196,21 +196,20 @@
               <canvas id="sampleLoupeCanvas" width="84" height="84"></canvas>
               <strong id="sampleHex">#FFFFFF</strong>
             </div>
+            <div class="stage-actions" id="viewControls" hidden>
+              <button id="focusPlayer" type="button" aria-label="Focus view on player" title="Focus Player">⌖</button>
+              <button id="fitArtwork" type="button" aria-label="Fit full artwork" title="Fit Artwork">▣</button>
+            </div>
           </div>
 
         </section>
 
         <section class="controls hider-controls" id="hiderControls" hidden>
-          <div class="role-head"><span class="role-badge hider">HIDER</span><p>Drag the figure · pinch it to resize/rotate · drag the background to pan.</p></div>
+          <div class="role-head"><span class="role-badge hider">HIDER</span><p>Camouflage your player, then lock the hiding spot.</p></div>
           <div class="tool-grid">
             <button class="tool active" data-tool="place" type="button"><b>✥</b><span>Place</span></button>
             <button class="tool" data-tool="sample" type="button"><b>◉</b><span>Sample</span></button>
             <button class="tool" data-tool="paint" type="button"><b>✎</b><span>Paint</span></button>
-          </div>
-
-          <div class="view-row">
-            <button id="focusPlayer" type="button"><b>⌖</b><span>Focus Player</span></button>
-            <button id="fitArtwork" type="button"><b>▣</b><span>Fit Artwork</span></button>
           </div>
 
           <div class="paint-row">
@@ -219,18 +218,24 @@
             <button id="resetPaint" type="button">Reset white</button>
           </div>
 
-          <div class="pose-row" role="group" aria-label="Figure pose">
-            <button class="pose active" data-pose="stand" type="button">Standing</button>
-            <button class="pose" data-pose="lean" type="button">Leaning</button>
-            <button class="pose" data-pose="crouch" type="button">Crouched</button>
-            <button class="pose" data-pose="wide" type="button">Wide</button>
-          </div>
-
-          <div class="build-row" role="group" aria-label="Figure build">
-            <span>Build</span>
-            <button class="build" data-build="slim" type="button">Slim</button>
-            <button class="build active" data-build="regular" type="button">Regular</button>
-            <button class="build" data-build="bold" type="button">Bold</button>
+          <div class="figure-options">
+            <label class="field">
+              <span>Pose</span>
+              <select id="poseSelect">
+                <option value="stand">Standing</option>
+                <option value="lean">Leaning</option>
+                <option value="crouch">Crouched</option>
+                <option value="wide">Wide</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Build</span>
+              <select id="buildSelect">
+                <option value="slim">Slim</option>
+                <option value="regular" selected>Regular</option>
+                <option value="bold">Bold</option>
+              </select>
+            </label>
           </div>
 
           <button class="primary lock" id="lockHide" type="button">Lock Hiding Spot</button>
