@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -113,5 +113,26 @@
     "artwork_bounds": "Figure is clamped fully inside the artwork",
     "metadata_cleanup": true,
     "dom_integrity_validation": true
+  },
+  "painting_categories": [
+    "Mixed Collection",
+    "Impressionism",
+    "Landscapes",
+    "City & Street",
+    "Interiors",
+    "People & Markets",
+    "Water & Coast",
+    "Gardens & Parks"
+  ],
+  "painting": {
+    "opacity": {
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "default": 100,
+      "type": "brush opacity"
+    },
+    "sample_to_paint": true,
+    "reset_button": false
   }
 }
