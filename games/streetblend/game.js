@@ -856,6 +856,7 @@
 
     if((state.phase === 'seek' || state.phase === 'reveal') && state.figure){
       figure=sanitizeFigure(state.figure);
+      clampFigureToArtwork();
       await importPaintData(figure.paintData);
     }
 
@@ -1159,7 +1160,11 @@
       state?.phase==='seek' || state?.phase==='reveal' ||
       (state?.phase==='hide' && state?.hiderSeat===seat)
     );
-    if(shouldDrawFigure) drawFigure(t,state?.phase==='reveal',state?.phase==='hide' && state?.hiderSeat===seat);
+    if(shouldDrawFigure) drawFigure(
+      t,
+      state?.phase==='reveal',
+      state?.phase==='hide' && state?.hiderSeat===seat && activeTool==='place'
+    );
 
     if(state?.phase==='seek' || state?.phase==='reveal'){
       drawGuessMarks(t, state?.guessMarks || guessMarks);
@@ -1239,6 +1244,19 @@
     const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
     const w=h*(PAINT_W/PAINT_H)*widthFactor;
     return {t,p,w,h};
+  }
+
+  function clampFigureToArtwork(){
+    if(!figure) return;
+    const imageRatio=sceneImage?.naturalWidth && sceneImage?.naturalHeight
+      ? sceneImage.naturalHeight/sceneImage.naturalWidth
+      : .75;
+    const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
+    const normalizedWidth=figure.scale*imageRatio*(PAINT_W/PAINT_H)*widthFactor;
+    const halfX=clamp(normalizedWidth/2,.015,.45);
+    const halfY=clamp(figure.scale/2,.02,.45);
+    figure.x=clamp(figure.x,halfX,1-halfX);
+    figure.y=clamp(figure.y,halfY,1-halfY);
   }
 
   function figureLocalPoint(px,py){
@@ -1546,6 +1564,7 @@
         const angleDelta=(angleBetween(pts[0],pts[1])-figureTransform.angle)*180/Math.PI;
         figure.scale=clamp(figureTransform.scale*ratio,.10,.24);
         figure.rotation=clamp(figureTransform.rotation+normalizeAngle(angleDelta),-70,70);
+        clampFigureToArtwork();
         markDirty();
       }else if(pinchStart){
         const ratio=distance(pts[0],pts[1])/Math.max(1,pinchStart.distance);
@@ -1578,6 +1597,7 @@
       if(h.type==='resize'){
         const dist=Math.max(1,Math.hypot(p.x-h.center.x,p.y-h.center.y));
         figure.scale=clamp(h.scale*(dist/h.startDistance),.10,.24);
+        clampFigureToArtwork();
       }else if(h.type==='rotate'){
         const angle=Math.atan2(p.y-h.center.y,p.x-h.center.x);
         const delta=normalizeAngle((angle-h.startAngle)*180/Math.PI);
@@ -1593,6 +1613,7 @@
       if(n){
         figure.x=n.x;
         figure.y=n.y;
+        clampFigureToArtwork();
         markDirty();
       }
       if(pointerStart) pointerStart.moved=true;
@@ -1659,7 +1680,13 @@
       }else if(wasTap && activeTool==='place'){
         if(!pointHitsFigure(p.x,p.y) && !figureHandleAt(p.x,p.y)){
           const n=screenToImage(p.x,p.y);
-          if(n){figure.x=n.x;figure.y=n.y;sendDraft();markDirty();}
+          if(n){
+            figure.x=n.x;
+            figure.y=n.y;
+            clampFigureToArtwork();
+            sendDraft();
+            markDirty();
+          }
         }
       }else if(wasTap && activeTool==='sample' && !activeSample){
         sampleColor(screenToImage(p.x,p.y),p,false);
