@@ -167,13 +167,13 @@
 
       <section class="game-shell" id="gameShell" hidden>
         <div class="matchbar">
-          <div class="match-player" id="p0Match"><span>Player 1</span><b>0</b></div>
+          <div class="match-player" id="p0Match"><img class="match-avatar" id="p0AvatarMatch" alt=""><span>Player 1</span><b>0</b></div>
           <div class="round-state">
             <span id="roundLabel">ROUND 1 / 4</span>
             <strong id="phaseLabel">HIDE</strong>
             <em id="clock">1:00</em>
           </div>
-          <div class="match-player right" id="p1Match"><span>Player 2</span><b>0</b></div>
+          <div class="match-player right" id="p1Match"><img class="match-avatar" id="p1AvatarMatch" alt=""><span>Player 2</span><b>0</b></div>
         </div>
 
         <section class="art-card">
@@ -250,6 +250,26 @@
           <span class="role-badge" id="waitingRole">SEEKER</span>
           <h2 id="waitingTitle">The Hider is blending in…</h2>
           <p id="waitingText">You’ll get the full painting when the hiding spot is locked.</p>
+
+          <div class="waiting-opponent" id="waitingOpponent" hidden>
+            <span id="waitingOpponentLabel">Opponent icon</span>
+            <img id="waitingOpponentAvatar" alt="Opponent customized icon">
+          </div>
+
+          <div class="avatar-studio" id="avatarStudio">
+            <div class="avatar-studio-head">
+              <div><strong>Customize your icon</strong><span>Draw while you wait. It follows you through the match.</span></div>
+              <button id="avatarClear" type="button">Clear</button>
+            </div>
+            <div class="avatar-edit-row">
+              <canvas id="avatarCanvas" width="128" height="128" aria-label="Draw your player icon"></canvas>
+              <div class="avatar-tools">
+                <label><span>Color</span><input id="avatarColor" type="color" value="#7fd6c2"></label>
+                <label><span>Brush</span><input id="avatarBrush" type="range" min="3" max="22" value="10"></label>
+                <button id="avatarEraser" type="button">Eraser</button>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section class="controls reveal-controls" id="revealControls" hidden>
@@ -277,6 +297,7 @@
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script src="../../shared/multiplayer-room.js?v=2"></script>
   <script src="./art-library.js?v=1.4.1"></script>
+  <script src="./avatar-studio.js?v=1.5.0"></script>
   <script src="./game.js?v=1.4.1"></script>
 </body>
 </html>
