@@ -38,4 +38,27 @@ for(const game of ['rogue-quest','tide-and-tranquility','blockforge']){
   const manifest=JSON.parse(await readFile(join(root,'games',game,'game.json'),'utf8'));
   assert.ok(manifest.javascript.length>=10);
 }
+
+// Streetblend control integrity: every direct DOM lookup must resolve, IDs must be unique,
+// and the split gameplay modules must remain explicitly loaded by the entry page.
+{
+  const entry=await readFile(join(root,'games','streetblend','index.html'),'utf8');
+  const gameJs=await readFile(join(root,'games','streetblend','game.js'),'utf8');
+  const avatarJs=await readFile(join(root,'games','streetblend','avatar-studio.js'),'utf8');
+  const ids=[...entry.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  const unique=new Set(ids);
+  assert.equal(unique.size,ids.length,'streetblend contains duplicate DOM ids');
+
+  const refs=[
+    ...gameJs.matchAll(/\$\('([^']+)'\)/g),
+    ...avatarJs.matchAll(/\$\('([^']+)'\)/g)
+  ].map(m=>m[1]);
+  for(const id of new Set(refs)){
+    assert.ok(unique.has(id),`streetblend JavaScript references missing DOM id: ${id}`);
+  }
+
+  for(const script of ['art-library.js','avatar-studio.js','sample-utils.js','game.js']){
+    assert.match(entry,new RegExp(`src=["'][^"']*${script.replace('.','\\.')}[^"']*["']`));
+  }
+}
 console.log(`Validated ${games.length} GameRoom projects and ${files.length} repository files.`);
