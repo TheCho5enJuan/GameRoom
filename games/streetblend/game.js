@@ -1395,15 +1395,35 @@
     return {t,p,w,h};
   }
 
-  function pointHitsFigure(px,py){
+  function figureLocalPoint(px,py){
     const m=figureMetrics();
-    if(!m) return false;
+    if(!m) return null;
     const dx=px-m.p.x;
     const dy=py-m.p.y;
     const a=-figure.rotation*Math.PI/180;
-    const lx=dx*Math.cos(a)-dy*Math.sin(a);
-    const ly=dx*Math.sin(a)+dy*Math.cos(a);
-    return Math.abs(lx)<=m.w*.72 && Math.abs(ly)<=m.h*.60;
+    return {
+      m,
+      x:dx*Math.cos(a)-dy*Math.sin(a),
+      y:dx*Math.sin(a)+dy*Math.cos(a)
+    };
+  }
+
+  function pointHitsFigure(px,py){
+    const p=figureLocalPoint(px,py);
+    if(!p) return false;
+    return Math.abs(p.x)<=p.m.w*.72 && Math.abs(p.y)<=p.m.h*.60;
+  }
+
+  function figureHandleAt(px,py){
+    const p=figureLocalPoint(px,py);
+    if(!p) return null;
+    const dpr=window.devicePixelRatio||1;
+    const radius=18*dpr;
+    const rotate={x:0,y:-p.m.h*.76};
+    const resize={x:p.m.w*.70,y:p.m.h*.64};
+    if(Math.hypot(p.x-rotate.x,p.y-rotate.y)<=radius) return 'rotate';
+    if(Math.hypot(p.x-resize.x,p.y-resize.y)<=radius) return 'resize';
+    return null;
   }
 
   function drawFigure(t,revealOutline,selected){
@@ -1421,19 +1441,43 @@
 
     if(selected){
       ctx.save();
-      ctx.strokeStyle='rgba(255,255,255,.96)';
+      ctx.strokeStyle='rgba(255,255,255,.98)';
       ctx.lineWidth=2*dpr;
       ctx.setLineDash([6*dpr,4*dpr]);
       ctx.strokeRect(-w*.62,-h*.56,w*1.24,h*1.12);
       ctx.setLineDash([]);
-      const r=5*dpr;
-      const corners=[[-w*.62,-h*.56],[w*.62,-h*.56],[-w*.62,h*.56],[w*.62,h*.56]];
-      ctx.fillStyle='#ffffff';
-      ctx.strokeStyle='#0a0d13';
+
+      // Rotation handle.
+      ctx.beginPath();
+      ctx.moveTo(0,-h*.56);
+      ctx.lineTo(0,-h*.70);
+      ctx.stroke();
+      const handleR=14*dpr;
+      ctx.fillStyle='rgba(8,13,20,.96)';
+      ctx.strokeStyle='#ffffff';
       ctx.lineWidth=2*dpr;
-      for(const [x,y] of corners){
-        ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
-      }
+      ctx.beginPath();ctx.arc(0,-h*.76,handleR,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#ffffff';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.font='900 '+(14*dpr)+'px sans-serif';
+      ctx.fillText('↻',0,-h*.76);
+
+      // Resize handle.
+      ctx.fillStyle='rgba(8,13,20,.96)';
+      ctx.strokeStyle='#ffffff';
+      ctx.beginPath();ctx.arc(w*.70,h*.64,handleR,0,Math.PI*2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#ffffff';
+      ctx.font='900 '+(12*dpr)+'px sans-serif';
+      ctx.fillText('⤢',w*.70,h*.64);
+
+      // Small drag cue in the middle of the selection box.
+      ctx.fillStyle='rgba(8,13,20,.78)';
+      const cueW=38*dpr,cueH=16*dpr;
+      ctx.fillRect(-cueW/2,-cueH/2,cueW,cueH);
+      ctx.fillStyle='#ffffff';
+      ctx.font='800 '+(7*dpr)+'px sans-serif';
+      ctx.fillText('DRAG',0,0);
       ctx.restore();
     }
 
