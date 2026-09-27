@@ -151,7 +151,7 @@
     const code=cleanCode(opts.code);
     if(code.length!==6) throw new Error('Room codes are six characters.');
     const session=makeSession(opts,'guest',code);
-    let forcingReconnect=false;
+    let suppressedCloseConnection=null;
 
     function start(attempt=0){
       if(session.closed) return;
@@ -188,7 +188,7 @@
         });
         conn.on('close',()=>{
           if(session.closed) return;
-          if(forcingReconnect){forcingReconnect=false;return;}
+          if(conn===suppressedCloseConnection){suppressedCloseConnection=null;return;}
           opts.onStatus?.({state:'disconnected',role:'guest',code,seat:session.seat});
           if(opts.autoReconnect) scheduleRetry(session,opts,0,start,{type:'network',message:'Game connection closed.'});
         });
@@ -210,7 +210,7 @@
       if(session.retryTimer) clearTimeout(session.retryTimer);
       session.retryTimer=null;
       session.retryPending=false;
-      forcingReconnect=true;
+      suppressedCloseConnection=session.connection||null;
       opts.onStatus?.({state:'retrying',role:'guest',code,attempt:1,maxRetries:MAX_RETRIES,errorType:'heartbeat'});
       start(0);
     };
