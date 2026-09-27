@@ -339,6 +339,7 @@ function createRoom(){
     },
     onPlayerJoin(info){
       connected=true;
+      lastSeenBySeat[info.seat]=Date.now();
       if(!hostState||hostState.phase===PHASES.LOBBY){
         hideConnectionBanner();
         $('roomBox').hidden=true;
@@ -368,6 +369,7 @@ function createRoom(){
     },
     onPlayerLeave(info){
       connected=false;
+      delete lastSeenBySeat[info?.seat];
       if(hostState&&hostState.phase!==PHASES.LOBBY){
         pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.','disconnect');
         showConnectionBanner('Connection lost','Game time is paused. Waiting for the other player to reconnect…');
@@ -615,6 +617,7 @@ function publicState(includeFigure=false){
     guessMarks:hostState.guessMarks,
     result:hostState.result,
     paused:!!hostState.paused,
+    pauseReason:hostState.pauseReason||null,
     timerStarted:!!hostState.timerStarted,
     remaining
   };
@@ -1975,6 +1978,22 @@ function tick(){
         ? Math.max(0,hostState.deadline-now)
         : null;
 
+    if(!solo&&session?.connections?.size){
+      const staleSeat=(hostState.activeSeats||[])
+        .filter(s=>s!==0&&session.connections.has(s))
+        .find(s=>now-Number(lastSeenBySeat[s]||0)>6000);
+      if(staleSeat!==undefined){
+        const age=now-Number(lastSeenBySeat[staleSeat]||0);
+        if(!hostState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)&&hostState.timerStarted){
+          pauseMatch('Player '+(staleSeat+1)+' stopped responding.','heartbeat');
+          showConnectionBanner('Player not responding','Game time is paused while the connection recovers.');
+        }
+        if(age>12000){
+          try{session.connections.get(staleSeat)?.close();}catch(_){}
+        }
+      }
+    }
+
     if(!solo&&session?.connections?.size&&hostState.phase!==PHASES.LOBBY&&now-lastPulseAt>=1000){
       lastPulseAt=now;
       session.broadcast({
@@ -2006,6 +2025,11 @@ function tick(){
     if(connected&&lastHostPulseAt&&now-lastHostPulseAt>5000){
       showConnectionBanner('Synchronizing…','The host heartbeat is late. Requesting the authoritative game state.');
       requestResync();
+    }
+    if(connected&&lastHostPulseAt&&now-lastHostPulseAt>10000&&now-lastForcedReconnectAt>10000){
+      lastForcedReconnectAt=now;
+      showConnectionBanner('Reconnecting…','The shared channel stopped responding. Opening a fresh connection.');
+      session?.reconnect?.();
     }
     if(remoteState.timerStarted&&!remoteState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(remoteState.phase)){
       if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
