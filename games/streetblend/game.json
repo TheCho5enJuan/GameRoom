@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -78,6 +78,7 @@
   "modules": [
     "art-library.js",
     "avatar-studio.js",
+    "sample-utils.js",
     "game.js"
   ],
   "waiting_activity": {
@@ -86,5 +87,11 @@
     "hider_during_seek": true,
     "synchronized": true,
     "displayed_in_match_header": true
+  },
+  "eyedropper": {
+    "footprint": "Circular sampling area driven by the current brush-size slider.",
+    "minimum": "1px exact source pixel",
+    "aggregation": "Mean RGB across all non-transparent source pixels inside the circular footprint.",
+    "loupe": "Shows the sampled footprint and aggregated hex color."
   }
 }
