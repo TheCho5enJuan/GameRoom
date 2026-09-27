@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -13,11 +13,12 @@
   "description": "Two-player camouflage hide-and-seek using public-domain paintings from the Art Institute of Chicago Open Access collection.",
   "entry": "index.html",
   "artwork": {
-    "provider": "Art Institute of Chicago",
-    "delivery": "Fixed curated catalog of direct IIIF image URLs; no runtime artwork API dependency.",
+    "provider": "Wikimedia Commons",
+    "museum_source": "Art Institute of Chicago",
+    "delivery": "Curated public-domain Wikimedia thumbnail files; no runtime artwork API dependency.",
     "public_domain_only": true,
     "scenes": 7,
-    "fallback": "CORS image load first, then normal direct image load if CORS is blocked."
+    "fallback": "CORS image load first, then normal image load so rendering still works if pixel access is blocked."
   },
   "multiplayer": {
     "transport": "PeerJS/WebRTC",
