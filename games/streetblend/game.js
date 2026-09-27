@@ -119,7 +119,6 @@
   let figure = defaultFigure();
   let paintColor = '#ffffff';
   let activeTool = 'place';
-  let guessArmed = false;
   let camera = {cx:.5, cy:.5, zoom:1};
   let guessMarks = [];
   let reveal = false;
@@ -128,9 +127,11 @@
   let pinchStart = null;
   let paintingPointer = null;
   let draggingFigure = null;
+  let figureTransform = null;
+  let lastUiPhaseKey = '';
 
   function defaultFigure(){
-    return {x:.5,y:.58,scale:.095,rotation:0,pose:'stand',paintData:null};
+    return {x:.5,y:.58,scale:.11,rotation:0,pose:'stand',paintData:null};
   }
 
   function resetPaint(){
@@ -515,7 +516,7 @@
     lastTickSent=-1;
     $('phaseLabel').textContent='HIDE';
     $('lockHide').disabled=false;
-    $('hiderHint').textContent='Tap the painting to position your figure. Use Sample, then Paint to camouflage it.';
+    $('hiderHint').textContent='Drag the figure. Pinch it to resize/rotate. Drag the background to pan; pinch the background to zoom.';
     updateClock(hostState.config.hideSeconds*1000);
     sendGuestPhase();
     toast('Painting ready. Hide timer started.');
@@ -526,8 +527,8 @@
     return {
       x:clamp(Number(f.x)||.5,.02,.98),
       y:clamp(Number(f.y)||.5,.02,.98),
-      scale:clamp(Number(f.scale)||.075,.035,.14),
-      rotation:clamp(Number(f.rotation)||0,-45,45),
+      scale:clamp(Number(f.scale)||.11,.08,.18),
+      rotation:clamp(Number(f.rotation)||0,-70,70),
       pose:['stand','lean','crouch','wide'].includes(f.pose)?f.pose:'stand',
       paintData:typeof f.paintData === 'string' && f.paintData.length < 150000 ? f.paintData : null
     };
@@ -601,7 +602,7 @@
         updateScoreboard(hostState);
         markDirty();
       }
-      if(!solo && session) session.sendTo(1,{type:'sb:toast',message:'Miss · 5 seconds lost'});
+      if(!solo && session) session.sendTo(1,{type:'sb:toast',message:'MISS · −5 sec'});
       sendGuestPhase();
     }
   }
@@ -613,7 +614,7 @@
     const seeker=hostState.seekerSeat;
     const hider=hostState.hiderSeat;
     const seekerPoints=found ? 500 + remaining*10 : 0;
-    const hiderPoints=(found ? elapsed*10 : 1000) + hostState.wrong*75;
+    const hiderPoints=(found ? elapsed*10 : 1000);
     hostState.players[seeker].score += seekerPoints;
     hostState.players[hider].score += hiderPoints;
     hostState.phase='reveal';
@@ -677,6 +678,8 @@
   }
 
   async function applyStateToUI(state,isHost){
+    const phaseKey=String(state.round)+':'+String(state.phase)+':'+String(state.scene?.id||'');
+    const enteringPhase=phaseKey!==lastUiPhaseKey;
     $('lobbyPanel').hidden=true;
     $('gameShell').hidden=false;
     updateScoreboard(state);
@@ -718,19 +721,19 @@
 
     if(state.phase === 'hide'){
       if(state.hiderSeat === seat){
-        resetFigureForHide();
-        camera={cx:.5,cy:.5,zoom:2.35};
-        $('zoom').value=String(camera.zoom);
-        activeTool='place';
-        setToolButtons();
+        if(enteringPhase){
+          resetFigureForHide();
+          camera={cx:.5,cy:.5,zoom:2.1};
+          activeTool='place';
+          setToolButtons();
+        }
         $('hiderControls').hidden=false;
         $('lockHide').disabled=!state.timerStarted;
         $('hiderHint').textContent=state.timerStarted
-          ? 'Your white figure starts in the center. Drag it directly, or tap elsewhere to move it. Then Sample and Paint.'
+          ? 'Drag the figure. Pinch the figure to resize or rotate. Drag the background to pan; pinch the background to zoom.'
           : 'Painting loaded. Your figure is ready; waiting for the round timer to start…';
       }else{
-        camera={cx:.5,cy:.5,zoom:1};
-        $('zoom').value='1';
+        if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
         $('waitingControls').hidden=false;
         $('waitingRole').textContent='SEEKER';
         $('waitingTitle').textContent='The Hider is blending in…';
@@ -739,34 +742,28 @@
       }
     }else if(state.phase === 'seek'){
       if(state.seekerSeat === seat || solo){
-        camera={cx:.5,cy:.5,zoom:1};
-        $('zoom').value='1';
-        guessArmed=false;
-        $('guessMode').classList.remove('armed');
-        $('guessMode').textContent='Make a Guess';
+        if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
         $('wrongCount').textContent=String(state.wrong||0);
+        $('seekHint').textContent='Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −5 sec.';
         $('seekerControls').hidden=false;
       }else{
-        camera={cx:.5,cy:.5,zoom:1};
-        $('zoom').value='1';
+        if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
         $('waitingControls').hidden=false;
         $('waitingRole').textContent='HIDER';
         $('waitingTitle').textContent='Stay hidden…';
         $('waitingText').textContent='The Seeker is searching the painting.';
       }
     }else if(state.phase === 'reveal'){
-      camera={cx:.5,cy:.5,zoom:1};
-      $('zoom').value='1';
+      if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
       showReveal(state,isHost);
     }
+    lastUiPhaseKey=phaseKey;
     markDirty();
   }
 
   function resetFigureForHide(){
     figure=defaultFigure();
     resetPaint();
-    $('figureScale').value=String(figure.scale);
-    $('figureRotation').value='0';
     paintColor='#ffffff';
     $('paintSwatch').style.background=paintColor;
     document.querySelectorAll('.pose').forEach(b=>b.classList.toggle('active',b.dataset.pose==='stand'));
@@ -1185,26 +1182,9 @@
     document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===activeTool));
   }
 
-  function armGuess(){
-    if(guessArmed){
-      guessArmed=false;
-      $('guessMode').classList.remove('armed');
-      $('guessMode').textContent='Make a Guess';
-      $('seekHint').textContent='Drag to explore. Pinch or use the zoom slider for detail.';
-    }else{
-      guessArmed=true;
-      $('guessMode').classList.add('armed');
-      $('guessMode').textContent='Tap the painting';
-      $('seekHint').textContent='Guess armed — tap the exact spot where you see the hidden figure.';
-    }
-  }
-
   function sendGuess(norm){
     const state=getState();
     if(!state || state.phase!=='seek' || (state.seekerSeat!==seat && !solo)) return;
-    guessArmed=false;
-    $('guessMode').classList.remove('armed');
-    $('guessMode').textContent='Make a Guess';
     if(role==='host') processGuess(norm.x,norm.y);
     else session.send({type:'sb:guess',x:norm.x,y:norm.y});
   }
@@ -1212,25 +1192,43 @@
   function pointerXY(event){
     const rect=stage.getBoundingClientRect();
     const sx=stage.width/rect.width, sy=stage.height/rect.height;
-    return {x:(event.clientX-rect.left)*sx,y:(event.clientY-rect.top)*sy};
+    const cx=event.clientX-rect.left, cy=event.clientY-rect.top;
+    return {x:cx*sx,y:cy*sy,cx,cy};
   }
 
   function onPointerDown(e){
     stage.setPointerCapture?.(e.pointerId);
     const p=pointerXY(e);
     pointers.set(e.pointerId,p);
-    if(pointers.size===1) pointerStart={id:e.pointerId,x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false};
+
+    if(pointers.size===1){
+      pointerStart={id:e.pointerId,x:p.x,y:p.y,cx:p.cx,cy:p.cy,lastX:p.x,lastY:p.y,moved:false};
+    }
+
+    const state=getState();
+
     if(pointers.size===2){
       const pts=[...pointers.values()];
-      pinchStart={distance:distance(pts[0],pts[1]),zoom:camera.zoom};
+      const midpoint={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+      const d=distance(pts[0],pts[1]);
+      const a=angleBetween(pts[0],pts[1]);
+
+      if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='place' && (draggingFigure || pointHitsFigure(midpoint.x,midpoint.y))){
+        figureTransform={distance:d,angle:a,scale:figure.scale,rotation:figure.rotation};
+        draggingFigure=null;
+        pinchStart=null;
+      }else{
+        pinchStart={distance:d,zoom:camera.zoom};
+        figureTransform=null;
+      }
       pointerStart=null;
+      return;
     }
-    const state=getState();
+
     if(state?.phase==='hide' && state.hiderSeat===seat){
       if(activeTool==='place' && pointHitsFigure(p.x,p.y)){
         draggingFigure={pointerId:e.pointerId};
-        pointerStart.moved=true;
-      }else if(activeTool==='paint'){
+      }else if(activeTool==='paint' && pointHitsFigure(p.x,p.y)){
         paintingPointer=e.pointerId;
         paintAt(p.x,p.y);
       }
@@ -1244,16 +1242,23 @@
 
     if(pointers.size>=2){
       const pts=[...pointers.values()];
-      if(pinchStart){
+      if(figureTransform){
+        const ratio=distance(pts[0],pts[1])/Math.max(1,figureTransform.distance);
+        const angleDelta=(angleBetween(pts[0],pts[1])-figureTransform.angle)*180/Math.PI;
+        figure.scale=clamp(figureTransform.scale*ratio,.08,.18);
+        figure.rotation=clamp(figureTransform.rotation+normalizeAngle(angleDelta),-70,70);
+        markDirty();
+      }else if(pinchStart){
         const ratio=distance(pts[0],pts[1])/Math.max(1,pinchStart.distance);
         camera.zoom=clamp(pinchStart.zoom*ratio,1,5);
-        $('zoom').value=String(camera.zoom);
-        clampCamera();markDirty();
+        clampCamera();
+        markDirty();
       }
       return;
     }
 
     const state=getState();
+
     if(state?.phase==='hide' && state.hiderSeat===seat && draggingFigure?.pointerId===e.pointerId){
       const n=screenToImage(p.x,p.y);
       if(n){
@@ -1261,66 +1266,85 @@
         figure.y=n.y;
         markDirty();
       }
+      if(pointerStart) pointerStart.moved=true;
       return;
     }
 
     if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='paint' && paintingPointer===e.pointerId){
       paintAt(p.x,p.y);
+      if(pointerStart) pointerStart.moved=true;
       return;
     }
 
-    const canPan = (state?.phase==='hide' && state.hiderSeat===seat && activeTool==='pan') ||
-      (state?.phase==='seek' && state.seekerSeat===seat && !guessArmed) ||
+    const canPan =
+      (state?.phase==='hide' && state.hiderSeat===seat) ||
+      (state?.phase==='seek' && (state.seekerSeat===seat || solo)) ||
       state?.phase==='reveal';
+
     if(canPan && pointerStart){
       const dx=p.x-pointerStart.lastX,dy=p.y-pointerStart.lastY;
-      if(Math.abs(p.x-pointerStart.x)+Math.abs(p.y-pointerStart.y)>8) pointerStart.moved=true;
-      const t=getTransform();
-      if(t){
-        camera.cx-=dx/(t.iw*t.scale);
-        camera.cy-=dy/(t.ih*t.scale);
-        clampCamera();markDirty();
+      if(Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8) pointerStart.moved=true;
+      if(pointerStart.moved){
+        const t=getTransform();
+        if(t){
+          camera.cx-=dx/(t.iw*t.scale);
+          camera.cy-=dy/(t.ih*t.scale);
+          clampCamera();
+          markDirty();
+        }
       }
-      pointerStart.lastX=p.x;pointerStart.lastY=p.y;
+      pointerStart.lastX=p.x;
+      pointerStart.lastY=p.y;
     }
   }
 
   function onPointerUp(e){
     const p=pointerXY(e);
     const state=getState();
-    const wasStart=pointerStart && pointerStart.id===e.pointerId && !pointerStart.moved;
+    const wasTap=!!(pointerStart && pointerStart.id===e.pointerId && !pointerStart.moved);
 
-    if(state?.phase==='hide' && state.hiderSeat===seat){
+    if(figureTransform){
+      figureTransform=null;
+      sendDraft();
+    }else if(state?.phase==='hide' && state.hiderSeat===seat){
       if(draggingFigure?.pointerId===e.pointerId){
         draggingFigure=null;
         sendDraft();
       }else if(activeTool==='paint' && paintingPointer===e.pointerId){
         paintingPointer=null;
         sendDraft();
-      }else if(wasStart && activeTool==='place'){
-        const n=screenToImage(p.x,p.y);
-        if(n){figure.x=n.x;figure.y=n.y;sendDraft();markDirty();}
-      }else if(wasStart && activeTool==='sample'){
+      }else if(wasTap && activeTool==='place'){
+        if(!pointHitsFigure(p.x,p.y)){
+          const n=screenToImage(p.x,p.y);
+          if(n){figure.x=n.x;figure.y=n.y;sendDraft();markDirty();}
+        }
+      }else if(wasTap && activeTool==='sample'){
         sampleColor(screenToImage(p.x,p.y));
       }
-    }else if(state?.phase==='seek' && state.seekerSeat===seat && wasStart && guessArmed){
-      const n=screenToImage(p.x,p.y);if(n) sendGuess(n);
+    }else if(state?.phase==='seek' && (state.seekerSeat===seat || solo) && wasTap){
+      const n=screenToImage(p.x,p.y);
+      if(n) sendGuess(n);
     }
 
     if(draggingFigure?.pointerId===e.pointerId) draggingFigure=null;
+    if(paintingPointer===e.pointerId) paintingPointer=null;
     pointers.delete(e.pointerId);
-    if(pointers.size<2) pinchStart=null;
+    if(pointers.size<2){
+      pinchStart=null;
+      figureTransform=null;
+    }
     if(!pointers.size) pointerStart=null;
   }
 
   function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
-  function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
-
-  function updateFromControls(){
-    figure.scale=Number($('figureScale').value)||.075;
-    figure.rotation=Number($('figureRotation').value)||0;
-    markDirty();sendDraft();
+  function angleBetween(a,b){return Math.atan2(b.y-a.y,b.x-a.x)}
+  function normalizeAngle(deg){
+    let d=deg%360;
+    if(d>180)d-=360;
+    if(d<-180)d+=360;
+    return d;
   }
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 
   function tick(){
     const state=getState();
@@ -1357,13 +1381,16 @@
     $('leaveRoom').addEventListener('click',()=>leaveRoom(true));
     $('startMatch').addEventListener('click',startMatch);
     $('lockHide').addEventListener('click',lockCurrentHide);
-    $('guessMode').addEventListener('click',armGuess);
     $('nextRound').addEventListener('click',nextRound);
     $('rematch').addEventListener('click',rematch);
 
     document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{
       activeTool=b.dataset.tool;setToolButtons();
-      const copy={place:'Tap the painting to move your figure.',pan:'Drag the painting to inspect another area.',sample:'Tap any color in the artwork to pick it up.',paint:'Drag directly over your figure to paint.'};
+      const copy={
+        place:'Drag the figure. Pinch the figure to resize/rotate. Drag or pinch the background to move around.',
+        sample:'Tap a color to sample it. Drag or pinch the background to move around.',
+        paint:'Drag over the figure to paint. Drag or pinch outside the figure to move around.'
+      };
       $('hiderHint').textContent=copy[activeTool]||'';
     }));
     document.querySelectorAll('.pose').forEach(b=>b.addEventListener('click',()=>{
@@ -1372,8 +1399,6 @@
       markDirty();sendDraft();
     }));
 
-    $('figureScale').addEventListener('input',updateFromControls);
-    $('figureRotation').addEventListener('input',updateFromControls);
     $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
     const colorPicker=document.createElement('input');
     colorPicker.type='color';
@@ -1391,11 +1416,6 @@
       activeTool='paint';
       setToolButtons();
     });
-
-    $('zoom').addEventListener('input',()=>{camera.zoom=Number($('zoom').value)||1;clampCamera();markDirty();});
-    $('zoomOut').addEventListener('click',()=>{camera.zoom=clamp(camera.zoom-.35,1,5);$('zoom').value=String(camera.zoom);clampCamera();markDirty();});
-    $('zoomIn').addEventListener('click',()=>{camera.zoom=clamp(camera.zoom+.35,1,5);$('zoom').value=String(camera.zoom);clampCamera();markDirty();});
-    $('resetView').addEventListener('click',()=>{camera={cx:.5,cy:.5,zoom:1};$('zoom').value='1';markDirty();});
 
     stage.addEventListener('pointerdown',onPointerDown);
     stage.addEventListener('pointermove',onPointerMove);
