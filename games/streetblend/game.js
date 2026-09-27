@@ -127,9 +127,10 @@
   let pointerStart = null;
   let pinchStart = null;
   let paintingPointer = null;
+  let draggingFigure = null;
 
   function defaultFigure(){
-    return {x:.5,y:.58,scale:.075,rotation:0,pose:'stand',paintData:null};
+    return {x:.5,y:.58,scale:.095,rotation:0,pose:'stand',paintData:null};
   }
 
   function resetPaint(){
@@ -725,8 +726,8 @@
         $('hiderControls').hidden=false;
         $('lockHide').disabled=!state.timerStarted;
         $('hiderHint').textContent=state.timerStarted
-          ? 'Tap the painting to position your figure. Use Sample, then Paint to camouflage it.'
-          : 'Painting loaded. Waiting for the round timer to start…';
+          ? 'Your white figure starts in the center. Drag it directly, or tap elsewhere to move it. Then Sample and Paint.'
+          : 'Painting loaded. Your figure is ready; waiting for the round timer to start…';
       }else{
         camera={cx:.5,cy:.5,zoom:1};
         $('zoom').value='1';
@@ -977,7 +978,7 @@
       state?.phase==='seek' || state?.phase==='reveal' ||
       (state?.phase==='hide' && state?.hiderSeat===seat)
     );
-    if(shouldDrawFigure) drawFigure(t,state?.phase==='reveal');
+    if(shouldDrawFigure) drawFigure(t,state?.phase==='reveal',state?.phase==='hide' && state?.hiderSeat===seat);
 
     if(state?.phase==='seek' || state?.phase==='reveal'){
       drawGuessMarks(t, state?.guessMarks || guessMarks);
@@ -991,12 +992,17 @@
 
   function rebuildFigureCanvas(){
     figureCtx.clearRect(0,0,PAINT_W,PAINT_H);
+
+    // Build the opaque human silhouette first.
     figureCtx.globalCompositeOperation='source-over';
-    figureCtx.drawImage(paintCanvas,0,0);
-    figureCtx.globalCompositeOperation='destination-in';
     figureCtx.fillStyle='#fff';
     figureCtx.strokeStyle='#fff';
     drawSilhouette(figureCtx,figure.pose,PAINT_W,PAINT_H);
+
+    // Then keep the paint only where that silhouette exists.
+    figureCtx.globalCompositeOperation='source-in';
+    figureCtx.drawImage(paintCanvas,0,0);
+
     figureCtx.globalCompositeOperation='source-over';
   }
 
@@ -1043,22 +1049,64 @@
     c.restore();
   }
 
-  function drawFigure(t,outline){
+  function figureMetrics(){
+    const t=getTransform();
+    const p=imageToScreen(figure.x,figure.y);
+    if(!t || !p) return null;
+    const h=figure.scale*t.ih*t.scale;
+    const w=h*(PAINT_W/PAINT_H);
+    return {t,p,w,h};
+  }
+
+  function pointHitsFigure(px,py){
+    const m=figureMetrics();
+    if(!m) return false;
+    const dx=px-m.p.x;
+    const dy=py-m.p.y;
+    const a=-figure.rotation*Math.PI/180;
+    const lx=dx*Math.cos(a)-dy*Math.sin(a);
+    const ly=dx*Math.sin(a)+dy*Math.cos(a);
+    return Math.abs(lx)<=m.w*.72 && Math.abs(ly)<=m.h*.60;
+  }
+
+  function drawFigure(t,revealOutline,selected){
     rebuildFigureCanvas();
     const p=imageToScreen(figure.x,figure.y);
     if(!p) return;
     const h=figure.scale*t.ih*t.scale;
     const w=h*(PAINT_W/PAINT_H);
+    const dpr=window.devicePixelRatio||1;
+
     ctx.save();
     ctx.translate(p.x,p.y);
     ctx.rotate(figure.rotation*Math.PI/180);
-    if(outline){
-      ctx.shadowColor='rgba(255,80,105,.95)';
-      ctx.shadowBlur=18*(window.devicePixelRatio||1);
-      ctx.strokeStyle='#ff5d73';
-      ctx.lineWidth=4*(window.devicePixelRatio||1);
-      ctx.strokeRect(-w*.52,-h*.52,w*1.04,h*1.04);
+
+    if(selected){
+      ctx.save();
+      ctx.strokeStyle='rgba(255,255,255,.96)';
+      ctx.lineWidth=2*dpr;
+      ctx.setLineDash([6*dpr,4*dpr]);
+      ctx.strokeRect(-w*.62,-h*.56,w*1.24,h*1.12);
+      ctx.setLineDash([]);
+      const r=5*dpr;
+      const corners=[[-w*.62,-h*.56],[w*.62,-h*.56],[-w*.62,h*.56],[w*.62,h*.56]];
+      ctx.fillStyle='#ffffff';
+      ctx.strokeStyle='#0a0d13';
+      ctx.lineWidth=2*dpr;
+      for(const [x,y] of corners){
+        ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+      }
+      ctx.restore();
     }
+
+    if(revealOutline){
+      ctx.shadowColor='rgba(255,80,105,.95)';
+      ctx.shadowBlur=18*dpr;
+      ctx.strokeStyle='#ff5d73';
+      ctx.lineWidth=4*dpr;
+      ctx.strokeRect(-w*.58,-h*.55,w*1.16,h*1.10);
+    }
+
     ctx.drawImage(figureCanvas,-w/2,-h/2,w,h);
     ctx.restore();
   }
@@ -1178,8 +1226,14 @@
       pointerStart=null;
     }
     const state=getState();
-    if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='paint'){
-      paintingPointer=e.pointerId;paintAt(p.x,p.y);
+    if(state?.phase==='hide' && state.hiderSeat===seat){
+      if(activeTool==='place' && pointHitsFigure(p.x,p.y)){
+        draggingFigure={pointerId:e.pointerId};
+        pointerStart.moved=true;
+      }else if(activeTool==='paint'){
+        paintingPointer=e.pointerId;
+        paintAt(p.x,p.y);
+      }
     }
   }
 
@@ -1200,6 +1254,16 @@
     }
 
     const state=getState();
+    if(state?.phase==='hide' && state.hiderSeat===seat && draggingFigure?.pointerId===e.pointerId){
+      const n=screenToImage(p.x,p.y);
+      if(n){
+        figure.x=n.x;
+        figure.y=n.y;
+        markDirty();
+      }
+      return;
+    }
+
     if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='paint' && paintingPointer===e.pointerId){
       paintAt(p.x,p.y);
       return;
@@ -1227,7 +1291,10 @@
     const wasStart=pointerStart && pointerStart.id===e.pointerId && !pointerStart.moved;
 
     if(state?.phase==='hide' && state.hiderSeat===seat){
-      if(activeTool==='paint' && paintingPointer===e.pointerId){
+      if(draggingFigure?.pointerId===e.pointerId){
+        draggingFigure=null;
+        sendDraft();
+      }else if(activeTool==='paint' && paintingPointer===e.pointerId){
         paintingPointer=null;
         sendDraft();
       }else if(wasStart && activeTool==='place'){
@@ -1240,6 +1307,7 @@
       const n=screenToImage(p.x,p.y);if(n) sendGuess(n);
     }
 
+    if(draggingFigure?.pointerId===e.pointerId) draggingFigure=null;
     pointers.delete(e.pointerId);
     if(pointers.size<2) pinchStart=null;
     if(!pointers.size) pointerStart=null;
