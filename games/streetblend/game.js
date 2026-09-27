@@ -1525,21 +1525,66 @@
     });
   }
 
-  function sampleColor(norm){
-    if(!sceneImage || !norm) return;
+  function hideSampleLoupe(){
+    $('sampleLoupe').hidden=true;
+  }
+
+  function showSampleLoupe(norm,pointer,color){
+    if(!sceneSamplingAvailable || !norm || !pointer) return;
+    try{
+      const sx=clamp(Math.floor(norm.x*sceneBuffer.width),0,sceneBuffer.width-1);
+      const sy=clamp(Math.floor(norm.y*sceneBuffer.height),0,sceneBuffer.height-1);
+      const sampleSize=17;
+      const half=Math.floor(sampleSize/2);
+      const srcX=clamp(sx-half,0,Math.max(0,sceneBuffer.width-sampleSize));
+      const srcY=clamp(sy-half,0,Math.max(0,sceneBuffer.height-sampleSize));
+
+      sampleLoupeCtx.clearRect(0,0,sampleLoupeCanvas.width,sampleLoupeCanvas.height);
+      sampleLoupeCtx.imageSmoothingEnabled=false;
+      sampleLoupeCtx.drawImage(
+        sceneBuffer,
+        srcX,srcY,
+        Math.min(sampleSize,sceneBuffer.width-srcX),
+        Math.min(sampleSize,sceneBuffer.height-srcY),
+        0,0,
+        sampleLoupeCanvas.width,sampleLoupeCanvas.height
+      );
+      sampleLoupeCtx.strokeStyle='#ffffff';
+      sampleLoupeCtx.lineWidth=2;
+      sampleLoupeCtx.beginPath();
+      sampleLoupeCtx.moveTo(sampleLoupeCanvas.width/2-10,sampleLoupeCanvas.height/2);
+      sampleLoupeCtx.lineTo(sampleLoupeCanvas.width/2+10,sampleLoupeCanvas.height/2);
+      sampleLoupeCtx.moveTo(sampleLoupeCanvas.width/2,sampleLoupeCanvas.height/2-10);
+      sampleLoupeCtx.lineTo(sampleLoupeCanvas.width/2,sampleLoupeCanvas.height/2+10);
+      sampleLoupeCtx.stroke();
+
+      $('sampleHex').textContent=color;
+      const wrap=$('stageWrap').getBoundingClientRect();
+      const x=clamp(pointer.cx,52,wrap.width-52);
+      const y=clamp(pointer.cy,104,wrap.height-8);
+      $('sampleLoupe').style.left=x+'px';
+      $('sampleLoupe').style.top=y+'px';
+      $('sampleLoupe').hidden=false;
+    }catch(_){}
+  }
+
+  function sampleColor(norm,pointer=null,quiet=false){
+    if(!sceneImage || !norm) return false;
     try{
       const x=clamp(Math.floor(norm.x*sceneBuffer.width),0,sceneBuffer.width-1);
       const y=clamp(Math.floor(norm.y*sceneBuffer.height),0,sceneBuffer.height-1);
       const d=sceneBufferCtx.getImageData(x,y,1,1).data;
-      paintColor='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+      paintColor='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
       $('paintSwatch').style.background=paintColor;
-      activeTool='paint';
-      setToolButtons();
-      $('hiderHint').textContent='Color sampled. Paint directly over your figure.';
-      toast('Color sampled.');
+      $('hiderHint').textContent='Sampling '+paintColor+' · hold and slide for precise color control.';
+      if(pointer) showSampleLoupe(norm,pointer,paintColor);
+      if(!quiet) toast('Sampled '+paintColor);
+      return true;
     }catch(_){
       sceneSamplingAvailable=false;
-      toast('Color sampling is blocked for this image. Tap the color swatch to choose a paint color.');
+      hideSampleLoupe();
+      if(!quiet) toast('Color sampling is blocked for this image. Tap the color swatch to choose a paint color.');
+      return false;
     }
   }
 
