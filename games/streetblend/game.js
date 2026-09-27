@@ -6,46 +6,12 @@ const net = window.GameRoomMultiplayer;
 const PAINT_W = 96;
 const PAINT_H = 180;
 
-const SETTINGS_KEY='streetblend.settings.v3';
-const DEFAULT_SETTINGS=Object.freeze({
-  mode:'classic',
-  players:2,
-  rounds:4,
-  hideSeconds:180,
-  seekSeconds:240,
-  wrongPenaltyMode:'time',
-  wrongPenaltySeconds:5,
-  artCategory:'mixed'
-});
-
-function sanitizeSettings(raw={}){
-  const rounds=[2,4,6], hide=[60,90,120,180,240,300,450,600], seek=[90,120,180,240,300,450,600], penalty=[3,5,10,15];
-  const artCategories=['mixed','impressionism','landscapes','city','interiors','people','water','gardens'];
-  return {
-    mode:'classic',
-    players:2,
-    rounds:rounds.includes(Number(raw.rounds))?Number(raw.rounds):DEFAULT_SETTINGS.rounds,
-    hideSeconds:hide.includes(Number(raw.hideSeconds))?Number(raw.hideSeconds):DEFAULT_SETTINGS.hideSeconds,
-    seekSeconds:seek.includes(Number(raw.seekSeconds))?Number(raw.seekSeconds):DEFAULT_SETTINGS.seekSeconds,
-    wrongPenaltyMode:raw.wrongPenaltyMode==='none'?'none':'time',
-    wrongPenaltySeconds:penalty.includes(Number(raw.wrongPenaltySeconds))?Number(raw.wrongPenaltySeconds):DEFAULT_SETTINGS.wrongPenaltySeconds,
-    artCategory:artCategories.includes(raw.artCategory)?raw.artCategory:DEFAULT_SETTINGS.artCategory
-  };
-}
-
-function loadSavedSettings(){
-  try{
-    const current=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
-    if(current) return sanitizeSettings(current);
-    const legacy=JSON.parse(localStorage.getItem('streetblend.settings.v2')||'null');
-    if(legacy) return sanitizeSettings({...legacy,hideSeconds:DEFAULT_SETTINGS.hideSeconds,seekSeconds:DEFAULT_SETTINGS.seekSeconds});
-    return {...DEFAULT_SETTINGS};
-  }catch(_){
-    return {...DEFAULT_SETTINGS};
-  }
-}
-
-let appSettings=loadSavedSettings();
+const settingsApi=window.StreetblendSettings;
+const sanitizeSettings=settingsApi.sanitize;
+const penaltyText=settingsApi.penaltyText;
+const artCategoryText=settingsApi.artCategoryText;
+const rulesText=settingsApi.rulesText;
+let appSettings=settingsApi.load();
 
 let artLibrary = [];
 let artLoadPromise = null;
@@ -189,15 +155,14 @@ function closeSettings(){
 }
 
 function saveSettings(){
-  appSettings=readSettingsForm();
-  try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));}catch(_){}
+  appSettings=settingsApi.save(readSettingsForm());
   updateSettingsSummary();
   closeSettings();
   toast('Settings saved.');
 }
 
 function restoreDefaultSettings(){
-  appSettings={...DEFAULT_SETTINGS};
+  appSettings=settingsApi.defaults();
   syncSettingsForm();
 }
 
