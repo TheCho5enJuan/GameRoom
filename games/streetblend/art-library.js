@@ -81,7 +81,7 @@ const ART_LIBRARY = [
   }
 ];
 
-  const ART_CACHE_KEY='streetblend.commons.catalog.v1';
+  const ART_CACHE_KEY='streetblend.commons.catalog.v2';
   const ART_CACHE_MAX_AGE=7*24*60*60*1000;
   const COMMONS_SEARCHES=[
     'painting landscape',
