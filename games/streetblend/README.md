@@ -77,3 +77,17 @@ The current catalog includes Paris Street; Rainy Day, A Sunday on La Grande Jatt
 - Quick tap to guess.
 - A wrong guess removes 5 seconds from the seek timer. It does not directly subtract score points.
 
+
+## Start screen and settings
+
+Streetblend v1.2.0 uses a menu-style start screen with Create Game, Join Game, Practice, and Settings.
+
+Host settings are saved locally and copied into each newly created match. Current configurable rules are:
+
+- match length: 2, 4, or 6 rounds
+- hide timer: 30, 45, 60, 75, or 90 seconds
+- seek timer: 45, 60, 90, 120, or 150 seconds
+- wrong-guess penalty: no penalty or a configurable time penalty of 3, 5, 10, or 15 seconds
+
+The settings model already includes game mode and player count. Classic currently supports two players; additional modes/player counts are surfaced as coming-soon options rather than pretending they are playable.
+
