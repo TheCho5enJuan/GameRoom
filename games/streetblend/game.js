@@ -554,6 +554,10 @@ function phaseToken(phase){
 }
 
 function setHostPhase(phase){
+  if(hostState?.phase&&hostState.phase!==phase&&!flow.canTransition(hostState.phase,phase)){
+    console.warn('Streetblend blocked illegal phase transition',hostState.phase,'→',phase);
+    return false;
+  }
   hostState.phase=phase;
   hostState.phaseToken=phaseToken(phase);
   hostState.readyBySeat={};
@@ -563,6 +567,7 @@ function setHostPhase(phase){
   hostState.paused=false;
   localReadyToken='';
   lastTickSent=-1;
+  return true;
 }
 
 function beginRound(roundIndex){
