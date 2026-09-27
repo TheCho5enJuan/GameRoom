@@ -776,6 +776,8 @@ async function drainRemoteStates(){
       if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) continue;
       if(Number(remoteState?.syncSeq||0)!==seq) continue;
       guestAppliedSeq=Math.max(guestAppliedSeq,seq);
+      lastHostPulseAt=Date.now();
+      if(connected&&!state.paused) hideConnectionBanner();
       session?.send({type:'sb:state-ack',seq,phaseToken:state.phaseToken});
     }
   }finally{
@@ -804,10 +806,12 @@ async function handleGuestMessage(message){
     return;
   }
   if(message.type==='sb:state'){
+    lastHostPulseAt=Date.now();
     queueRemoteState(message.state);
     return;
   }
   if(message.type==='sb:pulse'||message.type==='sb:tick'){
+    lastHostPulseAt=Date.now();
     if(!remoteState ||
        Number(message.syncSeq)!==Number(remoteState.syncSeq) ||
        Number(message.round)!==Number(remoteState.round) ||
@@ -1942,7 +1946,7 @@ function tick(){
         ? Math.max(0,hostState.deadline-now)
         : null;
 
-    if(!solo&&session&&connected&&now-lastPulseAt>=1000){
+    if(!solo&&session?.connections?.size&&hostState.phase!==PHASES.LOBBY&&now-lastPulseAt>=1000){
       lastPulseAt=now;
       session.broadcast({
         type:'sb:pulse',
@@ -1970,6 +1974,10 @@ function tick(){
   }
 
   if(role==='guest'&&remoteState){
+    if(connected&&lastHostPulseAt&&now-lastHostPulseAt>5000){
+      showConnectionBanner('Synchronizing…','The host heartbeat is late. Requesting the authoritative game state.');
+      requestResync();
+    }
     if(remoteState.timerStarted&&!remoteState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(remoteState.phase)){
       if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
       updateClock(remoteState.remaining||0);
