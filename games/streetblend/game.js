@@ -2027,6 +2027,25 @@ stage.addEventListener('pointerup',onPointerUp);
 stage.addEventListener('pointercancel',onPointerUp);
 window.addEventListener('resize',()=>{resizeStage();markDirty();});
 window.addEventListener('beforeunload',()=>{try{session?.close();}catch(_){}});
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden){
+if(role==='host'&&!solo)pauseMatch('Host app moved to the background.','visibility');
+return;
+}
+if(role==='guest'&&remoteState)requestResync();
+else if(role==='host'&&hostState?.paused&&hostState.pauseReason==='visibility'&&session?.connections?.size){
+const seq=publishHostState();
+for(const s of (hostState.activeSeats||[]).filter(s=>s!==0))reconnectResumeBySeat[s]=seq;
+}
+});
+window.addEventListener('offline',()=>{
+if(role==='host'&&!solo)pauseMatch('Network connection lost.','network');
+showConnectionBanner('Offline','Game time is paused until the network returns.');
+});
+window.addEventListener('online',()=>{
+if(role==='guest'&&remoteState)session?.reconnect?.();
+else if(role==='host'&&hostState)publishHostState();
+});
 
 const invite=net.cleanCode(new URLSearchParams(location.search).get('room'));
 syncSettingsForm();
