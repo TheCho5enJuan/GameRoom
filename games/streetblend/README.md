@@ -55,4 +55,8 @@ The runtime rights check is deliberate: a title being present in a museum collec
 
 ## Image delivery
 
-Streetblend uses the `config.iiif_url` returned by the Art Institute API rather than assuming a fixed image host. Public-domain images are requested at 1686px wide first and automatically retried at the museum-recommended 843px size if the larger request fails.
+Streetblend v1.0.2 does not query the museum artwork API at runtime. It uses a curated catalog of seven known public-domain Art Institute works with direct IIIF image URLs.
+
+Each scene first attempts a CORS-enabled direct image load so the eyedropper can read pixels. If that is blocked by the browser or museum edge service, Streetblend retries the same direct image URL as a normal browser image so the painting still renders. When pixel sampling is unavailable, the paint swatch opens a manual color picker instead.
+
+The current catalog includes Paris Street; Rainy Day, A Sunday on La Grande Jatte, Water Lilies, Two Sisters, The Child's Bath, Arrival of the Normandy Train, and The Bedroom.
