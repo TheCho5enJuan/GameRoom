@@ -119,19 +119,12 @@
             <div class="guess-flash" id="guessFlash" hidden></div>
           </div>
 
-          <div class="zoom-row">
-            <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
-            <input id="zoom" type="range" min="1" max="5" step="0.05" value="1">
-            <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
-            <button id="resetView" type="button">Fit</button>
-          </div>
         </section>
 
         <section class="controls hider-controls" id="hiderControls" hidden>
-          <div class="role-head"><span class="role-badge hider">HIDER</span><p>Find a spot, paint your figure, then lock it in.</p></div>
+          <div class="role-head"><span class="role-badge hider">HIDER</span><p>Drag the figure · pinch it to resize/rotate · drag the background to pan.</p></div>
           <div class="tool-grid">
             <button class="tool active" data-tool="place" type="button"><b>✥</b><span>Place</span></button>
-            <button class="tool" data-tool="pan" type="button"><b>↔</b><span>Pan</span></button>
             <button class="tool" data-tool="sample" type="button"><b>◉</b><span>Sample</span></button>
             <button class="tool" data-tool="paint" type="button"><b>✎</b><span>Paint</span></button>
           </div>
@@ -140,11 +133,6 @@
             <div class="swatch" id="paintSwatch" aria-label="Selected paint color"></div>
             <label><span>Brush</span><input id="brushSize" type="range" min="4" max="28" value="14"></label>
             <button id="resetPaint" type="button">Reset white</button>
-          </div>
-
-          <div class="transform-grid">
-            <label><span>Size</span><input id="figureScale" type="range" min="0.035" max="0.14" step="0.002" value="0.075"></label>
-            <label><span>Rotation</span><input id="figureRotation" type="range" min="-45" max="45" step="1" value="0"></label>
           </div>
 
           <div class="pose-row" role="group" aria-label="Figure pose">
@@ -159,12 +147,12 @@
         </section>
 
         <section class="controls seeker-controls" id="seekerControls" hidden>
-          <div class="role-head"><span class="role-badge seeker">SEEKER</span><p>Pan and zoom. Arm a guess when you think you've found the hidden figure.</p></div>
-          <div class="seek-actions">
-            <button class="primary" id="guessMode" type="button">Make a Guess</button>
+          <div class="role-head"><span class="role-badge seeker">SEEKER</span><p>Drag to pan · pinch to zoom · quick tap to guess.</p></div>
+          <div class="seek-status">
             <div><strong id="wrongCount">0</strong><span>wrong guesses</span></div>
+            <div class="penalty"><strong>−5 sec</strong><span>per wrong tap</span></div>
           </div>
-          <p class="hint" id="seekHint">Drag to explore. Pinch or use the zoom slider for detail.</p>
+          <p class="hint" id="seekHint">Explore freely. A quick tap is a guess; dragging never counts as a guess.</p>
         </section>
 
         <section class="controls waiting-controls" id="waitingControls" hidden>
