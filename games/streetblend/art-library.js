@@ -304,8 +304,24 @@ const ART_LIBRARY = [
     }
   }
   
+  function shuffle(items){
+    const list=(items||[]).slice();
+    for(let i=list.length-1;i>0;i--){
+      let unit=Math.random();
+      if(globalThis.crypto?.getRandomValues){
+        const data=new Uint32Array(1);
+        globalThis.crypto.getRandomValues(data);
+        unit=data[0]/4294967296;
+      }
+      const j=Math.floor(unit*(i+1));
+      [list[i],list[j]]=[list[j],list[i]];
+    }
+    return list;
+  }
+
   window.StreetblendArt={
     load:loadArtLibrary,
+    shuffle,
     categories:{...CATEGORY_LABELS},
     seedCount:ART_LIBRARY.length
   };
