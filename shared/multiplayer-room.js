@@ -19,7 +19,7 @@
       role, code, gameKey:cleanGameKey(opts.gameKey), maxPlayers:Math.max(2,Number(opts.maxPlayers)||2),
       peer:null, connection:null, connections:new Map(), seat:role==='host'?0:null, closed:false,
       playerId:String(opts.playerId||randomId()).slice(0,80),
-      retryTimer:null, retryPending:false,
+      retryTimer:null, retryPending:false, reconnect:null,
       send(message){
         if(role==='host') throw new Error('Host sessions use sendTo() or broadcast().');
         if(session.connection?.open) session.connection.send(message);
@@ -129,7 +129,11 @@
       });
       peer.on('connection',bindIncoming);
       peer.on('disconnected',()=>{
-        if(session.closed || session.connections.size>0) return;
+        if(session.closed) return;
+        if(session.connections.size>0&&typeof peer.reconnect==='function'){
+          opts.onStatus?.({state:'retrying',role:'host',code,attempt:1,maxRetries:MAX_RETRIES,errorType:'signaling'});
+          try{peer.reconnect();return;}catch(_){}
+        }
         scheduleRetry(session,opts,attempt,start,{type:'network',message:'Signaling server disconnected.'});
       });
       peer.on('error',error=>{
@@ -170,7 +174,8 @@
         conn.on('data',message=>{
           if(message?.type==='gameroom:welcome'){
             session.seat=Number(message.seat);
-            opts.onStatus?.({state:'connected',role:'guest',code,seat:session.seat});
+            session.retryPending=false;
+            opts.onStatus?.({state:'connected',role:'guest',code,seat:session.seat,reconnected:!!message.reconnected});
             opts.onWelcome?.(message);
             return;
           }
@@ -197,6 +202,14 @@
         opts.onError?.(error);
       });
     }
+
+    session.reconnect=()=>{
+      if(session.closed) return;
+      if(session.retryTimer) clearTimeout(session.retryTimer);
+      session.retryTimer=null;
+      session.retryPending=false;
+      start(0);
+    };
 
     start(0);
     return session;
