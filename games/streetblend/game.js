@@ -35,7 +35,11 @@ function sanitizeSettings(raw={}){
 
 function loadSavedSettings(){
   try{
-    return sanitizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null')||DEFAULT_SETTINGS);
+    const current=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
+    if(current) return sanitizeSettings(current);
+    const legacy=JSON.parse(localStorage.getItem('streetblend.settings.v2')||'null');
+    if(legacy) return sanitizeSettings({...legacy,hideSeconds:DEFAULT_SETTINGS.hideSeconds,seekSeconds:DEFAULT_SETTINGS.seekSeconds});
+    return {...DEFAULT_SETTINGS};
   }catch(_){
     return {...DEFAULT_SETTINGS};
   }
