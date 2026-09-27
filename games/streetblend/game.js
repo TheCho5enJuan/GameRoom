@@ -1,5 +1,4 @@
 'use strict';
-
 (() => {
 const $ = id => document.getElementById(id);
 const net = window.GameRoomMultiplayer;
@@ -8,7 +7,6 @@ const view = window.StreetblendView;
 const PHASES = flow.PHASES;
 const PAINT_W = 96;
 const PAINT_H = 180;
-
 const settingsApi=window.StreetblendSettings;
 const settingsPanel=window.StreetblendSettingsPanel;
 const sanitizeSettings=settingsApi.sanitize;
@@ -16,7 +14,6 @@ const penaltyText=settingsApi.penaltyText;
 const artCategoryText=settingsApi.artCategoryText;
 const rulesText=settingsApi.rulesText;
 let appSettings=settingsApi.load();
-
 let artLibrary = [];
 let artLoadPromise = null;
 let artLoadCategory = null;
@@ -42,7 +39,6 @@ let lastTickSent = -1;
 let toastTimer = null;
 let localReadyToken = '';
 let localAvatar = null;
-
 const stage = $('stage');
 const ctx = stage.getContext('2d');
 const paintCanvas = document.createElement('canvas');
@@ -55,7 +51,6 @@ figureCanvas.height = PAINT_H;
 const figureCtx = figureCanvas.getContext('2d');
 const sampleLoupeCanvas = $('sampleLoupeCanvas');
 const sampleLoupeCtx = sampleLoupeCanvas.getContext('2d');
-
 let figure = defaultFigure();
 let paintColor = '#ffffff';
 let activeTool = 'place';
@@ -91,11 +86,9 @@ let lastSeenBySeat={};
 let lastForcedReconnectAt=0;
 let pendingCriticalAction=null;
 let lastCriticalSendAt=0;
-
 function defaultFigure(){
 return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
 }
-
 function resetPaint(){
 paintCtx.save();
 paintCtx.globalCompositeOperation = 'source-over';
@@ -106,28 +99,23 @@ figure.paintData = null;
 markDirty();
 }
 resetPaint();
-
 function toast(message){
 clearTimeout(toastTimer);
 $('toast').textContent = message;
 $('toast').classList.add('show');
 toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2200);
 }
-
 function setNetStatus(title,detail){
 $('netStatus').innerHTML='<strong>'+escapeHtml(title)+'</strong><span>'+escapeHtml(detail)+'</span>';
 }
-
 function showConnectionBanner(title,text){
 $('connectionBannerTitle').textContent=title;
 $('connectionBannerText').textContent=text;
 $('connectionBanner').hidden=false;
 }
-
 function hideConnectionBanner(){
 $('connectionBanner').hidden=true;
 }
-
 function stablePlayerId(code){
 const key='streetblend.player.'+String(code||'room');
 try{
@@ -141,11 +129,9 @@ return id;
 return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 }
 }
-
 function escapeHtml(v){
 return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
-
 function updateSettingsSummary(){settingsPanel.updateSummary(appSettings,hostState)}
 function syncSettingsForm(){settingsPanel.sync(appSettings)}
 function openSettings(){settingsPanel.open(appSettings)}
@@ -154,7 +140,6 @@ function saveSettings(){appSettings=settingsPanel.save();updateSettingsSummary()
 function restoreDefaultSettings(){appSettings=settingsPanel.restore()}
 function showStartMenu(){settingsPanel.showStart(appSettings,hostState,setNetStatus)}
 function showJoinPane(){settingsPanel.showJoin(setNetStatus)}
-
 async function loadArtLibrary(category=appSettings.artCategory){
 category=category||'mixed';
 if(artLoadPromise && artLoadCategory===category) return artLoadPromise;
@@ -168,15 +153,12 @@ artLoadPromise=window.StreetblendArt.load(category,(title,detail)=>setNetStatus(
 });
 return artLoadPromise;
 }
-
 function playerName(){
 return String($('playerName').value || 'Player').trim().slice(0,18) || 'Player';
 }
-
 function cleanCode(){
 $('roomCode').value = net.cleanCode($('roomCode').value);
 }
-
 function inviteUrl(code){
 const u = new URL(location.href);
 u.search = '';
@@ -184,7 +166,6 @@ u.hash = '';
 u.searchParams.set('room',net.cleanCode(code));
 return u.toString();
 }
-
 async function shareInvite(){
 if(!session?.code) return;
 const url = inviteUrl(session.code);
@@ -205,7 +186,6 @@ try{
 }
 }
 }
-
 function leaveRoom(reload=true){
 try{session?.close();}catch(_){}
 session = null;
@@ -220,7 +200,6 @@ u.searchParams.delete('room');
 history.replaceState({},'',u.pathname+(u.search||'')+u.hash);
 if(reload) location.reload();
 }
-
 function refreshAvatarUi(state=getState()){
 if(!window.StreetblendAvatar) return;
 if(state?.players) StreetblendAvatar.setMatchAvatars(state.players);
@@ -233,7 +212,6 @@ const opponent=state.players?.[state.seekerSeat];
 StreetblendAvatar.setOpponent(opponent?.avatar,opponent?.name||'Seeker');
 }else StreetblendAvatar.setOpponent(null);
 }
-
 function onAvatarChanged(data){
 if(typeof data!=='string' || data.length>160000) return;
 localAvatar=data;
@@ -249,7 +227,6 @@ if(!solo&&session?.connections?.size) session.broadcast({type:'sb:avatar',seat:0
 session?.send({type:'sb:avatar',seat,data});
 }
 }
-
 function createRoom(){
 loadArtLibrary(appSettings.artCategory).catch(()=>{});
 leaveRoom(false);
@@ -264,7 +241,6 @@ $('roomBox').hidden=true;
 $('connectedBox').hidden=true;
 hideConnectionBanner();
 setNetStatus('Creating room','Connecting to the signaling service…');
-
 session=net.host({
 gameKey:'streetblend',
 maxPlayers:appSettings.players,
@@ -302,7 +278,6 @@ onPlayerJoin(info){
     session.sendTo(info.seat,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
     return;
   }
-
   hostState.players[info.seat].name=info.name||hostState.players[info.seat]?.name||('Player '+(info.seat+1));
   $('connectedBox').hidden=true;
   $('gameShell').hidden=false;
@@ -332,7 +307,6 @@ onError(error){
 }
 });
 }
-
 function joinRoom(){
 leaveRoom(false);
 const code=net.cleanCode($('roomCode').value);
@@ -350,7 +324,6 @@ $('roomBox').hidden=true;
 $('connectedBox').hidden=true;
 hideConnectionBanner();
 setNetStatus('Connecting','Looking for room '+code+'…');
-
 session=net.join({
 gameKey:'streetblend',
 code,
@@ -407,7 +380,6 @@ onError(error){
 }
 });
 }
-
 function makeHostState(name0,name1){
 return {
 players:[{name:name0,score:0,avatar:localAvatar},{name:name1,score:0,avatar:null}],
@@ -433,7 +405,6 @@ pauseReason:null,
 pauseRemaining:0
 };
 }
-
 async function startMatch(){
 try{
 await loadArtLibrary(hostState?.config?.artCategory || appSettings.artCategory);
@@ -451,7 +422,6 @@ if(!hostState) hostState = makeHostState(playerName(),'Practice Seeker');
 beginRound(0);
 }
 }
-
 async function startSolo(){
 try{await loadArtLibrary(appSettings.artCategory);}catch(error){toast(error.message);return;}
 leaveRoom(false);
@@ -464,14 +434,12 @@ hostState.activeSeats=[0];
 resetSceneDeck();
 beginRound(0);
 }
-
 function resetSceneDeck(){
 sceneDeck=window.StreetblendArt.shuffle(artLibrary);
 if(sceneDeck.length>1 && lastSceneId!=null && String(sceneDeck[0].id)===String(lastSceneId)){
 [sceneDeck[0],sceneDeck[1]]=[sceneDeck[1],sceneDeck[0]];
 }
 }
-
 function shuffledScene(){
 if(!artLibrary.length) return null;
 if(!sceneDeck.length) resetSceneDeck();
@@ -479,11 +447,9 @@ const selected=sceneDeck.shift()||artLibrary[0];
 lastSceneId=selected?.id??null;
 return selected;
 }
-
 function phaseToken(phase){
 return String(hostState?.round??0)+':'+phase+':'+(++phaseSerial);
 }
-
 function setHostPhase(phase){
 if(hostState?.phase&&hostState.phase!==phase&&!flow.canTransition(hostState.phase,phase)){
 console.warn('Streetblend blocked illegal phase transition',hostState.phase,'→',phase);
@@ -500,7 +466,6 @@ localReadyToken='';
 lastTickSent=-1;
 return true;
 }
-
 function beginRound(roundIndex){
 if(!hostState) return;
 hostState.round=roundIndex;
@@ -520,7 +485,6 @@ hostState.seekerSeat=1;
 setHostPhase(PHASES.HIDE_PREPARE);
 publishHostState();
 }
-
 function publicState(includeFigure=false){
 if(!hostState) return null;
 const remaining=hostState.paused
@@ -550,7 +514,6 @@ remaining
 if(includeFigure||hostState.phase===PHASES.SEEK_PREPARE) state.figure=hostState.figure;
 return state;
 }
-
 function sendGuestPhase(repeat=false){
 if(!hostState) return null;
 if(!repeat) syncSeq++;
@@ -559,7 +522,6 @@ const state=publicState(repeat);
 if(role==='host'&&!solo&&session?.connections?.size) session.broadcast({type:'sb:state',state});
 return state;
 }
-
 function publishHostState(){
 const snapshot=sendGuestPhase(false)||publicState();
 if(!snapshot) return 0;
@@ -571,7 +533,6 @@ if(applied&&Number(snapshot.syncSeq)===syncSeq){
 });
 return Number(snapshot.syncSeq)||0;
 }
-
 function resendHostState(targetSeat=null){
 if(!hostState||role!=='host'||solo||!session) return;
 const state=publicState(true);
@@ -580,13 +541,11 @@ if(targetSeat===null) session.broadcast({type:'sb:state',state});
 else session.sendTo(targetSeat,{type:'sb:state',state});
 markDirty();
 }
-
 function requestResync(){
 if(role!=='guest'||!connected||!session||Date.now()-lastResyncAt<1000) return;
 lastResyncAt=Date.now();
 session.send({type:'sb:resync',haveSeq:Number(remoteState?.syncSeq)||0});
 }
-
 function actionMessage(type,payload={},critical=false){
 const state=getState();
 if(role!=='guest'||!session||!connected||!state) return null;
@@ -605,7 +564,6 @@ lastCriticalSendAt=Date.now();
 }
 return message;
 }
-
 function markPhaseReady(readySeat,token){
 if(role!=='host'||!hostState||token!==hostState.phaseToken) return;
 hostState.readyBySeat[readySeat]=token;
@@ -618,7 +576,6 @@ setHostPhase(PHASES.SEEK);
 publishHostState();
 }
 }
-
 function reportPhaseReady(state){
 if(!state||![PHASES.HIDE_PREPARE,PHASES.SEEK_PREPARE].includes(state.phase)) return;
 if(!flow.requiredReadySeats(state).includes(seat)) return;
@@ -627,12 +584,10 @@ localReadyToken=state.phaseToken;
 if(role==='host') markPhaseReady(0,state.phaseToken);
 else actionMessage('sb:phase-ready');
 }
-
 function allGuestAcks(seq){
 const seats=(hostState?.activeSeats||[]).filter(s=>s!==0);
 return seats.every(s=>Number(ackBySeat[s]||0)>=Number(seq||0));
 }
-
 function maybeResumeAfterReconnect(){
 const entries=Object.entries(reconnectResumeBySeat);
 if(!entries.length||!hostState?.paused) return;
@@ -640,7 +595,6 @@ if(entries.some(([s,seq])=>Number(ackBySeat[s]||0)<Number(seq))) return;
 reconnectResumeBySeat={};
 resumeMatch();
 }
-
 function maybeStartTimedPhase(){
 if(role!=='host'||!hostState||hostState.timerStarted||hostState.paused) return;
 if(![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)) return;
@@ -653,7 +607,6 @@ hostState.deadline=Date.now()+seconds*1000;
 lastTickSent=-1;
 publishHostState();
 }
-
 function refreshNextRoundGate(){
 if(role!=='host'||hostState?.phase!==PHASES.REVEAL) return;
 const ready=solo||allGuestAcks(syncSeq);
@@ -661,7 +614,6 @@ $('nextRound').disabled=!ready;
 $('nextRoundWait').hidden=ready;
 if(!ready) $('nextRoundWait').textContent='Waiting for opponent to receive the round result…';
 }
-
 function handleHostMessage(message,meta){
 if(!message?.type||!hostState) return;
 const sender=Number(meta?.seat);
@@ -727,7 +679,6 @@ lockFigure(sanitizeFigure(message.figure));
 processGuess(message.x,message.y);
 }
 }
-
 function queueRemoteState(state){
 if(!state?.figure&&remoteState?.figure&&Number(state?.round)===Number(remoteState?.round)){
 state={...state,figure:remoteState.figure};
@@ -739,7 +690,6 @@ pendingRemoteState=state;
 if(remoteRenderRunning) uiEpoch++;
 drainRemoteStates();
 }
-
 async function drainRemoteStates(){
 if(remoteRenderRunning) return;
 remoteRenderRunning=true;
@@ -763,7 +713,6 @@ remoteRenderRunning=false;
 if(pendingRemoteState) drainRemoteStates();
 }
 }
-
 async function handleGuestMessage(message){
 if(!message?.type) return;
 if(message.type==='sb:lobby-config'){
@@ -821,7 +770,6 @@ return;
 }
 if(message.type==='sb:toast') toast(message.message);
 }
-
 function sanitizeFigure(f){
 if(!f) return defaultFigure();
 return {
@@ -834,14 +782,12 @@ build:['slim','regular','bold'].includes(f.build)?f.build:'regular',
 paintData:typeof f.paintData === 'string' && f.paintData.length < 150000 ? f.paintData : null
 };
 }
-
 function exportFigure(){
 return {
 x:figure.x,y:figure.y,scale:figure.scale,rotation:figure.rotation,pose:figure.pose,build:figure.build,
 paintData:paintCanvas.toDataURL('image/png')
 };
 }
-
 function sendDraft(){
 if(role==='guest'&&connected&&remoteState?.phase===PHASES.HIDE&&remoteState.hiderSeat===seat){
 clearTimeout(draftTimer);
@@ -850,7 +796,6 @@ draftTimer=setTimeout(()=>actionMessage('sb:draft',{figure:exportFigure()}),140)
 hostState.lastDraft=exportFigure();
 }
 }
-
 function lockCurrentHide(){
 const state=getState();
 if(!state||state.phase!==PHASES.HIDE||state.hiderSeat!==seat) return;
@@ -864,7 +809,6 @@ else actionMessage('sb:lock',{figure:f},true);
 showStageMessage('Hiding spot locked','Preparing the Seeker’s view…');
 $('hiderControls').hidden=true;
 }
-
 function lockFigure(f){
 if(!hostState||hostState.phase!==PHASES.HIDE) return;
 hostState.figure=sanitizeFigure(f||hostState.lastDraft||defaultFigure());
@@ -873,7 +817,6 @@ hostState.guessMarks=[];
 setHostPhase(PHASES.SEEK_PREPARE);
 publishHostState();
 }
-
 function processGuess(x,y){
 if(!hostState || hostState.phase !== 'seek' || !hostState.figure) return;
 x=clamp(Number(x)||0,0,1); y=clamp(Number(y)||0,0,1);
@@ -884,7 +827,6 @@ const rx = Math.max(.022,f.scale*ratio*.42*buildWidth);
 const ry = Math.max(.03,f.scale*.52);
 const dx=(x-f.x)/rx, dy=(y-f.y)/ry;
 const hit=dx*dx+dy*dy <= 1.15;
-
 hostState.guessMarks.push({x,y,hit});
 if(hit){
 finishRound(true);
@@ -907,7 +849,6 @@ if(!solo&&session?.connections?.size) session.broadcast({type:'sb:toast',message
 publishHostState();
 }
 }
-
 function finishRound(found){
 if(!hostState||hostState.phase!==PHASES.SEEK) return;
 const remaining=Math.max(0,Math.ceil((hostState.deadline-Date.now())/1000));
@@ -922,7 +863,6 @@ hostState.result={found,remaining,seekerPoints,hiderPoints,wrong:hostState.wrong
 setHostPhase(PHASES.REVEAL);
 publishHostState();
 }
-
 function nextRound(){
 if(role!=='host'||!hostState||hostState.phase!==PHASES.REVEAL) return;
 if(!solo&&!allGuestAcks(syncSeq)){
@@ -935,7 +875,6 @@ setHostPhase(PHASES.FINAL);
 publishHostState();
 }else beginRound(next);
 }
-
 function rematch(){
 if(role !== 'host') return;
 if(solo){
@@ -947,7 +886,6 @@ if(!connected) return;
 hostState.players.forEach(p=>p.score=0);
 beginRound(0);
 }
-
 function pauseMatch(message,reason='disconnect'){
 if(!hostState||![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)||!hostState.timerStarted||hostState.paused) return;
 hostState.paused=true;
@@ -957,7 +895,6 @@ hostState.deadline=0;
 publishHostState();
 toast(message);
 }
-
 function resumeMatch(){
 if(!hostState?.paused) return;
 hostState.paused=false;
@@ -966,11 +903,9 @@ hostState.deadline=Date.now()+Math.max(1000,hostState.pauseRemaining||30000);
 hostState.pauseRemaining=0;
 publishHostState();
 }
-
 function getState(){
 return role === 'host' ? hostState : remoteState;
 }
-
 async function applyStateToUI(state,isHost){
 const epoch=++uiEpoch;
 const phaseKey=String(state.phaseToken||state.round+':'+state.phase+':'+(state.scene?.id||''));
@@ -978,39 +913,32 @@ const enteringPhase=phaseKey!==lastUiPhaseKey;
 $('lobbyPanel').hidden=true;
 $('gameShell').hidden=false;
 updateScoreboard(state);
-
 if(state.timerStarted) updateClock(state.remaining||0);
 else {
 $('clock').textContent='--:--';
 $('clock').style.color='';
 }
-
 if(state.paused){
 showConnectionBanner('Game paused','Waiting for the shared session to reconnect and synchronize.');
 }else if(connected){
 hideConnectionBanner();
 }
-
 if(state.phase===PHASES.FINAL){
 showFinal(state,isHost);
 lastUiPhaseKey=phaseKey;
 return true;
 }
-
 let sceneLoaded=!!sceneImage&&scene?.id===state.scene?.id;
 if(scene?.id!==state.scene?.id||!sceneImage) sceneLoaded=await loadScene(state.scene);
 if(epoch!==uiEpoch) return false;
-
 reveal=state.phase===PHASES.REVEAL;
 guessMarks=(state.guessMarks||[]).slice();
-
 if([PHASES.SEEK_PREPARE,PHASES.SEEK,PHASES.REVEAL].includes(state.phase)&&state.figure){
 figure=sanitizeFigure(state.figure);
 clampFigureToArtwork();
 await importPaintData(figure.paintData);
 if(epoch!==uiEpoch) return false;
 }
-
 $('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.config.rounds;
 $('phaseLabel').textContent=(!state.timerStarted&&[PHASES.HIDE,PHASES.SEEK].includes(state.phase))
 ? 'SYNCING'
@@ -1024,7 +952,6 @@ $('viewControls').hidden=true;
 window.StreetblendAvatar?.setStudioVisible(false);
 window.StreetblendAvatar?.setOpponent(null);
 hideStageMessage();
-
 if(state.phase===PHASES.HIDE_PREPARE){
 if(state.hiderSeat===seat||solo){
   if(enteringPhase){
@@ -1121,12 +1048,10 @@ if(state.seekerSeat===seat||solo){
 if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
 showReveal(state,isHost);
 }
-
 lastUiPhaseKey=phaseKey;
 markDirty();
 return true;
 }
-
 function resetFigureForHide(){
 figure=defaultFigure();
 resetPaint();
@@ -1136,7 +1061,6 @@ $('poseSelect').value='stand';
 $('buildSelect').value='regular';
 if(role==='host') hostState.lastDraft=exportFigure();
 }
-
 function updateScoreboard(state){view.updateScoreboard(state,window.StreetblendAvatar)}
 function updateClock(ms){view.updateClock(ms)}
 function showReveal(state,isHost){view.showReveal(state,isHost,escapeHtml);if(isHost)refreshNextRoundGate();markDirty()}
@@ -1144,7 +1068,6 @@ function showFinal(state,isHost){view.showFinal(state,isHost,escapeHtml);reveal=
 const showStageMessage=view.showStageMessage;
 const hideStageMessage=view.hideStageMessage;
 const flashGuess=view.flashGuess;
-
 function loadImageDirect(url,useCors){
 return new Promise((resolve,reject)=>{
 const img=new Image();
@@ -1154,7 +1077,6 @@ img.onerror=()=>reject(new Error('Image request failed.'));
 img.src=url;
 });
 }
-
 async function loadScene(nextScene){
 if(!nextScene) return false;
 scene=nextScene;
@@ -1165,11 +1087,9 @@ $('artTitle').textContent=scene.title || 'Loading artwork…';
 $('artArtist').textContent=[scene.artist,scene.date].filter(Boolean).join(' · ');
 $('artSource').href=scene.sourceUrl || 'https://www.artic.edu/';
 showStageMessage('Loading painting','Loading artwork…');
-
 const urls=Array.from(new Set([scene.imageUrl,scene.imageLarge].filter(Boolean)));
 let img=null;
 let corsLoaded=false;
-
 for(const url of urls){
 try{
   img=await loadImageDirect(url,true);
@@ -1177,7 +1097,6 @@ try{
   break;
 }catch(_){}
 }
-
 if(!img){
 for(const url of urls){
   try{
@@ -1187,18 +1106,14 @@ for(const url of urls){
   }catch(_){}
 }
 }
-
 if(token!==sceneToken) return false;
-
 if(!img){
 showStageMessage('Painting unavailable','This direct museum image could not be loaded. Try another round or reload.');
 toast('Could not load painting image.');
 return false;
 }
-
 sceneImage=img;
 sceneSamplingAvailable=corsLoaded;
-
 sceneBuffer.width=img.naturalWidth;
 sceneBuffer.height=img.naturalHeight;
 sceneBufferCtx.clearRect(0,0,sceneBuffer.width,sceneBuffer.height);
@@ -1210,7 +1125,6 @@ if(corsLoaded){
 }catch(_){
 sceneSamplingAvailable=false;
 }
-
 $('hiderHint').textContent=sceneSamplingAvailable
 ? 'Tap the painting to position your figure. Use Sample, then Paint to camouflage it.'
 : 'Tap to position your figure. Direct image loaded; choose paint colors manually if sampling is blocked.';
@@ -1218,7 +1132,6 @@ hideStageMessage();
 markDirty();
 return true;
 }
-
 function resizeStage(){
 const rect=$('stageWrap').getBoundingClientRect();
 const dpr=Math.min(2,window.devicePixelRatio||1);
@@ -1229,7 +1142,6 @@ stage.width=w;stage.height=h;
 markDirty();
 }
 }
-
 function getTransform(){
 if(!sceneImage) return null;
 const iw=sceneImage.naturalWidth, ih=sceneImage.naturalHeight;
@@ -1239,7 +1151,6 @@ const dx=stage.width/2-camera.cx*iw*scale;
 const dy=stage.height/2-camera.cy*ih*scale;
 return {iw,ih,fit,scale,dx,dy};
 }
-
 function screenToImage(px,py){
 const t=getTransform();
 if(!t) return null;
@@ -1248,25 +1159,21 @@ x:clamp((px-t.dx)/(t.iw*t.scale),0,1),
 y:clamp((py-t.dy)/(t.ih*t.scale),0,1)
 };
 }
-
 function imageToScreen(x,y){
 const t=getTransform();
 if(!t) return null;
 return {x:t.dx+x*t.iw*t.scale,y:t.dy+y*t.ih*t.scale};
 }
-
 function clampCamera(){
 const z=Math.max(1,camera.zoom);
 const margin=.5/z;
 camera.cx=clamp(camera.cx,margin,1-margin);
 camera.cy=clamp(camera.cy,margin,1-margin);
 }
-
 function fitArtwork(){
 camera={cx:.5,cy:.5,zoom:1};
 markDirty();
 }
-
 function focusPlayer(){
 if(!sceneImage || !figure) return;
 resizeStage();
@@ -1281,7 +1188,6 @@ clampCamera();
 markDirty();
 toast('Player focused.');
 }
-
 function draw(){
 raf=0;
 if(!dirty) return;
@@ -1291,7 +1197,6 @@ ctx.clearRect(0,0,stage.width,stage.height);
 if(!sceneImage) return;
 const t=getTransform();
 ctx.drawImage(sceneImage,t.dx,t.dy,t.iw*t.scale,t.ih*t.scale);
-
 const state=getState();
 const shouldDrawFigure = !!figure && (
 state?.phase==='seek' || state?.phase==='reveal' ||
@@ -1302,31 +1207,24 @@ t,
 state?.phase==='reveal',
 state?.phase==='hide' && state?.hiderSeat===seat && activeTool==='place'
 );
-
 if(state?.phase==='seek' || state?.phase==='reveal'){
 drawGuessMarks(t, state?.guessMarks || guessMarks);
 }
 }
-
 function markDirty(){
 dirty=true;
 if(!raf) raf=requestAnimationFrame(draw);
 }
-
 function rebuildFigureCanvas(){
 figureCtx.clearRect(0,0,PAINT_W,PAINT_H);
-
 figureCtx.globalCompositeOperation='source-over';
 figureCtx.fillStyle='#fff';
 figureCtx.strokeStyle='#fff';
 drawSilhouette(figureCtx,figure.pose,PAINT_W,PAINT_H,figure.build);
-
 figureCtx.globalCompositeOperation='source-in';
 figureCtx.drawImage(paintCanvas,0,0);
-
 figureCtx.globalCompositeOperation='source-over';
 }
-
 function drawSilhouette(c,pose,w,h,build='regular'){
 c.save();
 c.lineCap='round';
@@ -1336,14 +1234,12 @@ c.fillStyle='#fff';
 const thickness=build==='bold'?1.55:(build==='slim'?.82:1.15);
 const headY=pose==='crouch'?38:24;
 c.beginPath();c.arc(w*.5,headY,w*.12*Math.sqrt(thickness),0,Math.PI*2);c.fill();
-
 c.lineWidth=w*.17*thickness;
 c.beginPath();
 if(pose==='lean'){c.moveTo(w*.48,headY+w*.13);c.lineTo(w*.61,h*.55);}
 else if(pose==='crouch'){c.moveTo(w*.5,headY+w*.12);c.lineTo(w*.47,h*.48);}
 else {c.moveTo(w*.5,headY+w*.12);c.lineTo(w*.5,h*.58);}
 c.stroke();
-
 c.lineWidth=w*.10*thickness;
 c.beginPath();
 if(pose==='wide'){
@@ -1370,7 +1266,6 @@ c.moveTo(w*.52,h*.57);c.lineTo(w*.65,h*.96);
 c.stroke();
 c.restore();
 }
-
 function figureMetrics(){
 const t=getTransform();
 const p=imageToScreen(figure.x,figure.y);
@@ -1380,7 +1275,6 @@ const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
 const w=h*(PAINT_W/PAINT_H)*widthFactor;
 return {t,p,w,h};
 }
-
 function clampFigureToArtwork(){
 if(!figure) return;
 const imageRatio=sceneImage?.naturalWidth && sceneImage?.naturalHeight
@@ -1393,7 +1287,6 @@ const halfY=clamp(figure.scale/2,.02,.45);
 figure.x=clamp(figure.x,halfX,1-halfX);
 figure.y=clamp(figure.y,halfY,1-halfY);
 }
-
 function figureLocalPoint(px,py){
 const m=figureMetrics();
 if(!m) return null;
@@ -1406,13 +1299,11 @@ x:dx*Math.cos(a)-dy*Math.sin(a),
 y:dx*Math.sin(a)+dy*Math.cos(a)
 };
 }
-
 function pointHitsFigure(px,py){
 const p=figureLocalPoint(px,py);
 if(!p) return false;
 return Math.abs(p.x)<=p.m.w*.72 && Math.abs(p.y)<=p.m.h*.60;
 }
-
 function figureHandleAt(px,py){
 const p=figureLocalPoint(px,py);
 if(!p) return null;
@@ -1424,7 +1315,6 @@ if(Math.hypot(p.x-rotate.x,p.y-rotate.y)<=radius) return 'rotate';
 if(Math.hypot(p.x-resize.x,p.y-resize.y)<=radius) return 'resize';
 return null;
 }
-
 function drawFigure(t,revealOutline,selected){
 rebuildFigureCanvas();
 const p=imageToScreen(figure.x,figure.y);
@@ -1433,11 +1323,9 @@ const h=figure.scale*t.ih*t.scale;
 const widthFactor=figure.build==='bold'?1.28:(figure.build==='slim'?.90:1.08);
 const w=h*(PAINT_W/PAINT_H)*widthFactor;
 const dpr=window.devicePixelRatio||1;
-
 ctx.save();
 ctx.translate(p.x,p.y);
 ctx.rotate(figure.rotation*Math.PI/180);
-
 if(selected){
 ctx.save();
 ctx.strokeStyle='rgba(255,255,255,.98)';
@@ -1445,7 +1333,6 @@ ctx.lineWidth=2*dpr;
 ctx.setLineDash([6*dpr,4*dpr]);
 ctx.strokeRect(-w*.62,-h*.56,w*1.24,h*1.12);
 ctx.setLineDash([]);
-
 ctx.beginPath();
 ctx.moveTo(0,-h*.56);
 ctx.lineTo(0,-h*.70);
@@ -1462,7 +1349,6 @@ ctx.font='900 '+(14*dpr)+'px sans-serif';
 ctx.fillText('↻',0,-h*.76);
 ctx.font='800 '+(6*dpr)+'px sans-serif';
 ctx.fillText('ROTATE',0,-h*.76-handleR-7*dpr);
-
 ctx.fillStyle='rgba(8,13,20,.96)';
 ctx.strokeStyle='#ffffff';
 ctx.beginPath();ctx.arc(w*.70,h*.64,handleR,0,Math.PI*2);ctx.fill();ctx.stroke();
@@ -1471,10 +1357,8 @@ ctx.font='900 '+(12*dpr)+'px sans-serif';
 ctx.fillText('⤢',w*.70,h*.64);
 ctx.font='800 '+(6*dpr)+'px sans-serif';
 ctx.fillText('SIZE',w*.70,h*.64+handleR+7*dpr);
-
 ctx.restore();
 }
-
 if(revealOutline){
 ctx.shadowColor='rgba(255,80,105,.95)';
 ctx.shadowBlur=18*dpr;
@@ -1482,11 +1366,9 @@ ctx.strokeStyle='#ff5d73';
 ctx.lineWidth=4*dpr;
 ctx.strokeRect(-w*.58,-h*.55,w*1.16,h*1.10);
 }
-
 ctx.drawImage(figureCanvas,-w/2,-h/2,w,h);
 ctx.restore();
 }
-
 function drawGuessMarks(t,marks){
 if(!marks?.length) return;
 for(const m of marks){
@@ -1501,7 +1383,6 @@ ctx.beginPath();ctx.moveTo(p.x-r*.6,p.y);ctx.lineTo(p.x+r*.6,p.y);ctx.moveTo(p.x
 ctx.restore();
 }
 }
-
 function importPaintData(data){
 if(!data){
 resetPaint();
@@ -1518,15 +1399,12 @@ img.onerror=()=>{resetPaint();resolve();};
 img.src=data;
 });
 }
-
 function hideSampleLoupe(){
 $('sampleLoupe').hidden=true;
 }
-
 function currentSampleDiameter(){
 return Math.max(1,Math.round(Number($('brushSize').value)||1));
 }
-
 function showSampleLoupe(norm,pointer,sample){
 if(!sceneSamplingAvailable || !norm || !pointer || !sample) return;
 try{
@@ -1540,7 +1418,6 @@ $('sampleLoupe').style.top=y+'px';
 $('sampleLoupe').hidden=false;
 }catch(_){}
 }
-
 function sampleColor(norm,pointer=null,quiet=false){
 if(!sceneImage || !norm || !window.StreetblendSampler) return false;
 try{
@@ -1563,13 +1440,11 @@ if(!quiet) toast('Color sampling is blocked for this image. Tap the color swatch
 return false;
 }
 }
-
 function enterPaintAfterSample(){
 activeTool='paint';
 setToolButtons();
 $('hiderHint').textContent='Paint with '+paintColor+' · drag over your player to apply the sampled color.';
 }
-
 function paintAt(px,py){
 const t=getTransform();
 const p=imageToScreen(figure.x,figure.y);
@@ -1593,11 +1468,9 @@ paintCtx.fill();
 paintCtx.restore();
 markDirty();
 }
-
 function setToolButtons(){
 document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===activeTool));
 }
-
 function sendGuess(norm){
 const state=getState();
 if(!state||state.phase!==PHASES.SEEK||!state.timerStarted||state.paused||(state.seekerSeat!==seat&&!solo)) return;
@@ -1605,39 +1478,32 @@ if(role==='guest'&&pendingCriticalAction?.type==='sb:guess') return;
 if(role==='host') processGuess(norm.x,norm.y);
 else actionMessage('sb:guess',{x:norm.x,y:norm.y},true);
 }
-
 function pointerXY(event){
 const rect=stage.getBoundingClientRect();
 const sx=stage.width/rect.width, sy=stage.height/rect.height;
 const cx=event.clientX-rect.left, cy=event.clientY-rect.top;
 return {x:cx*sx,y:cy*sy,cx,cy};
 }
-
 function cancelSampleHold(hide=true){
 clearTimeout(sampleHoldTimer);
 sampleHoldTimer=null;
 sampleHold=null;
 if(hide) hideSampleLoupe();
 }
-
 function onPointerDown(e){
 stage.setPointerCapture?.(e.pointerId);
 const p=pointerXY(e);
 pointers.set(e.pointerId,p);
-
 if(pointers.size===1){
 pointerStart={id:e.pointerId,x:p.x,y:p.y,cx:p.cx,cy:p.cy,lastX:p.x,lastY:p.y,moved:false};
 }
-
 const state=getState();
-
 if(pointers.size===2){
 cancelSampleHold();
 const pts=[...pointers.values()];
 const midpoint={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
 const d=distance(pts[0],pts[1]);
 const a=angleBetween(pts[0],pts[1]);
-
 if(
   state?.phase==='hide' &&
   state.hiderSeat===seat &&
@@ -1656,7 +1522,6 @@ if(
 pointerStart=null;
 return;
 }
-
 if(state?.phase==='hide' && state.hiderSeat===seat){
 if(activeTool==='place'){
   const handle=figureHandleAt(p.x,p.y);
@@ -1694,12 +1559,10 @@ if(activeTool==='place'){
 }
 }
 }
-
 function onPointerMove(e){
 if(!pointers.has(e.pointerId)) return;
 const p=pointerXY(e);
 pointers.set(e.pointerId,p);
-
 if(pointers.size>=2){
 const pts=[...pointers.values()];
 if(figureTransform){
@@ -1717,9 +1580,7 @@ if(figureTransform){
 }
 return;
 }
-
 const state=getState();
-
 if(sampleHold?.pointerId===e.pointerId){
 sampleHold.latest=p;
 if(sampleHold.active){
@@ -1734,7 +1595,6 @@ if(pointerStart && Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8){
   hideSampleLoupe();
 }
 }
-
 if(state?.phase==='hide' && state.hiderSeat===seat && figureHandleDrag?.pointerId===e.pointerId){
 const h=figureHandleDrag;
 if(h.type==='resize'){
@@ -1750,7 +1610,6 @@ if(pointerStart) pointerStart.moved=true;
 markDirty();
 return;
 }
-
 if(state?.phase==='hide' && state.hiderSeat===seat && draggingFigure?.pointerId===e.pointerId){
 const n=screenToImage(p.x,p.y);
 if(n){
@@ -1762,18 +1621,15 @@ if(n){
 if(pointerStart) pointerStart.moved=true;
 return;
 }
-
 if(state?.phase==='hide' && state.hiderSeat===seat && activeTool==='paint' && paintingPointer===e.pointerId){
 paintAt(p.x,p.y);
 if(pointerStart) pointerStart.moved=true;
 return;
 }
-
 const canPan =
 (state?.phase==='hide' && state.hiderSeat===seat) ||
 (state?.phase==='seek' && (state.seekerSeat===seat || solo)) ||
 state?.phase==='reveal';
-
 if(canPan && pointerStart){
 const dx=p.x-pointerStart.lastX,dy=p.y-pointerStart.lastY;
 if(Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8) pointerStart.moved=true;
@@ -1790,13 +1646,11 @@ pointerStart.lastX=p.x;
 pointerStart.lastY=p.y;
 }
 }
-
 function onPointerUp(e){
 const p=pointerXY(e);
 const state=getState();
 const wasTap=!!(pointerStart && pointerStart.id===e.pointerId && !pointerStart.moved);
 const activeSample=sampleHold?.pointerId===e.pointerId && sampleHold.active;
-
 if(sampleHold?.pointerId===e.pointerId){
 clearTimeout(sampleHoldTimer);
 sampleHoldTimer=null;
@@ -1807,7 +1661,6 @@ if(activeSample){
 }
 sampleHold=null;
 }
-
 if(figureTransform){
 figureTransform=null;
 sendDraft();
@@ -1841,7 +1694,6 @@ if(figureHandleDrag?.pointerId===e.pointerId){
 const n=screenToImage(p.x,p.y);
 if(n) sendGuess(n);
 }
-
 if(figureHandleDrag?.pointerId===e.pointerId) figureHandleDrag=null;
 if(draggingFigure?.pointerId===e.pointerId) draggingFigure=null;
 if(paintingPointer===e.pointerId) paintingPointer=null;
@@ -1852,7 +1704,6 @@ figureTransform=null;
 }
 if(!pointers.size) pointerStart=null;
 }
-
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 function angleBetween(a,b){return Math.atan2(b.y-a.y,b.x-a.x)}
 function normalizeAngle(deg){
@@ -1862,12 +1713,10 @@ if(d<-180)d+=360;
 return d;
 }
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
-
 function tick(){
 const state=getState();
 if(!state) return;
 const now=Date.now();
-
 if(role==='host'&&hostState){
 const timed=[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase);
 const remaining=hostState.paused
@@ -1875,7 +1724,6 @@ const remaining=hostState.paused
   : hostState.timerStarted
     ? Math.max(0,hostState.deadline-now)
     : null;
-
 if(!solo&&session?.connections?.size){
   const staleSeat=(hostState.activeSeats||[])
     .filter(s=>s!==0&&session.connections.has(s))
@@ -1891,7 +1739,6 @@ if(!solo&&session?.connections?.size){
     }
   }
 }
-
 if(!solo&&session?.connections?.size&&hostState.phase!==PHASES.LOBBY&&now-lastPulseAt>=1000){
   lastPulseAt=now;
   session.broadcast({
@@ -1905,7 +1752,6 @@ if(!solo&&session?.connections?.size&&hostState.phase!==PHASES.LOBBY&&now-lastPu
     remaining
   });
 }
-
 if(timed&&hostState.timerStarted&&!hostState.paused){
   updateClock(remaining);
   if(remaining<=0){
@@ -1918,7 +1764,6 @@ if(timed&&hostState.timerStarted&&!hostState.paused){
 }
 return;
 }
-
 if(role==='guest'&&remoteState){
 if(pendingCriticalAction){
   const sameContext=Number(pendingCriticalAction.round)===Number(remoteState.round)&&
@@ -1945,7 +1790,6 @@ if(remoteState.timerStarted&&!remoteState.paused&&[PHASES.HIDE,PHASES.SEEK].incl
 }
 }
 }
-
 function bind(){
 window.StreetblendAvatar?.init({onChange:onAvatarChanged});
 localAvatar=window.StreetblendAvatar?.getAvatar()||null;
@@ -1971,7 +1815,6 @@ $('startMatch').addEventListener('click',startMatch);
 $('lockHide').addEventListener('click',lockCurrentHide);
 $('nextRound').addEventListener('click',nextRound);
 $('rematch').addEventListener('click',rematch);
-
 document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{
 cancelSampleHold();
 activeTool=b.dataset.tool;
@@ -1988,13 +1831,11 @@ figure.pose=$('poseSelect').value;
 markDirty();
 sendDraft();
 });
-
 $('buildSelect').addEventListener('change',()=>{
 figure.build=$('buildSelect').value;
 markDirty();
 sendDraft();
 });
-
 $('focusPlayer').addEventListener('click',focusPlayer);
 $('fitArtwork').addEventListener('click',fitArtwork);
 $('brushSize').addEventListener('input',()=>{
@@ -2020,7 +1861,6 @@ paintColor=colorPicker.value.toUpperCase();
 $('paintSwatch').style.background=paintColor;
 enterPaintAfterSample();
 });
-
 stage.addEventListener('pointerdown',onPointerDown);
 stage.addEventListener('pointermove',onPointerMove);
 stage.addEventListener('pointerup',onPointerUp);
@@ -2046,7 +1886,6 @@ window.addEventListener('online',()=>{
 if(role==='guest'&&remoteState)session?.reconnect?.();
 else if(role==='host'&&hostState)publishHostState();
 });
-
 const invite=net.cleanCode(new URLSearchParams(location.search).get('room'));
 syncSettingsForm();
 updateSettingsSummary();
@@ -2059,12 +1898,10 @@ setTimeout(()=>$('playerName').focus(),150);
 }else{
 showStartMenu();
 }
-
 timerLoop=setInterval(tick,250);
 resizeStage();
 markDirty();
 loadArtLibrary().catch(()=>{});
 }
-
 bind();
 })();
