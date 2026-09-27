@@ -81,25 +81,56 @@ const ART_LIBRARY = [
   }
 ];
 
-  const ART_CACHE_KEY='streetblend.commons.catalog.v2';
+  const ART_CACHE_KEY='streetblend.commons.catalog.v3';
   const ART_CACHE_MAX_AGE=7*24*60*60*1000;
-  const COMMONS_SEARCHES=[
-    'painting landscape',
-    'painting city street',
-    'painting interior room',
-    'painting crowd market',
-    'painting harbor river',
-    'painting garden park',
-    'painting village architecture',
-    'painting railway station',
-    'painting beach coast',
-    'painting forest',
-    'painting festival',
-    'painting cafe'
-  ];
+  const CATEGORY_LABELS={
+    mixed:'Mixed Collection',
+    impressionism:'Impressionism',
+    landscapes:'Landscapes',
+    city:'City & Street',
+    interiors:'Interiors',
+    people:'People & Markets',
+    water:'Water & Coast',
+    gardens:'Gardens & Parks'
+  };
+  const CATEGORY_SEARCHES={
+    mixed:[
+      'painting landscape','painting city street','painting interior room','painting crowd market',
+      'painting harbor river','painting garden park','painting village architecture','painting railway station',
+      'painting beach coast','painting forest','painting festival','painting cafe'
+    ],
+    impressionism:[
+      'impressionist painting','Claude Monet painting','Pierre-Auguste Renoir painting',
+      'Camille Pissarro painting','Alfred Sisley painting','Edgar Degas painting','Mary Cassatt painting'
+    ],
+    landscapes:[
+      'landscape painting','mountain landscape painting','forest landscape painting',
+      'rural landscape painting','countryside painting','winter landscape painting','field landscape painting'
+    ],
+    city:[
+      'cityscape painting','street scene painting','urban painting','market square painting',
+      'railway station painting','cafe street painting','town square painting'
+    ],
+    interiors:[
+      'interior painting room','domestic interior painting','bedroom painting','cafe interior painting',
+      'church interior painting','artist studio interior painting','dining room painting'
+    ],
+    people:[
+      'genre painting people','market painting people','crowd painting','workers painting',
+      'family painting','group portrait painting','festival crowd painting'
+    ],
+    water:[
+      'seascape painting','harbor painting','river painting','coast painting',
+      'beach painting','boats painting','canal painting'
+    ],
+    gardens:[
+      'garden painting','park painting','flower garden painting','water lilies painting',
+      'orchard painting','public garden painting','botanical garden painting'
+    ]
+  };
 
-  let library=[];
-  let loadPromise=null;
+  const libraries=new Map();
+  const loadPromises=new Map();
 
   function plainText(value){
     const box=document.createElement('div');
@@ -190,9 +221,17 @@ const ART_LIBRARY = [
     return out;
   }
   
-  function readArtCache(){
+  function normalizeCategory(category){
+    return Object.prototype.hasOwnProperty.call(CATEGORY_SEARCHES,category)?category:'mixed';
+  }
+
+  function cacheKey(category){
+    return ART_CACHE_KEY+'.'+normalizeCategory(category);
+  }
+
+  function readArtCache(category){
     try{
-      const cached=JSON.parse(localStorage.getItem(ART_CACHE_KEY)||'null');
+      const cached=JSON.parse(localStorage.getItem(cacheKey(category))||'null');
       if(!cached || !Array.isArray(cached.items) || cached.items.length<50) return null;
       if(Date.now()-Number(cached.savedAt||0)>ART_CACHE_MAX_AGE) return null;
       return cached.items;
@@ -201,62 +240,73 @@ const ART_LIBRARY = [
     }
   }
   
-  function writeArtCache(items){
+  function writeArtCache(category,items){
     try{
-      localStorage.setItem(ART_CACHE_KEY,JSON.stringify({savedAt:Date.now(),items:items.slice(0,120)}));
+      localStorage.setItem(cacheKey(category),JSON.stringify({savedAt:Date.now(),items:items.slice(0,140)}));
     }catch(_){}
   }
   
-  async function loadArtLibrary(statusFn=()=>{}){
-    if(loadPromise) return loadPromise;
-    loadPromise=(async()=>{
-      const cached=readArtCache();
+  async function loadArtLibrary(category='mixed',statusFn=()=>{}){
+    category=normalizeCategory(category);
+    if(libraries.has(category)) return libraries.get(category);
+    if(loadPromises.has(category)) return loadPromises.get(category);
+
+    const promise=(async()=>{
+      const cached=readArtCache(category);
       if(cached){
-        library=mergeArtworks(ART_LIBRARY,cached);
-        statusFn('Ready',library.length+' public-domain paintings ready.');
-        return library;
+        const items=mergeArtworks(category==='mixed'?ART_LIBRARY:[],cached);
+        libraries.set(category,items);
+        statusFn('Ready',items.length+' '+CATEGORY_LABELS[category].toLowerCase()+' paintings ready.');
+        return items;
       }
-  
-      statusFn('Loading art library','Building a public-domain painting catalog…');
-      const batches=await Promise.allSettled(COMMONS_SEARCHES.map(fetchCommonsPaintings));
-      const discovered=batches.flatMap(result=>result.status==='fulfilled'?result.value:[]);
-      library=mergeArtworks(ART_LIBRARY,discovered);
-  
-      if(library.length<50){
-        const broad=await Promise.allSettled([
-          fetchCommonsPaintings('oil painting'),
-          fetchCommonsPaintings('impressionist painting'),
-          fetchCommonsPaintings('genre painting'),
-          fetchCommonsPaintings('historical painting')
-        ]);
-        library=mergeArtworks(library,broad.flatMap(result=>result.status==='fulfilled'?result.value:[]));
+
+      statusFn('Loading art library','Building the '+CATEGORY_LABELS[category].toLowerCase()+' painting catalog…');
+      const queries=CATEGORY_SEARCHES[category];
+      const batches=await Promise.allSettled(queries.map(fetchCommonsPaintings));
+      let items=mergeArtworks(
+        category==='mixed'?ART_LIBRARY:[],
+        batches.flatMap(result=>result.status==='fulfilled'?result.value:[])
+      );
+
+      if(items.length<50){
+        const extraQueries=category==='mixed'
+          ? ['oil painting','impressionist painting','genre painting','historical painting']
+          : [
+              CATEGORY_LABELS[category]+' painting art',
+              CATEGORY_LABELS[category]+' oil painting',
+              CATEGORY_LABELS[category]+' museum painting',
+              CATEGORY_LABELS[category]+' classical painting'
+            ];
+        const extra=await Promise.allSettled(extraQueries.map(fetchCommonsPaintings));
+        items=mergeArtworks(items,extra.flatMap(result=>result.status==='fulfilled'?result.value:[]));
       }
-  
-      if(library.length<50){
+
+      if(items.length<50 && category==='mixed'){
         const masters=await Promise.allSettled([
-          'Claude Monet painting',
-          'Pierre-Auguste Renoir painting',
-          'Vincent van Gogh painting',
-          'Camille Pissarro painting',
-          'Alfred Sisley painting',
-          'Edgar Degas painting',
-          'Mary Cassatt painting',
-          'J. M. W. Turner painting'
+          'Claude Monet painting','Pierre-Auguste Renoir painting','Vincent van Gogh painting',
+          'Camille Pissarro painting','Alfred Sisley painting','Edgar Degas painting',
+          'Mary Cassatt painting','J. M. W. Turner painting'
         ].map(fetchCommonsPaintings));
-        library=mergeArtworks(library,masters.flatMap(result=>result.status==='fulfilled'?result.value:[]));
+        items=mergeArtworks(items,masters.flatMap(result=>result.status==='fulfilled'?result.value:[]));
       }
-  
-      if(library.length>=50) writeArtCache(library);
-      statusFn('Ready',library.length+' public-domain paintings ready.');
-      return library;
+
+      if(items.length>=50) writeArtCache(category,items);
+      libraries.set(category,items);
+      statusFn('Ready',items.length+' '+CATEGORY_LABELS[category].toLowerCase()+' paintings ready.');
+      return items;
     })();
-    return loadPromise;
+
+    loadPromises.set(category,promise);
+    try{
+      return await promise;
+    }finally{
+      loadPromises.delete(category);
+    }
   }
   
-  
-
   window.StreetblendArt={
     load:loadArtLibrary,
+    categories:{...CATEGORY_LABELS},
     seedCount:ART_LIBRARY.length
   };
 })();
