@@ -6,20 +6,20 @@
   const PAINT_W = 96;
   const PAINT_H = 180;
 
-  const SETTINGS_KEY='streetblend.settings.v2';
+  const SETTINGS_KEY='streetblend.settings.v3';
   const DEFAULT_SETTINGS=Object.freeze({
     mode:'classic',
     players:2,
     rounds:4,
-    hideSeconds:60,
-    seekSeconds:90,
+    hideSeconds:180,
+    seekSeconds:240,
     wrongPenaltyMode:'time',
     wrongPenaltySeconds:5,
     artCategory:'mixed'
   });
 
   function sanitizeSettings(raw={}){
-    const rounds=[2,4,6], hide=[30,45,60,75,90], seek=[45,60,90,120,150], penalty=[3,5,10,15];
+    const rounds=[2,4,6], hide=[60,90,120,180,240,300,450,600], seek=[90,120,180,240,300,450,600], penalty=[3,5,10,15];
     const artCategories=['mixed','impressionism','landscapes','city','interiors','people','water','gardens'];
     return {
       mode:'classic',
@@ -98,6 +98,10 @@
   let sampleHold = null;
   let sampleHoldTimer = null;
   let lastUiPhaseKey = '';
+  let syncSeq=0;
+  let guestAckSeq=0;
+  let uiEpoch=0;
+  let lastResyncAt=0;
 
   function defaultFigure(){
     return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -277,7 +281,6 @@
     if(reload) location.reload();
   }
 
-
   function refreshAvatarUi(state=getState()){
     if(!window.StreetblendAvatar) return;
     if(state?.players) StreetblendAvatar.setMatchAvatars(state.players);
@@ -348,9 +351,17 @@
         $('startMatch').hidden = false;
         $('guestWait').hidden = true;
         setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
-        hostState = makeHostState(name,info.name||'Player 2');
-        $('roomRules').textContent=rulesText(hostState.config);
-        session.sendTo(1,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
+        if(!hostState || hostState.phase==='lobby'){
+          hostState=makeHostState(name,info.name||'Player 2');
+          syncSeq=0;
+          guestAckSeq=0;
+          $('roomRules').textContent=rulesText(hostState.config);
+          session.sendTo(1,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
+        }else{
+          hostState.players[1].name=info.name||hostState.players[1].name||'Player 2';
+          if(hostState.paused) resumeMatch();
+          sendGuestPhase(true);
+        }
       },
       onPlayerLeave(){
         connected = false;
@@ -557,17 +568,40 @@
     };
   }
 
-  function sendGuestPhase(){
+  function sendGuestPhase(repeat=false){
     if(role !== 'host' || solo || !session || !connected || !hostState) return;
-    const state = publicState();
-    if(hostState.phase === 'seek' || hostState.phase === 'reveal' || hostState.phase === 'final'){
-      state.figure = hostState.figure;
-    }
+    if(!repeat) syncSeq++;
+    const state=publicState();
+    state.syncSeq=syncSeq;
+    if(hostState.phase==='seek'||hostState.phase==='reveal'||hostState.phase==='final') state.figure=hostState.figure;
     session.sendTo(1,{type:'sb:state',state});
+  }
+
+  function requestResync(){
+    if(role!=='guest'||!connected||!session||Date.now()-lastResyncAt<1200) return;
+    lastResyncAt=Date.now();
+    session.send({type:'sb:resync'});
+  }
+
+  function refreshNextRoundGate(){
+    if(role!=='host'||hostState?.phase!=='reveal') return;
+    const ready=solo||guestAckSeq>=syncSeq;
+    $('nextRound').disabled=!ready;
+    $('nextRoundWait').hidden=ready;
+    if(!ready) $('nextRoundWait').textContent='Waiting for opponent to receive the round result…';
   }
 
   function handleHostMessage(message,meta){
     if(!message?.type || meta.seat !== 1 || !hostState) return;
+    if(message.type==='sb:state-ack'){
+      guestAckSeq=Math.max(guestAckSeq,Number(message.seq)||0);
+      refreshNextRoundGate();
+      return;
+    }
+    if(message.type==='sb:resync'){
+      sendGuestPhase(true);
+      return;
+    }
     if(message.type === 'sb:scene-ready'){
       const key=String(hostState.round)+':'+String(hostState.scene?.id||'');
       if(message.key===key && hostState.phase==='hide' && !hostState.timerStarted){
@@ -621,14 +655,19 @@
       }
       return;
     }
-    if(message.type === 'sb:state'){
-      remoteState = message.state;
+    if(message.type==='sb:state'){
+      const seq=Number(message.state?.syncSeq)||0;
+      if(seq && Number(remoteState?.syncSeq||0)>seq) return;
+      remoteState=message.state;
+      if(seq) session?.send({type:'sb:state-ack',seq});
       await applyRemoteView();
-    }else if(message.type === 'sb:tick'){
-      if(remoteState){
-        remoteState.remaining = message.remaining;
-        updateClock(message.remaining);
+    }else if(message.type==='sb:tick'){
+      if(!remoteState || message.round!==remoteState.round || message.phase!==remoteState.phase){
+        requestResync();
+        return;
       }
+      remoteState.remaining=message.remaining;
+      updateClock(message.remaining);
     }else if(message.type === 'sb:toast'){
       toast(message.message);
     }
@@ -776,12 +815,16 @@
     hostState.phase='reveal';
     hostState.deadline=0;
     hostState.result={found,remaining,seekerPoints,hiderPoints,wrong:hostState.wrong};
-    applyHostView();
     sendGuestPhase();
+    applyHostView();
   }
 
   function nextRound(){
     if(role !== 'host' || !hostState || hostState.phase !== 'reveal') return;
+    if(!solo && guestAckSeq<syncSeq){
+      toast('Waiting for the other player to receive the round result.');
+      return;
+    }
     const next=hostState.round+1;
     if(next >= hostState.config.rounds){
       hostState.phase='final';
@@ -834,6 +877,7 @@
   }
 
   async function applyStateToUI(state,isHost){
+    const epoch=++uiEpoch;
     const phaseKey=String(state.round)+':'+String(state.phase)+':'+String(state.scene?.id||'');
     const enteringPhase=phaseKey!==lastUiPhaseKey;
     $('lobbyPanel').hidden=true;
@@ -851,9 +895,8 @@
     }
 
     let sceneLoaded = !!sceneImage && scene?.id === state.scene?.id;
-    if(scene?.id !== state.scene?.id || !sceneImage){
-      sceneLoaded = await loadScene(state.scene);
-    }
+    if(scene?.id !== state.scene?.id || !sceneImage) sceneLoaded=await loadScene(state.scene);
+    if(epoch!==uiEpoch) return;
     if(sceneLoaded && state.phase==='hide' && !state.timerStarted){
       reportSceneReady(state);
     }
@@ -865,6 +908,7 @@
       figure=sanitizeFigure(state.figure);
       clampFigureToArtwork();
       await importPaintData(figure.paintData);
+      if(epoch!==uiEpoch) return;
     }
 
     $('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.config.rounds;
@@ -968,7 +1012,12 @@
       '<div><b>+'+(r.hiderPoints||0)+'</b><span>'+escapeHtml(h.name)+' · Hider</span></div>'+
       '<div><b>+'+(r.seekerPoints||0)+'</b><span>'+escapeHtml(s.name)+' · Seeker</span></div>';
     $('nextRound').hidden=!isHost;
-    $('nextRoundWait').hidden=isHost;
+    if(isHost){
+      refreshNextRoundGate();
+    }else{
+      $('nextRoundWait').hidden=false;
+      $('nextRoundWait').textContent='Waiting for the host…';
+    }
     markDirty();
   }
 
@@ -1035,7 +1084,6 @@
     let img=null;
     let corsLoaded=false;
 
-    // Preferred path: CORS-enabled direct IIIF image. This keeps the eyedropper working.
     for(const url of urls){
       try{
         img=await loadImageDirect(url,true);
@@ -1044,8 +1092,6 @@
       }catch(_){}
     }
 
-    // Fallback: load the exact same direct IIIF URL as a normal browser image.
-    // This always favors displaying the painting over failing the round.
     if(!img){
       for(const url of urls){
         try{
@@ -1073,7 +1119,6 @@
     try{
       sceneBufferCtx.drawImage(img,0,0);
       if(corsLoaded){
-        // Verify that pixel access is actually allowed before advertising sampling.
         sceneBufferCtx.getImageData(0,0,1,1);
       }
     }catch(_){
@@ -1151,7 +1196,6 @@
     toast('Player focused.');
   }
 
-
   function draw(){
     raf=0;
     if(!dirty) return;
@@ -1186,13 +1230,11 @@
   function rebuildFigureCanvas(){
     figureCtx.clearRect(0,0,PAINT_W,PAINT_H);
 
-    // Build the opaque human silhouette first.
     figureCtx.globalCompositeOperation='source-over';
     figureCtx.fillStyle='#fff';
     figureCtx.strokeStyle='#fff';
     drawSilhouette(figureCtx,figure.pose,PAINT_W,PAINT_H,figure.build);
 
-    // Then keep the paint only where that silhouette exists.
     figureCtx.globalCompositeOperation='source-in';
     figureCtx.drawImage(paintCanvas,0,0);
 
@@ -1318,7 +1360,6 @@
       ctx.strokeRect(-w*.62,-h*.56,w*1.24,h*1.12);
       ctx.setLineDash([]);
 
-      // Rotation handle.
       ctx.beginPath();
       ctx.moveTo(0,-h*.56);
       ctx.lineTo(0,-h*.70);
@@ -1336,7 +1377,6 @@
       ctx.font='800 '+(6*dpr)+'px sans-serif';
       ctx.fillText('ROTATE',0,-h*.76-handleR-7*dpr);
 
-      // Resize handle.
       ctx.fillStyle='rgba(8,13,20,.96)';
       ctx.strokeStyle='#ffffff';
       ctx.beginPath();ctx.arc(w*.70,h*.64,handleR,0,Math.PI*2);ctx.fill();ctx.stroke();
@@ -1745,7 +1785,7 @@
       const sec=Math.ceil(remaining/1000);
       if(!solo && session && connected && sec!==lastTickSent){
         lastTickSent=sec;
-        session.sendTo(1,{type:'sb:tick',remaining});
+        session.sendTo(1,{type:'sb:tick',remaining,round:hostState.round,phase:hostState.phase,syncSeq});
       }
       if(remaining<=0){
         if(hostState.phase==='hide'){
@@ -1759,6 +1799,7 @@
     }else if(role==='guest' && remoteState && ['hide','seek'].includes(remoteState.phase) && remoteState.timerStarted){
       if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
       updateClock(remoteState.remaining||0);
+      if(remoteState.remaining<=0) requestResync();
     }
   }
 
