@@ -3,6 +3,8 @@
 (() => {
 const $ = id => document.getElementById(id);
 const net = window.GameRoomMultiplayer;
+const flow = window.StreetblendFlow;
+const PHASES = flow.PHASES;
 const PAINT_W = 96;
 const PAINT_H = 180;
 
@@ -36,7 +38,7 @@ let raf = 0;
 let timerLoop = null;
 let lastTickSent = -1;
 let toastTimer = null;
-let localReadyKey = '';
+let localReadyToken = '';
 let localAvatar = null;
 
 const stage = $('stage');
@@ -70,8 +72,15 @@ let sampleHoldTimer = null;
 let lastUiPhaseKey = '';
 let syncSeq=0;
 let guestAckSeq=0;
+let hostAppliedSeq=0;
+let guestAppliedSeq=0;
+let phaseSerial=0;
 let uiEpoch=0;
 let lastResyncAt=0;
+let lastPulseAt=0;
+let pendingRemoteState=null;
+let remoteRenderRunning=false;
+let reconnectResumeSeq=0;
 
 function defaultFigure(){
   return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -491,69 +500,152 @@ function shuffledScene(){
   return selected;
 }
 
+function phaseToken(phase){
+  return String(hostState?.round??0)+':'+phase+':'+(++phaseSerial);
+}
+
+function setHostPhase(phase){
+  hostState.phase=phase;
+  hostState.phaseToken=phaseToken(phase);
+  hostState.readyBySeat={};
+  hostState.timerStarted=false;
+  hostState.deadline=0;
+  hostState.pauseRemaining=0;
+  hostState.paused=false;
+  localReadyToken='';
+  lastTickSent=-1;
+}
+
 function beginRound(roundIndex){
   if(!hostState) return;
-  hostState.round = roundIndex;
-  hostState.phase = 'hide';
-  hostState.hiderSeat = roundIndex % 2;
-  hostState.seekerSeat = 1 - hostState.hiderSeat;
-  hostState.scene = shuffledScene();
-  hostState.wrong = 0;
-  hostState.figure = null;
-  hostState.lastDraft = null;
-  hostState.guessMarks = [];
-  hostState.result = null;
-  hostState.paused = false;
-  hostState.deadline = 0;
-  hostState.timerStarted = false;
-  hostState.sceneReady = [false,false];
-  localReadyKey = '';
-  lastTickSent = -1;
-
-  if(solo && hostState.hiderSeat === 1){
-    hostState.hiderSeat = 0;
-    hostState.seekerSeat = 1;
+  hostState.round=roundIndex;
+  hostState.hiderSeat=roundIndex%2;
+  hostState.seekerSeat=1-hostState.hiderSeat;
+  hostState.scene=shuffledScene();
+  hostState.wrong=0;
+  hostState.figure=null;
+  hostState.lastDraft=null;
+  hostState.guessMarks=[];
+  hostState.result=null;
+  if(solo && hostState.hiderSeat===1){
+    hostState.hiderSeat=0;
+    hostState.seekerSeat=1;
   }
-
-  applyHostView();
-  sendGuestPhase();
+  setHostPhase(PHASES.HIDE_PREPARE);
+  publishHostState();
 }
 
 function publicState(){
   if(!hostState) return null;
-  return {
+  const remaining=hostState.paused
+    ? Math.max(0,hostState.pauseRemaining||0)
+    : hostState.timerStarted
+      ? Math.max(0,hostState.deadline-Date.now())
+      : null;
+  const state={
     players:hostState.players,
+    activeSeats:hostState.activeSeats,
     config:hostState.config,
     round:hostState.round,
     phase:hostState.phase,
+    phaseToken:hostState.phaseToken,
+    syncSeq:hostState.syncSeq||syncSeq,
     scene:hostState.scene,
     hiderSeat:hostState.hiderSeat,
     seekerSeat:hostState.seekerSeat,
     wrong:hostState.wrong,
     guessMarks:hostState.guessMarks,
     result:hostState.result,
+    paused:!!hostState.paused,
     timerStarted:!!hostState.timerStarted,
-    remaining:hostState.timerStarted ? Math.max(0,hostState.deadline-Date.now()) : null
+    remaining
   };
+  if([PHASES.SEEK_PREPARE,PHASES.SEEK,PHASES.REVEAL,PHASES.FINAL].includes(hostState.phase)){
+    state.figure=hostState.figure;
+  }
+  return state;
 }
 
 function sendGuestPhase(repeat=false){
-  if(role !== 'host' || solo || !session || !connected || !hostState) return;
+  if(!hostState) return null;
   if(!repeat) syncSeq++;
+  hostState.syncSeq=syncSeq;
   const state=publicState();
-  state.syncSeq=syncSeq;
-  if(hostState.phase==='seek'||hostState.phase==='reveal'||hostState.phase==='final') state.figure=hostState.figure;
-  session.sendTo(1,{type:'sb:state',state});
+  if(role==='host'&&!solo&&session&&connected) session.sendTo(1,{type:'sb:state',state});
+  return state;
+}
+
+function publishHostState(){
+  const snapshot=sendGuestPhase(false)||publicState();
+  if(!snapshot) return;
+  applyStateToUI(snapshot,true).then(()=>{
+    if(Number(snapshot.syncSeq)===syncSeq){
+      hostAppliedSeq=Math.max(hostAppliedSeq,Number(snapshot.syncSeq)||0);
+      maybeStartTimedPhase();
+    }
+  });
+}
+
+function resendHostState(){
+  const snapshot=sendGuestPhase(true);
+  if(snapshot && role==='host') markDirty();
 }
 
 function requestResync(){
-  if(role!=='guest'||!connected||!session||Date.now()-lastResyncAt<1200) return;
+  if(role!=='guest'||!connected||!session||Date.now()-lastResyncAt<1000) return;
   lastResyncAt=Date.now();
-  session.send({type:'sb:resync'});
+  session.send({type:'sb:resync',haveSeq:Number(remoteState?.syncSeq)||0});
+}
+
+function actionMessage(type,payload={}){
+  const state=getState();
+  if(role!=='guest'||!session||!connected||!state) return;
+  session.send({
+    type,
+    round:state.round,
+    phaseToken:state.phaseToken,
+    syncSeq:state.syncSeq,
+    ...payload
+  });
+}
+
+function markPhaseReady(readySeat,token){
+  if(role!=='host'||!hostState||token!==hostState.phaseToken) return;
+  hostState.readyBySeat[readySeat]=token;
+  if(!flow.allReady(hostState,hostState.readyBySeat)) return;
+  if(hostState.phase===PHASES.HIDE_PREPARE){
+    setHostPhase(PHASES.HIDE);
+    publishHostState();
+  }else if(hostState.phase===PHASES.SEEK_PREPARE){
+    setHostPhase(PHASES.SEEK);
+    publishHostState();
+  }
+}
+
+function reportPhaseReady(state){
+  if(!state||![PHASES.HIDE_PREPARE,PHASES.SEEK_PREPARE].includes(state.phase)) return;
+  if(!flow.requiredReadySeats(state).includes(seat)) return;
+  if(localReadyToken===state.phaseToken) return;
+  localReadyToken=state.phaseToken;
+  if(role==='host') markPhaseReady(0,state.phaseToken);
+  else actionMessage('sb:phase-ready');
+}
+
+function maybeStartTimedPhase(){
+  if(role!=='host'||!hostState||hostState.timerStarted||hostState.paused) return;
+  if(![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)) return;
+  const actor=flow.timedActorSeat(hostState);
+  const actorApplied=solo || (actor===0 ? hostAppliedSeq>=syncSeq : guestAckSeq>=syncSeq);
+  if(!actorApplied) return;
+  hostState.timerStarted=true;
+  const seconds=hostState.phase===PHASES.HIDE?hostState.config.hideSeconds:hostState.config.seekSeconds;
+  hostState.deadline=Date.now()+seconds*1000;
+  lastTickSent=-1;
+  publishHostState();
 }
 
 function refreshNextRoundGate(){
-  if(role!=='host'||hostState?.phase!=='reveal') return;
+  if(role!=='host'||hostState?.phase!==PHASES.REVEAL) return;
   const ready=solo||guestAckSeq>=syncSeq;
   $('nextRound').disabled=!ready;
   $('nextRoundWait').hidden=ready;
@@ -561,48 +653,76 @@ function refreshNextRoundGate(){
 }
 
 function handleHostMessage(message,meta){
-  if(!message?.type || meta.seat !== 1 || !hostState) return;
+  if(!message?.type||!hostState) return;
+  const sender=Number(meta?.seat);
   if(message.type==='sb:state-ack'){
     guestAckSeq=Math.max(guestAckSeq,Number(message.seq)||0);
     refreshNextRoundGate();
-    return;
-  }
-  if(message.type==='sb:resync'){
-    sendGuestPhase(true);
-    return;
-  }
-  if(message.type === 'sb:scene-ready'){
-    const key=String(hostState.round)+':'+String(hostState.scene?.id||'');
-    if(message.key===key && hostState.phase==='hide' && !hostState.timerStarted){
-      hostState.sceneReady[1]=true;
-      startHideTimerIfReady();
+    maybeStartTimedPhase();
+    if(reconnectResumeSeq && guestAckSeq>=reconnectResumeSeq){
+      reconnectResumeSeq=0;
+      resumeMatch();
     }
     return;
   }
+  if(message.type==='sb:resync'){
+    resendHostState();
+    return;
+  }
   if(message.type==='sb:avatar'){
-    if(typeof message.data==='string' && message.data.length<=160000){
-      hostState.players[1].avatar=message.data;
+    if(hostState.players[sender] && typeof message.data==='string' && message.data.length<=160000){
+      hostState.players[sender].avatar=message.data;
       refreshAvatarUi(hostState);
     }
     return;
   }
-  if(message.type === 'sb:draft'){
-    if(hostState.phase === 'hide' && hostState.hiderSeat === 1){
-      hostState.lastDraft = sanitizeFigure(message.figure);
-    }
+  const action=message.type==='sb:phase-ready'?'phase-ready':
+    message.type==='sb:draft'?'draft':
+    message.type==='sb:lock'?'lock':
+    message.type==='sb:guess'?'guess':null;
+  if(!action) return;
+  if(!flow.actionAllowed(hostState,sender,action,message)){
+    resendHostState();
     return;
   }
-  if(message.type === 'sb:lock'){
-    if(hostState.phase === 'hide' && hostState.hiderSeat === 1){
-      lockFigure(sanitizeFigure(message.figure));
-    }
-    return;
+  if(action==='phase-ready'){
+    markPhaseReady(sender,message.phaseToken);
+  }else if(action==='draft'){
+    hostState.lastDraft=sanitizeFigure(message.figure);
+  }else if(action==='lock'){
+    lockFigure(sanitizeFigure(message.figure));
+  }else if(action==='guess'){
+    processGuess(message.x,message.y);
   }
-  if(message.type === 'sb:guess'){
-    if(hostState.phase === 'seek' && hostState.seekerSeat === 1){
-      processGuess(message.x,message.y);
+}
+
+function queueRemoteState(state){
+  const seq=Number(state?.syncSeq)||0;
+  if(!seq||seq<guestAppliedSeq) return;
+  if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) return;
+  pendingRemoteState=state;
+  if(remoteRenderRunning) uiEpoch++;
+  drainRemoteStates();
+}
+
+async function drainRemoteStates(){
+  if(remoteRenderRunning) return;
+  remoteRenderRunning=true;
+  try{
+    while(pendingRemoteState){
+      const state=pendingRemoteState;
+      pendingRemoteState=null;
+      const seq=Number(state.syncSeq)||0;
+      remoteState=state;
+      await applyStateToUI(state,false);
+      if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) continue;
+      if(Number(remoteState?.syncSeq||0)!==seq) continue;
+      guestAppliedSeq=Math.max(guestAppliedSeq,seq);
+      session?.send({type:'sb:state-ack',seq,phaseToken:state.phaseToken});
     }
-    return;
+  }finally{
+    remoteRenderRunning=false;
+    if(pendingRemoteState) drainRemoteStates();
   }
 }
 
@@ -610,72 +730,40 @@ async function handleGuestMessage(message){
   if(!message?.type) return;
   if(message.type==='sb:lobby-config'){
     if(message.config) $('roomRules').textContent=rulesText(sanitizeSettings(message.config));
-    if(Array.isArray(message.players) && message.players.length>=2){
+    if(Array.isArray(message.players)&&message.players.length>=2){
       $('p0Lobby').textContent=message.players[0]?.name||'Host';
       $('p1Lobby').textContent=message.players[1]?.name||playerName();
     }
-    if(localAvatar) session?.send({type:'sb:avatar',seat:1,data:localAvatar});
+    if(localAvatar) session?.send({type:'sb:avatar',seat,data:localAvatar});
     return;
   }
   if(message.type==='sb:avatar'){
-    if(remoteState?.players?.[0] && typeof message.data==='string' && message.data.length<=160000){
-      remoteState.players[0].avatar=message.data;
+    const remoteSeat=Number(message.seat);
+    if(remoteState?.players?.[remoteSeat]&&typeof message.data==='string'&&message.data.length<=160000){
+      remoteState.players[remoteSeat].avatar=message.data;
       refreshAvatarUi(remoteState);
     }
     return;
   }
   if(message.type==='sb:state'){
-    const seq=Number(message.state?.syncSeq)||0;
-    if(seq && Number(remoteState?.syncSeq||0)>seq) return;
-    remoteState=message.state;
-    await applyRemoteView();
-    if(seq && Number(remoteState?.syncSeq||0)===seq) session?.send({type:'sb:state-ack',seq});
-  }else if(message.type==='sb:tick'){
-    if(!remoteState || message.round!==remoteState.round || message.phase!==remoteState.phase){
+    queueRemoteState(message.state);
+    return;
+  }
+  if(message.type==='sb:pulse'||message.type==='sb:tick'){
+    if(!remoteState ||
+       Number(message.syncSeq)!==Number(remoteState.syncSeq) ||
+       Number(message.round)!==Number(remoteState.round) ||
+       String(message.phase)!==String(remoteState.phase) ||
+       (message.phaseToken&&String(message.phaseToken)!==String(remoteState.phaseToken))){
       requestResync();
       return;
     }
     remoteState.remaining=message.remaining;
-    updateClock(message.remaining);
-  }else if(message.type === 'sb:toast'){
-    toast(message.message);
+    remoteState.paused=!!message.paused;
+    if(remoteState.timerStarted&&!remoteState.paused) updateClock(message.remaining);
+    return;
   }
-}
-
-function sceneReadyKey(state){
-  return String(state?.round ?? '')+':'+String(state?.scene?.id ?? '');
-}
-
-function reportSceneReady(state){
-  if(!state || state.phase!=='hide' || state.timerStarted) return;
-  const key=sceneReadyKey(state);
-  if(!key || localReadyKey===key) return;
-  localReadyKey=key;
-
-  if(role==='host'){
-    if(hostState && sceneReadyKey(hostState)===key){
-      hostState.sceneReady[0]=true;
-      startHideTimerIfReady();
-    }
-  }else if(role==='guest' && session && connected){
-    session.send({type:'sb:scene-ready',key});
-  }
-}
-
-function startHideTimerIfReady(){
-  if(role!=='host' || !hostState || hostState.phase!=='hide' || hostState.timerStarted) return;
-  if(!solo && !connected) return;
-  const ready = solo ? hostState.sceneReady[0] : (hostState.sceneReady[0] && hostState.sceneReady[1]);
-  if(!ready) return;
-  hostState.timerStarted=true;
-  hostState.deadline=Date.now()+hostState.config.hideSeconds*1000;
-  lastTickSent=-1;
-  $('phaseLabel').textContent='HIDE';
-  $('lockHide').disabled=false;
-  $('hiderHint').textContent='Drag the figure. Pinch it to resize/rotate. Drag the background to pan; pinch the background to zoom.';
-  updateClock(hostState.config.hideSeconds*1000);
-  sendGuestPhase();
-  toast('Painting ready. Hide timer started.');
+  if(message.type==='sb:toast') toast(message.message);
 }
 
 function sanitizeFigure(f){
