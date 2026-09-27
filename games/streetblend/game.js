@@ -465,26 +465,8 @@ resetSceneDeck();
 beginRound(0);
 }
 
-function randomUnit(){
-if(window.crypto?.getRandomValues){
-const data=new Uint32Array(1);
-window.crypto.getRandomValues(data);
-return data[0]/4294967296;
-}
-return Math.random();
-}
-
-function secureShuffle(items){
-const list=items.slice();
-for(let i=list.length-1;i>0;i--){
-const j=Math.floor(randomUnit()*(i+1));
-[list[i],list[j]]=[list[j],list[i]];
-}
-return list;
-}
-
 function resetSceneDeck(){
-sceneDeck=secureShuffle(artLibrary);
+sceneDeck=window.StreetblendArt.shuffle(artLibrary);
 if(sceneDeck.length>1 && lastSceneId!=null && String(sceneDeck[0].id)===String(lastSceneId)){
 [sceneDeck[0],sceneDeck[1]]=[sceneDeck[1],sceneDeck[0]];
 }
