@@ -1318,13 +1318,6 @@
       ctx.font='800 '+(6*dpr)+'px sans-serif';
       ctx.fillText('SIZE',w*.70,h*.64+handleR+7*dpr);
 
-      // Small drag cue in the middle of the selection box.
-      ctx.fillStyle='rgba(8,13,20,.78)';
-      const cueW=38*dpr,cueH=16*dpr;
-      ctx.fillRect(-cueW/2,-cueH/2,cueW,cueH);
-      ctx.fillStyle='#ffffff';
-      ctx.font='800 '+(7*dpr)+'px sans-serif';
-      ctx.fillText('DRAG',0,0);
       ctx.restore();
     }
 
@@ -1376,36 +1369,15 @@
     $('sampleLoupe').hidden=true;
   }
 
-  function showSampleLoupe(norm,pointer,color){
-    if(!sceneSamplingAvailable || !norm || !pointer) return;
+  function currentSampleDiameter(){
+    return Math.max(1,Math.round(Number($('brushSize').value)||1));
+  }
+
+  function showSampleLoupe(norm,pointer,sample){
+    if(!sceneSamplingAvailable || !norm || !pointer || !sample) return;
     try{
-      const sx=clamp(Math.floor(norm.x*sceneBuffer.width),0,sceneBuffer.width-1);
-      const sy=clamp(Math.floor(norm.y*sceneBuffer.height),0,sceneBuffer.height-1);
-      const sampleSize=17;
-      const half=Math.floor(sampleSize/2);
-      const srcX=clamp(sx-half,0,Math.max(0,sceneBuffer.width-sampleSize));
-      const srcY=clamp(sy-half,0,Math.max(0,sceneBuffer.height-sampleSize));
-
-      sampleLoupeCtx.clearRect(0,0,sampleLoupeCanvas.width,sampleLoupeCanvas.height);
-      sampleLoupeCtx.imageSmoothingEnabled=false;
-      sampleLoupeCtx.drawImage(
-        sceneBuffer,
-        srcX,srcY,
-        Math.min(sampleSize,sceneBuffer.width-srcX),
-        Math.min(sampleSize,sceneBuffer.height-srcY),
-        0,0,
-        sampleLoupeCanvas.width,sampleLoupeCanvas.height
-      );
-      sampleLoupeCtx.strokeStyle='#ffffff';
-      sampleLoupeCtx.lineWidth=2;
-      sampleLoupeCtx.beginPath();
-      sampleLoupeCtx.moveTo(sampleLoupeCanvas.width/2-10,sampleLoupeCanvas.height/2);
-      sampleLoupeCtx.lineTo(sampleLoupeCanvas.width/2+10,sampleLoupeCanvas.height/2);
-      sampleLoupeCtx.moveTo(sampleLoupeCanvas.width/2,sampleLoupeCanvas.height/2-10);
-      sampleLoupeCtx.lineTo(sampleLoupeCanvas.width/2,sampleLoupeCanvas.height/2+10);
-      sampleLoupeCtx.stroke();
-
-      $('sampleHex').textContent=color;
+      StreetblendSampler.drawLoupe(sampleLoupeCtx,sampleLoupeCanvas,sceneBuffer,sample);
+      $('sampleHex').textContent=sample.hex+' · '+sample.diameter+'px';
       const wrap=$('stageWrap').getBoundingClientRect();
       const x=clamp(pointer.cx,52,wrap.width-52);
       const y=clamp(pointer.cy,104,wrap.height-8);
@@ -1416,16 +1388,19 @@
   }
 
   function sampleColor(norm,pointer=null,quiet=false){
-    if(!sceneImage || !norm) return false;
+    if(!sceneImage || !norm || !window.StreetblendSampler) return false;
     try{
-      const x=clamp(Math.floor(norm.x*sceneBuffer.width),0,sceneBuffer.width-1);
-      const y=clamp(Math.floor(norm.y*sceneBuffer.height),0,sceneBuffer.height-1);
-      const d=sceneBufferCtx.getImageData(x,y,1,1).data;
-      paintColor='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+      const sample=StreetblendSampler.aggregateColor(
+        sceneBufferCtx,
+        sceneBuffer,
+        norm,
+        currentSampleDiameter()
+      );
+      paintColor=sample.hex;
       $('paintSwatch').style.background=paintColor;
-      $('hiderHint').textContent='Sampling '+paintColor+' · hold and slide for precise color control.';
-      if(pointer) showSampleLoupe(norm,pointer,paintColor);
-      if(!quiet) toast('Sampled '+paintColor);
+      $('hiderHint').textContent='Sampling '+paintColor+' from '+sample.diameter+'px area · hold and slide for precise control.';
+      if(pointer) showSampleLoupe(norm,pointer,sample);
+      if(!quiet) toast('Sampled '+paintColor+' from '+sample.diameter+'px area');
       return true;
     }catch(_){
       sceneSamplingAvailable=false;
@@ -1771,7 +1746,7 @@
       setToolButtons();
       const copy={
         place:'Drag the player. Use ↻ to rotate, ⤢ to resize, or pinch/twist the player with two fingers.',
-        sample:'Tap once to sample. Hold and slide for a live magnified color preview.',
+        sample:'Tap once to sample. Hold and slide for a live magnified preview. Brush size controls the sampled area.',
         paint:'Drag over the player to paint. Drag or pinch outside the player to navigate the artwork.'
       };
       $('hiderHint').textContent=copy[activeTool]||'';
