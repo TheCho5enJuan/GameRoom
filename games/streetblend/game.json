@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -27,5 +27,6 @@
     "invite_links": true,
     "host_authoritative": true
   },
-  "loading_behavior": "Round timer starts only after the scene image has loaded; remote matches wait for both players to report scene readiness."
+  "loading_behavior": "Round timer starts only after the scene image has loaded; remote matches wait for both players to report scene readiness.",
+  "hider_controls": "Visible outlined figure, direct drag placement, size slider, rotation slider, pose selection, sampling and painting."
 }
