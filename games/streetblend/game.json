@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -14,11 +14,11 @@
   "entry": "index.html",
   "artwork": {
     "provider": "Wikimedia Commons",
-    "museum_source": "Art Institute of Chicago",
-    "delivery": "Curated public-domain Wikimedia thumbnail files; no runtime artwork API dependency.",
     "public_domain_only": true,
-    "scenes": 7,
-    "fallback": "CORS image load first, then normal image load so rendering still works if pixel access is blocked."
+    "minimum_target_pool": 50,
+    "discovery": "Runtime Commons API search across multiple painting genres and public-domain master painters, cached for 7 days.",
+    "fallback_seed_scenes": 7,
+    "randomization": "Cryptographic Fisher-Yates shuffle; each painting is used once per deck before reshuffling, with immediate repeats avoided."
   },
   "multiplayer": {
     "transport": "PeerJS/WebRTC",
@@ -55,5 +55,19 @@
   "controls": {
     "hider": "Drag figure to place; pinch figure to resize/rotate; drag background to pan; pinch background to zoom; Sample/Paint/Pose/Lock buttons.",
     "seeker": "Quick tap guesses; drag pans; pinch zooms."
+  },
+  "figure": {
+    "scale": {
+      "min": 0.1,
+      "default": 0.14,
+      "max": 0.24
+    },
+    "builds": [
+      "slim",
+      "regular",
+      "bold"
+    ],
+    "default_build": "regular",
+    "manipulation": "Drag to place; pinch to resize and rotate."
   }
 }
