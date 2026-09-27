@@ -116,6 +116,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .paint-row input{padding:0;border:0;background:transparent}
 .paint-row button{min-height:44px;font-size:9px}
 .pose-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}
+.build-row{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px;align-items:center;margin-top:8px}
+.build-row>span{font-size:8px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);padding-right:3px}
+.build{min-height:34px;padding:5px;font-size:8px}
+.build.active{border-color:rgba(255,209,102,.58);background:rgba(255,209,102,.12);color:#ffe6a8}
+
 .pose{min-height:36px;padding:5px;font-size:8px}.pose.active{border-color:rgba(127,214,194,.65);background:rgba(127,214,194,.12);color:#c8ffef}
 .lock{width:100%;margin-top:9px}
 .hint{margin:7px 2px 0;color:var(--muted);font-size:8px;line-height:1.4}
@@ -153,6 +158,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   .tool-grid{gap:5px}.tool{min-height:44px}
   .paint-row{grid-template-columns:40px minmax(0,1fr) auto}.swatch{width:40px;height:40px}.paint-row button{padding:5px 8px}
   .pose-row{grid-template-columns:repeat(2,1fr)}
+  .build-row{grid-template-columns:1fr 1fr 1fr}.build-row>span{grid-column:1/-1;padding:0}
 }
 @media(max-width:390px){
   .join-box{grid-template-columns:1fr}.join-box button{width:100%}
