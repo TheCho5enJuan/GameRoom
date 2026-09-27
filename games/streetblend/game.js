@@ -1917,11 +1917,13 @@
     $('rematch').addEventListener('click',rematch);
 
     document.querySelectorAll('.tool').forEach(b=>b.addEventListener('click',()=>{
-      activeTool=b.dataset.tool;setToolButtons();
+      cancelSampleHold();
+      activeTool=b.dataset.tool;
+      setToolButtons();
       const copy={
-        place:'Drag the figure. Pinch the figure to resize/rotate. Drag or pinch the background to move around.',
-        sample:'Tap a color to sample it. Drag or pinch the background to move around.',
-        paint:'Drag over the figure to paint. Drag or pinch outside the figure to move around.'
+        place:'Drag the player. Use ↻ to rotate, ⤢ to resize, or pinch/twist the player with two fingers.',
+        sample:'Tap once to sample. Hold and slide for a live magnified color preview.',
+        paint:'Drag over the player to paint. Drag or pinch outside the player to navigate the artwork.'
       };
       $('hiderHint').textContent=copy[activeTool]||'';
     }));
@@ -1938,6 +1940,8 @@
       sendDraft();
     }));
 
+    $('focusPlayer').addEventListener('click',focusPlayer);
+    $('fitArtwork').addEventListener('click',fitArtwork);
     $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
     const colorPicker=document.createElement('input');
     colorPicker.type='color';
@@ -1950,10 +1954,9 @@
     $('paintSwatch').title='Tap to choose a paint color';
     $('paintSwatch').addEventListener('click',()=>colorPicker.click());
     colorPicker.addEventListener('input',()=>{
-      paintColor=colorPicker.value;
+      paintColor=colorPicker.value.toUpperCase();
       $('paintSwatch').style.background=paintColor;
-      activeTool='paint';
-      setToolButtons();
+      $('hiderHint').textContent='Selected '+paintColor+'. Choose Paint when you are ready to apply it.';
     });
 
     stage.addEventListener('pointerdown',onPointerDown);
