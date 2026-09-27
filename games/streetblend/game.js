@@ -506,11 +506,15 @@
 
   function startHideTimerIfReady(){
     if(role!=='host' || !hostState || hostState.phase!=='hide' || hostState.timerStarted) return;
+    if(!solo && !connected) return;
     const ready = solo ? hostState.sceneReady[0] : (hostState.sceneReady[0] && hostState.sceneReady[1]);
     if(!ready) return;
     hostState.timerStarted=true;
     hostState.deadline=Date.now()+hostState.config.hideSeconds*1000;
     lastTickSent=-1;
+    $('phaseLabel').textContent='HIDE';
+    $('lockHide').disabled=false;
+    $('hiderHint').textContent='Tap the painting to position your figure. Use Sample, then Paint to camouflage it.';
     updateClock(hostState.config.hideSeconds*1000);
     sendGuestPhase();
     toast('Painting ready. Hide timer started.');
@@ -703,7 +707,7 @@
     }
 
     $('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.config.rounds;
-    $('phaseLabel').textContent=state.phase.toUpperCase();
+    $('phaseLabel').textContent=(state.phase==='hide' && !state.timerStarted) ? 'LOADING' : state.phase.toUpperCase();
     $('hiderControls').hidden=true;
     $('seekerControls').hidden=true;
     $('waitingControls').hidden=true;
