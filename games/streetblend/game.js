@@ -112,18 +112,6 @@ function escapeHtml(v){
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-function penaltyText(config=appSettings){
-  return config.wrongPenaltyMode==='none' ? 'No miss penalty' : '−'+Number(config.wrongPenaltySeconds||0)+'s miss';
-}
-
-function artCategoryText(config=appSettings){
-  return window.StreetblendArt?.categories?.[config.artCategory] || 'Mixed Collection';
-}
-
-function rulesText(config=appSettings){
-  return 'Classic · '+artCategoryText(config)+' · '+config.players+' players · '+config.rounds+' rounds · '+config.hideSeconds+'s hide · '+config.seekSeconds+'s seek · '+penaltyText(config);
-}
-
 function updateSettingsSummary(){
   if($('settingsSummary')) $('settingsSummary').textContent=artCategoryText(appSettings)+' · '+appSettings.players+' players · '+appSettings.rounds+' rounds · '+penaltyText(appSettings);
   if($('roomRules') && (!hostState || hostState.phase==='lobby')) $('roomRules').textContent=rulesText(appSettings);
@@ -955,7 +943,7 @@ async function applyStateToUI(state,isHost){
   if(scene?.id !== state.scene?.id || !sceneImage) sceneLoaded=await loadScene(state.scene);
   if(epoch!==uiEpoch) return;
   if(sceneLoaded && state.phase==='hide' && !state.timerStarted){
-    reportSceneReady(state);
+    reportPhaseReady(state);
   }
 
   reveal = state.phase === 'reveal';
