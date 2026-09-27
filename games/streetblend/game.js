@@ -596,9 +596,9 @@ resumeMatch();
 function maybeStartTimedPhase(){
 if(role!=='host'||!hostState||hostState.timerStarted||hostState.paused) return;
 if(![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)) return;
-const actor=flow.timedActorSeat(hostState);
-const actorApplied=solo||(actor===0?hostAppliedSeq>=syncSeq:Number(ackBySeat[actor]||0)>=syncSeq);
-if(!actorApplied) return;
+const actors=flow.timedActorSeats(hostState);
+const actorsApplied=solo||actors.every(actor=>actor===0?hostAppliedSeq>=syncSeq:Number(ackBySeat[actor]||0)>=syncSeq);
+if(!actorsApplied) return;
 hostState.timerStarted=true;
 const seconds=hostState.phase===PHASES.HIDE?hostState.config.hideSeconds:hostState.config.seekSeconds;
 hostState.deadline=Date.now()+seconds*1000;
