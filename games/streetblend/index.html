@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#0a0d13">
+  <meta name="description" content="Streetblend — a two-player camouflage hide-and-seek game using public-domain paintings.">
+  <title>Streetblend · GameRoom</title>
+  <link rel="stylesheet" href="./styles.css?v=1.0">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="home" href="../../" aria-label="Back to GameRoom">‹</a>
+      <div class="brand">
+        <span class="mark" aria-hidden="true">🎨</span>
+        <div><strong>Streetblend</strong><small>Paint. Hide. Hunt.</small></div>
+      </div>
+      <span class="version">v1.0</span>
+    </header>
+
+    <main>
+      <section class="panel lobby-panel" id="lobbyPanel">
+        <div class="hero">
+          <span class="eyebrow">2-player remote camouflage</span>
+          <h1>Disappear inside a painting.</h1>
+          <p>One player paints a figure into a public-domain artwork. The other hunts through the full scene before time runs out.</p>
+        </div>
+
+        <div class="status" id="netStatus"><strong>Ready</strong><span>Create a room or open an invite link.</span></div>
+
+        <label class="field">
+          <span>Your name</span>
+          <input id="playerName" maxlength="18" autocomplete="nickname" value="Player">
+        </label>
+
+        <div class="host-options" id="hostOptions">
+          <label class="field">
+            <span>Match length</span>
+            <select id="roundCount">
+              <option value="2">2 rounds · one hide each</option>
+              <option value="4" selected>4 rounds · two hides each</option>
+              <option value="6">6 rounds · three hides each</option>
+            </select>
+          </label>
+          <div class="timers">
+            <label class="field"><span>Hide time</span><select id="hideSeconds"><option>45</option><option selected>60</option><option>75</option></select></label>
+            <label class="field"><span>Seek time</span><select id="seekSeconds"><option>60</option><option selected>90</option><option>120</option></select></label>
+          </div>
+        </div>
+
+        <div class="actions two" id="lobbyActions">
+          <button class="primary" id="createRoom" type="button">Create Remote Room</button>
+          <button id="localDemo" type="button">Practice Solo</button>
+        </div>
+
+        <div class="join-box" id="joinBox">
+          <label class="field">
+            <span>Join room</span>
+            <input class="code-input" id="roomCode" maxlength="6" autocomplete="off" placeholder="ABC123">
+          </label>
+          <button class="secondary" id="joinRoom" type="button">Join Remote Room</button>
+        </div>
+
+        <div class="room-box" id="roomBox" hidden>
+          <span class="eyebrow">Room ready</span>
+          <div class="room-code" id="roomCodeDisplay">------</div>
+          <button class="primary" id="shareInvite" type="button">Share Invite</button>
+          <p id="roomNote">Waiting for Player 2…</p>
+          <button class="ghost danger" id="leaveRoom" type="button">Leave room</button>
+        </div>
+
+        <div class="connected-box" id="connectedBox" hidden>
+          <div class="versus">
+            <div><span id="p0Lobby">Player 1</span><b id="p0Ready">HOST</b></div>
+            <i>VS</i>
+            <div><span id="p1Lobby">Player 2</span><b id="p1Ready">CONNECTED</b></div>
+          </div>
+          <button class="primary" id="startMatch" type="button">Start Match</button>
+          <p class="guest-wait" id="guestWait" hidden>Waiting for the host to start the match…</p>
+        </div>
+
+        <details class="how">
+          <summary>How it works</summary>
+          <ol>
+            <li>The Hider gets a close-up view, positions a figure, samples colors from the artwork, and paints camouflage.</li>
+            <li>The Seeker starts zoomed out and pans or zooms through the full painting.</li>
+            <li>Wrong guesses cost 5 seconds. Roles alternate every round.</li>
+          </ol>
+        </details>
+      </section>
+
+      <section class="game-shell" id="gameShell" hidden>
+        <div class="matchbar">
+          <div class="match-player" id="p0Match"><span>Player 1</span><b>0</b></div>
+          <div class="round-state">
+            <span id="roundLabel">ROUND 1 / 4</span>
+            <strong id="phaseLabel">HIDE</strong>
+            <em id="clock">1:00</em>
+          </div>
+          <div class="match-player right" id="p1Match"><span>Player 2</span><b>0</b></div>
+        </div>
+
+        <section class="art-card">
+          <div class="art-meta">
+            <div>
+              <strong id="artTitle">Loading artwork…</strong>
+              <span id="artArtist">Art Institute of Chicago Open Access</span>
+            </div>
+            <a id="artSource" href="https://www.artic.edu/" target="_blank" rel="noopener">Artwork ↗</a>
+          </div>
+
+          <div class="stage-wrap" id="stageWrap">
+            <canvas id="stage" aria-label="Streetblend painting game board"></canvas>
+            <div class="stage-message" id="stageMessage" hidden>
+              <strong id="stageMessageTitle">Waiting</strong>
+              <span id="stageMessageText">The other player is preparing the scene.</span>
+            </div>
+            <div class="guess-flash" id="guessFlash" hidden></div>
+          </div>
+
+          <div class="zoom-row">
+            <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+            <input id="zoom" type="range" min="1" max="5" step="0.05" value="1">
+            <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+            <button id="resetView" type="button">Fit</button>
+          </div>
+        </section>
+
+        <section class="controls hider-controls" id="hiderControls" hidden>
+          <div class="role-head"><span class="role-badge hider">HIDER</span><p>Find a spot, paint your figure, then lock it in.</p></div>
+          <div class="tool-grid">
+            <button class="tool active" data-tool="place" type="button"><b>✥</b><span>Place</span></button>
+            <button class="tool" data-tool="pan" type="button"><b>↔</b><span>Pan</span></button>
+            <button class="tool" data-tool="sample" type="button"><b>◉</b><span>Sample</span></button>
+            <button class="tool" data-tool="paint" type="button"><b>✎</b><span>Paint</span></button>
+          </div>
+
+          <div class="paint-row">
+            <div class="swatch" id="paintSwatch" aria-label="Selected paint color"></div>
+            <label><span>Brush</span><input id="brushSize" type="range" min="4" max="28" value="14"></label>
+            <button id="resetPaint" type="button">Reset white</button>
+          </div>
+
+          <div class="transform-grid">
+            <label><span>Size</span><input id="figureScale" type="range" min="0.035" max="0.14" step="0.002" value="0.075"></label>
+            <label><span>Rotation</span><input id="figureRotation" type="range" min="-45" max="45" step="1" value="0"></label>
+          </div>
+
+          <div class="pose-row" role="group" aria-label="Figure pose">
+            <button class="pose active" data-pose="stand" type="button">Standing</button>
+            <button class="pose" data-pose="lean" type="button">Leaning</button>
+            <button class="pose" data-pose="crouch" type="button">Crouched</button>
+            <button class="pose" data-pose="wide" type="button">Wide</button>
+          </div>
+
+          <button class="primary lock" id="lockHide" type="button">Lock Hiding Spot</button>
+          <p class="hint" id="hiderHint">Tap the painting to position your figure.</p>
+        </section>
+
+        <section class="controls seeker-controls" id="seekerControls" hidden>
+          <div class="role-head"><span class="role-badge seeker">SEEKER</span><p>Pan and zoom. Arm a guess when you think you've found the hidden figure.</p></div>
+          <div class="seek-actions">
+            <button class="primary" id="guessMode" type="button">Make a Guess</button>
+            <div><strong id="wrongCount">0</strong><span>wrong guesses</span></div>
+          </div>
+          <p class="hint" id="seekHint">Drag to explore. Pinch or use the zoom slider for detail.</p>
+        </section>
+
+        <section class="controls waiting-controls" id="waitingControls" hidden>
+          <span class="role-badge" id="waitingRole">SEEKER</span>
+          <h2 id="waitingTitle">The Hider is blending in…</h2>
+          <p id="waitingText">You’ll get the full painting when the hiding spot is locked.</p>
+        </section>
+
+        <section class="controls reveal-controls" id="revealControls" hidden>
+          <span class="role-badge reveal">REVEAL</span>
+          <h2 id="revealTitle">Found!</h2>
+          <p id="revealText">The hiding spot is outlined on the painting.</p>
+          <div class="round-score" id="roundScore"></div>
+          <button class="primary" id="nextRound" type="button">Next Round</button>
+          <p class="guest-wait" id="nextRoundWait" hidden>Waiting for the host…</p>
+        </section>
+
+        <section class="controls final-controls" id="finalControls" hidden>
+          <span class="role-badge reveal">MATCH COMPLETE</span>
+          <h2 id="finalTitle">Final score</h2>
+          <div class="final-score" id="finalScore"></div>
+          <button class="primary" id="rematch" type="button">Rematch</button>
+          <a class="secondary link-button" href="../../">Back to GameRoom</a>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" aria-live="polite"></div>
+  </div>
+
+  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script src="../../shared/multiplayer-room.js?v=2"></script>
+  <script src="./game.js?v=1.0"></script>
+</body>
+</html>
