@@ -132,3 +132,18 @@ The Sample tool now uses the same brush-size control to determine its source-pix
 - RGB values from all non-transparent pixels inside that circle are averaged into one sampled color.
 - The sampling loupe shows the active footprint and the resulting aggregate hex color.
 - The central DRAG label was removed from the selected player box; direct drag behavior remains unchanged.
+
+## v1.6 control and visual audit
+
+Streetblend v1.6 received a full control/visual pass.
+
+- Hider primary tools remain only Place, Sample, and Paint.
+- Pose and Build were reduced from seven separate buttons to two compact selectors.
+- Focus Player and Fit Artwork were moved from the control panel onto the artwork as small floating view controls.
+- Transform handles and the player selection box are visible only in Place mode, keeping Sample and Paint visually clean.
+- The player is clamped fully inside the source artwork so a hiding position cannot be moved partly off-canvas.
+- The paint-color swatch is now a real button, and Reset White was renamed Clear Paint.
+- Brush size now displays its live pixel value because the same value controls eyedropper aggregation.
+- Commons titles/artist/year metadata are sanitized before display, and the artwork cache version was advanced so old malformed metadata is discarded.
+- Obsolete lobby CSS was removed.
+- Streetblend is included in the repository validation suite, including a control-ID integrity check for missing/duplicate DOM IDs.
