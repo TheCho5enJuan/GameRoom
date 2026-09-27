@@ -35,7 +35,6 @@ let sceneSamplingAvailable = false;
 let dirty = true;
 let raf = 0;
 let timerLoop = null;
-let lastTickSent = -1;
 let toastTimer = null;
 let localReadyToken = '';
 let localAvatar = null;
@@ -121,8 +120,8 @@ const key='streetblend.player.'+String(code||'room');
 try{
 let id=sessionStorage.getItem(key);
 if(!id){
-  id=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-  sessionStorage.setItem(key,id);
+id=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+sessionStorage.setItem(key,id);
 }
 return id;
 }catch(_){
@@ -147,9 +146,9 @@ if(!window.StreetblendArt?.load) throw new Error('Streetblend artwork module is 
 artLoadCategory=category;
 artLoadPromise=window.StreetblendArt.load(category,(title,detail)=>setNetStatus(title,detail))
 .then(items=>{
-  artLibrary=Array.isArray(items)?items:[];
-  sceneDeck=[];
-  return artLibrary;
+artLibrary=Array.isArray(items)?items:[];
+sceneDeck=[];
+return artLibrary;
 });
 return artLoadPromise;
 }
@@ -171,18 +170,18 @@ if(!session?.code) return;
 const url = inviteUrl(session.code);
 try{
 if(navigator.share){
-  await navigator.share({title:'Streetblend',text:'Join my Streetblend room '+session.code,url});
+await navigator.share({title:'Streetblend',text:'Join my Streetblend room '+session.code,url});
 }else{
-  await navigator.clipboard.writeText(url);
-  toast('Invite link copied.');
+await navigator.clipboard.writeText(url);
+toast('Invite link copied.');
 }
 }catch(error){
 if(error?.name === 'AbortError') return;
 try{
-  await navigator.clipboard.writeText(url);
-  toast('Invite link copied.');
+await navigator.clipboard.writeText(url);
+toast('Invite link copied.');
 }catch(_){
-  prompt('Share this invite link:',url);
+prompt('Share this invite link:',url);
 }
 }
 }
@@ -245,65 +244,65 @@ session=net.host({
 gameKey:'streetblend',
 maxPlayers:appSettings.players,
 onStatus(info){
-  if(info.state==='retrying'){
-    if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Reconnecting…','The host connection is recovering. Game time is paused.');
-    else setNetStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…');
-  }else if(info.state==='waiting'&&!connected&&(!hostState||hostState.phase===PHASES.LOBBY)){
-    history.replaceState({},'',inviteUrl(session.code));
-    $('roomCodeDisplay').textContent=session.code;
-    $('roomBox').hidden=false;
-    $('startMenu').hidden=true;
-    $('joinPane').hidden=true;
-    setNetStatus('Room '+session.code,'Share the invite and wait for Player 2.');
-  }
+if(info.state==='retrying'){
+if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Reconnecting…','The host connection is recovering. Game time is paused.');
+else setNetStatus('Reconnecting','Signaling retry '+info.attempt+' of '+info.maxRetries+'…');
+}else if(info.state==='waiting'&&!connected&&(!hostState||hostState.phase===PHASES.LOBBY)){
+history.replaceState({},'',inviteUrl(session.code));
+$('roomCodeDisplay').textContent=session.code;
+$('roomBox').hidden=false;
+$('startMenu').hidden=true;
+$('joinPane').hidden=true;
+setNetStatus('Room '+session.code,'Share the invite and wait for Player 2.');
+}
 },
 onPlayerJoin(info){
-  connected=true;
-  lastSeenBySeat[info.seat]=Date.now();
-  if(!hostState||hostState.phase===PHASES.LOBBY){
-    hideConnectionBanner();
-    $('roomBox').hidden=true;
-    $('connectedBox').hidden=false;
-    $('p0Lobby').textContent=name;
-    $('p1Lobby').textContent=info.name||'Player 2';
-    $('startMatch').hidden=false;
-    $('guestWait').hidden=true;
-    setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
-    hostState=makeHostState(name,info.name||'Player 2');
-    syncSeq=0;
-    ackBySeat={};
-    hostAppliedSeq=0;
-    phaseSerial=0;
-    $('roomRules').textContent=rulesText(hostState.config);
-    session.sendTo(info.seat,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
-    return;
-  }
-  hostState.players[info.seat].name=info.name||hostState.players[info.seat]?.name||('Player '+(info.seat+1));
-  $('connectedBox').hidden=true;
-  $('gameShell').hidden=false;
-  showConnectionBanner('Player reconnected','Restoring the authoritative game state before play resumes…');
-  const seq=publishHostState();
-  if(hostState.paused) reconnectResumeBySeat[info.seat]=seq;
-  else hideConnectionBanner();
+connected=true;
+lastSeenBySeat[info.seat]=Date.now();
+if(!hostState||hostState.phase===PHASES.LOBBY){
+hideConnectionBanner();
+$('roomBox').hidden=true;
+$('connectedBox').hidden=false;
+$('p0Lobby').textContent=name;
+$('p1Lobby').textContent=info.name||'Player 2';
+$('startMatch').hidden=false;
+$('guestWait').hidden=true;
+setNetStatus('Connected',(info.name||'Player 2')+' joined the room.');
+hostState=makeHostState(name,info.name||'Player 2');
+syncSeq=0;
+ackBySeat={};
+hostAppliedSeq=0;
+phaseSerial=0;
+$('roomRules').textContent=rulesText(hostState.config);
+session.sendTo(info.seat,{type:'sb:lobby-config',config:hostState.config,players:hostState.players});
+return;
+}
+hostState.players[info.seat].name=info.name||hostState.players[info.seat]?.name||('Player '+(info.seat+1));
+$('connectedBox').hidden=true;
+$('gameShell').hidden=false;
+showConnectionBanner('Player reconnected','Restoring the authoritative game state before play resumes…');
+const seq=publishHostState();
+if(hostState.paused) reconnectResumeBySeat[info.seat]=seq;
+else hideConnectionBanner();
 },
 onPlayerLeave(info){
-  connected=false;
-  delete lastSeenBySeat[info?.seat];
-  if(hostState&&hostState.phase!==PHASES.LOBBY){
-    pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.','disconnect');
-    showConnectionBanner('Connection lost','Game time is paused. Waiting for the other player to reconnect…');
-    $('gameShell').hidden=false;
-    return;
-  }
-  $('connectedBox').hidden=true;
-  $('roomBox').hidden=false;
-  $('guestWait').hidden=false;
-  setNetStatus('Player disconnected','Waiting for a player to reconnect…');
+connected=false;
+delete lastSeenBySeat[info?.seat];
+if(hostState&&hostState.phase!==PHASES.LOBBY){
+pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.','disconnect');
+showConnectionBanner('Connection lost','Game time is paused. Waiting for the other player to reconnect…');
+$('gameShell').hidden=false;
+return;
+}
+$('connectedBox').hidden=true;
+$('roomBox').hidden=false;
+$('guestWait').hidden=false;
+setNetStatus('Player disconnected','Waiting for a player to reconnect…');
 },
 onMessage(message,meta){handleHostMessage(message,meta);},
 onError(error){
-  if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Connection problem',error?.type||error?.message||'Recovering connection…');
-  else setNetStatus('Connection error',error?.type||error?.message||'Could not create room.');
+if(hostState&&hostState.phase!==PHASES.LOBBY) showConnectionBanner('Connection problem',error?.type||error?.message||'Recovering connection…');
+else setNetStatus('Connection error',error?.type||error?.message||'Could not create room.');
 }
 });
 }
@@ -333,50 +332,50 @@ autoReconnect:true,
 maxPlayers:2,
 onWelcome(info){seat=Number(info.seat)||1;},
 onStatus(info){
-  if(info.state==='retrying'){
-    connected=false;
-    if(remoteState){
-      showConnectionBanner('Reconnecting…','Game time is paused while the connection recovers.');
-      $('gameShell').hidden=false;
-    }else setNetStatus('Reconnecting','Connection retry '+(info.attempt||1)+'…');
-  }else if(info.state==='connected'){
-    connected=true;
-    seat=Number(info.seat??seat);
-    if(remoteState){
-      $('connectedBox').hidden=true;
-      $('gameShell').hidden=false;
-      showConnectionBanner('Connected','Synchronizing the latest game state…');
-      requestResync();
-    }else{
-      hideConnectionBanner();
-      $('connectedBox').hidden=false;
-      $('startMenu').hidden=true;
-      $('joinPane').hidden=true;
-      $('startMatch').hidden=true;
-      $('guestWait').hidden=false;
-      $('guestWait').textContent='Waiting for the host to start the match…';
-      $('p0Lobby').textContent='Host';
-      $('p1Lobby').textContent=playerName();
-      $('roomRules').textContent='Host settings apply';
-      setNetStatus('Connected','Waiting for the host to start.');
-    }
-  }else if(info.state==='disconnected'){
-    connected=false;
-    if(remoteState){
-      showConnectionBanner('Connection lost','Trying to reconnect automatically. Game time is paused.');
-      $('gameShell').hidden=false;
-    }else setNetStatus('Disconnected','Trying to reconnect to the host…');
-  }else if(info.state==='full'){
-    connected=false;
-    $('connectedBox').hidden=true;
-    $('joinPane').hidden=false;
-    setNetStatus('Room full','This Streetblend room already has all player seats occupied.');
-  }
+if(info.state==='retrying'){
+connected=false;
+if(remoteState){
+showConnectionBanner('Reconnecting…','Game time is paused while the connection recovers.');
+$('gameShell').hidden=false;
+}else setNetStatus('Reconnecting','Connection retry '+(info.attempt||1)+'…');
+}else if(info.state==='connected'){
+connected=true;
+seat=Number(info.seat??seat);
+if(remoteState){
+$('connectedBox').hidden=true;
+$('gameShell').hidden=false;
+showConnectionBanner('Connected','Synchronizing the latest game state…');
+requestResync();
+}else{
+hideConnectionBanner();
+$('connectedBox').hidden=false;
+$('startMenu').hidden=true;
+$('joinPane').hidden=true;
+$('startMatch').hidden=true;
+$('guestWait').hidden=false;
+$('guestWait').textContent='Waiting for the host to start the match…';
+$('p0Lobby').textContent='Host';
+$('p1Lobby').textContent=playerName();
+$('roomRules').textContent='Host settings apply';
+setNetStatus('Connected','Waiting for the host to start.');
+}
+}else if(info.state==='disconnected'){
+connected=false;
+if(remoteState){
+showConnectionBanner('Connection lost','Trying to reconnect automatically. Game time is paused.');
+$('gameShell').hidden=false;
+}else setNetStatus('Disconnected','Trying to reconnect to the host…');
+}else if(info.state==='full'){
+connected=false;
+$('connectedBox').hidden=true;
+$('joinPane').hidden=false;
+setNetStatus('Room full','This Streetblend room already has all player seats occupied.');
+}
 },
 onMessage(message){handleGuestMessage(message);},
 onError(error){
-  if(remoteState) showConnectionBanner('Connection problem',error?.type||error?.message||'Trying to recover…');
-  else setNetStatus('Connection error',error?.type||error?.message||'Could not join room.');
+if(remoteState) showConnectionBanner('Connection problem',error?.type||error?.message||'Trying to recover…');
+else setNetStatus('Connection error',error?.type||error?.message||'Could not join room.');
 }
 });
 }
@@ -463,7 +462,6 @@ hostState.deadline=0;
 hostState.pauseRemaining=0;
 hostState.paused=false;
 localReadyToken='';
-lastTickSent=-1;
 return true;
 }
 function beginRound(roundIndex){
@@ -490,8 +488,8 @@ if(!hostState) return null;
 const remaining=hostState.paused
 ? Math.max(0,hostState.pauseRemaining||0)
 : hostState.timerStarted
-  ? Math.max(0,hostState.deadline-Date.now())
-  : null;
+? Math.max(0,hostState.deadline-Date.now())
+: null;
 const state={
 players:hostState.players,
 activeSeats:hostState.activeSeats,
@@ -527,8 +525,8 @@ const snapshot=sendGuestPhase(false)||publicState();
 if(!snapshot) return 0;
 applyStateToUI(snapshot,true).then(applied=>{
 if(applied&&Number(snapshot.syncSeq)===syncSeq){
-  hostAppliedSeq=Math.max(hostAppliedSeq,Number(snapshot.syncSeq)||0);
-  maybeStartTimedPhase();
+hostAppliedSeq=Math.max(hostAppliedSeq,Number(snapshot.syncSeq)||0);
+maybeStartTimedPhase();
 }
 });
 return Number(snapshot.syncSeq)||0;
@@ -604,7 +602,6 @@ if(!actorApplied) return;
 hostState.timerStarted=true;
 const seconds=hostState.phase===PHASES.HIDE?hostState.config.hideSeconds:hostState.config.seekSeconds;
 hostState.deadline=Date.now()+seconds*1000;
-lastTickSent=-1;
 publishHostState();
 }
 function refreshNextRoundGate(){
@@ -621,14 +618,14 @@ if(Number.isFinite(sender)) lastSeenBySeat[sender]=Date.now();
 if(message.type==='sb:pong'){
 ackBySeat[sender]=Math.max(Number(ackBySeat[sender]||0),Number(message.appliedSeq)||0);
 if(message.readyToken&&message.readyToken===hostState.phaseToken){
-  markPhaseReady(sender,message.readyToken);
+markPhaseReady(sender,message.readyToken);
 }
 refreshNextRoundGate();
 maybeStartTimedPhase();
 maybeResumeAfterReconnect();
 if(hostState.paused&&hostState.pauseReason==='heartbeat'){
-  const stale=(hostState.activeSeats||[]).filter(s=>s!==0).some(s=>Date.now()-Number(lastSeenBySeat[s]||0)>3500);
-  if(!stale) resumeMatch();
+const stale=(hostState.activeSeats||[]).filter(s=>s!==0).some(s=>Date.now()-Number(lastSeenBySeat[s]||0)>3500);
+if(!stale) resumeMatch();
 }
 return;
 }
@@ -645,8 +642,8 @@ return;
 }
 if(message.type==='sb:avatar'){
 if(hostState.players[sender] && typeof message.data==='string' && message.data.length<=160000){
-  hostState.players[sender].avatar=message.data;
-  refreshAvatarUi(hostState);
+hostState.players[sender].avatar=message.data;
+refreshAvatarUi(hostState);
 }
 return;
 }
@@ -695,18 +692,18 @@ if(remoteRenderRunning) return;
 remoteRenderRunning=true;
 try{
 while(pendingRemoteState){
-  const state=pendingRemoteState;
-  pendingRemoteState=null;
-  const seq=Number(state.syncSeq)||0;
-  remoteState=state;
-  const applied=await applyStateToUI(state,false);
-  if(!applied) continue;
-  if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) continue;
-  if(Number(remoteState?.syncSeq||0)!==seq) continue;
-  guestAppliedSeq=Math.max(guestAppliedSeq,seq);
-  lastHostPulseAt=Date.now();
-  if(connected&&!state.paused) hideConnectionBanner();
-  session?.send({type:'sb:state-ack',seq,phaseToken:state.phaseToken});
+const state=pendingRemoteState;
+pendingRemoteState=null;
+const seq=Number(state.syncSeq)||0;
+remoteState=state;
+const applied=await applyStateToUI(state,false);
+if(!applied) continue;
+if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) continue;
+if(Number(remoteState?.syncSeq||0)!==seq) continue;
+guestAppliedSeq=Math.max(guestAppliedSeq,seq);
+lastHostPulseAt=Date.now();
+if(connected&&!state.paused) hideConnectionBanner();
+session?.send({type:'sb:state-ack',seq,phaseToken:state.phaseToken});
 }
 }finally{
 remoteRenderRunning=false;
@@ -718,8 +715,8 @@ if(!message?.type) return;
 if(message.type==='sb:lobby-config'){
 if(message.config) $('roomRules').textContent=rulesText(sanitizeSettings(message.config));
 if(Array.isArray(message.players)&&message.players.length>=2){
-  $('p0Lobby').textContent=message.players[0]?.name||'Host';
-  $('p1Lobby').textContent=message.players[1]?.name||playerName();
+$('p0Lobby').textContent=message.players[0]?.name||'Host';
+$('p1Lobby').textContent=message.players[1]?.name||playerName();
 }
 if(localAvatar) session?.send({type:'sb:avatar',seat,data:localAvatar});
 return;
@@ -727,8 +724,8 @@ return;
 if(message.type==='sb:avatar'){
 const remoteSeat=Number(message.seat);
 if(remoteState?.players?.[remoteSeat]&&typeof message.data==='string'&&message.data.length<=160000){
-  remoteState.players[remoteSeat].avatar=message.data;
-  refreshAvatarUi(remoteState);
+remoteState.players[remoteSeat].avatar=message.data;
+refreshAvatarUi(remoteState);
 }
 return;
 }
@@ -749,21 +746,21 @@ return;
 if(message.type==='sb:pulse'||message.type==='sb:tick'){
 lastHostPulseAt=Date.now();
 if(!remoteState ||
-   Number(message.syncSeq)!==Number(remoteState.syncSeq) ||
-   Number(message.round)!==Number(remoteState.round) ||
-   String(message.phase)!==String(remoteState.phase) ||
-   (message.phaseToken&&String(message.phaseToken)!==String(remoteState.phaseToken))){
-  requestResync();
-  return;
+Number(message.syncSeq)!==Number(remoteState.syncSeq) ||
+Number(message.round)!==Number(remoteState.round) ||
+String(message.phase)!==String(remoteState.phase) ||
+(message.phaseToken&&String(message.phaseToken)!==String(remoteState.phaseToken))){
+requestResync();
+return;
 }
 remoteState.remaining=message.remaining;
 remoteState.paused=!!message.paused;
 session?.send({
-  type:'sb:pong',
-  syncSeq:message.syncSeq,
-  phaseToken:message.phaseToken,
-  appliedSeq:guestAppliedSeq,
-  readyToken:localReadyToken
+type:'sb:pong',
+syncSeq:message.syncSeq,
+phaseToken:message.phaseToken,
+appliedSeq:guestAppliedSeq,
+readyToken:localReadyToken
 });
 if(remoteState.timerStarted&&!remoteState.paused) updateClock(message.remaining);
 return;
@@ -833,17 +830,17 @@ finishRound(true);
 }else{
 hostState.wrong += 1;
 const penaltySeconds=hostState.config.wrongPenaltyMode==='time'
-  ? Math.max(0,Number(hostState.config.wrongPenaltySeconds)||0)
-  : 0;
+? Math.max(0,Number(hostState.config.wrongPenaltySeconds)||0)
+: 0;
 if(penaltySeconds>0){
-  hostState.deadline=Math.max(Date.now(),hostState.deadline-penaltySeconds*1000);
+hostState.deadline=Math.max(Date.now(),hostState.deadline-penaltySeconds*1000);
 }
 const missText=penaltySeconds>0 ? 'MISS · −'+penaltySeconds+' sec' : 'MISS';
 if(role === 'host') {
-  guessMarks = hostState.guessMarks.slice();
-  flashGuess(missText.toUpperCase(),false);
-  updateScoreboard(hostState);
-  markDirty();
+guessMarks = hostState.guessMarks.slice();
+flashGuess(missText.toUpperCase(),false);
+updateScoreboard(hostState);
+markDirty();
 }
 if(!solo&&session?.connections?.size) session.broadcast({type:'sb:toast',message:missText});
 publishHostState();
@@ -954,95 +951,95 @@ window.StreetblendAvatar?.setOpponent(null);
 hideStageMessage();
 if(state.phase===PHASES.HIDE_PREPARE){
 if(state.hiderSeat===seat||solo){
-  if(enteringPhase){
-    resetFigureForHide();
-    camera={cx:.5,cy:.5,zoom:2.1};
-    activeTool='place';
-    setToolButtons();
-  }
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='HIDER';
-  $('waitingTitle').textContent='Preparing your canvas…';
-  $('waitingText').textContent='The round begins after both devices finish loading the same artwork.';
-  showStageMessage('Preparing round','Synchronizing the painting on both devices.');
+if(enteringPhase){
+resetFigureForHide();
+camera={cx:.5,cy:.5,zoom:2.1};
+activeTool='place';
+setToolButtons();
+}
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='HIDER';
+$('waitingTitle').textContent='Preparing your canvas…';
+$('waitingText').textContent='The round begins after both devices finish loading the same artwork.';
+showStageMessage('Preparing round','Synchronizing the painting on both devices.');
 }else{
-  if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='SEEKER';
-  $('waitingTitle').textContent='Preparing the round…';
-  $('waitingText').textContent='Customize your icon while both devices load the artwork.';
-  refreshAvatarUi(state);
-  showStageMessage('No peeking','The artwork is loading for the shared round.');
+if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='SEEKER';
+$('waitingTitle').textContent='Preparing the round…';
+$('waitingText').textContent='Customize your icon while both devices load the artwork.';
+refreshAvatarUi(state);
+showStageMessage('No peeking','The artwork is loading for the shared round.');
 }
 if(sceneLoaded) reportPhaseReady(state);
 }else if(state.phase===PHASES.HIDE){
 if(state.hiderSeat===seat||solo){
-  if(enteringPhase){
-    camera={cx:.5,cy:.5,zoom:2.1};
-    activeTool='place';
-    setToolButtons();
-  }
-  $('hiderControls').hidden=false;
-  $('viewControls').hidden=false;
-  $('lockHide').disabled=!state.timerStarted||state.paused;
-  $('hiderHint').textContent=state.timerStarted
-    ? 'Your turn: camouflage the player, then lock the hiding spot.'
-    : 'Your Hider screen is ready. Synchronizing the turn start…';
-  if(!state.timerStarted) showStageMessage('Starting Hider turn','Waiting for the Hider screen to be confirmed.');
+if(enteringPhase){
+camera={cx:.5,cy:.5,zoom:2.1};
+activeTool='place';
+setToolButtons();
+}
+$('hiderControls').hidden=false;
+$('viewControls').hidden=false;
+$('lockHide').disabled=!state.timerStarted||state.paused;
+$('hiderHint').textContent=state.timerStarted
+? 'Your turn: camouflage the player, then lock the hiding spot.'
+: 'Your Hider screen is ready. Synchronizing the turn start…';
+if(!state.timerStarted) showStageMessage('Starting Hider turn','Waiting for the Hider screen to be confirmed.');
 }else{
-  if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='SEEKER';
-  $('waitingTitle').textContent='The Hider is blending in…';
-  $('waitingText').textContent='Customize your icon while the Hider prepares the scene.';
-  refreshAvatarUi(state);
-  showStageMessage('No peeking','The Hider is painting camouflage.');
+if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='SEEKER';
+$('waitingTitle').textContent='The Hider is blending in…';
+$('waitingText').textContent='Customize your icon while the Hider prepares the scene.';
+refreshAvatarUi(state);
+showStageMessage('No peeking','The Hider is painting camouflage.');
 }
 }else if(state.phase===PHASES.SEEK_PREPARE){
 if(state.seekerSeat===seat||solo){
-  if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='SEEKER';
-  $('waitingTitle').textContent='Preparing your search…';
-  $('waitingText').textContent='Loading the final hidden figure. Your timer has not started.';
-  showStageMessage('Preparing search','Loading the Hider’s final camouflage.');
+if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='SEEKER';
+$('waitingTitle').textContent='Preparing your search…';
+$('waitingText').textContent='Loading the final hidden figure. Your timer has not started.';
+showStageMessage('Preparing search','Loading the Hider’s final camouflage.');
 }else{
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='HIDER';
-  $('waitingTitle').textContent='Hiding spot locked';
-  $('waitingText').textContent='Waiting for the Seeker’s device to confirm the search view.';
-  refreshAvatarUi(state);
-  showStageMessage('Spot locked','The Seeker is receiving the final scene.');
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='HIDER';
+$('waitingTitle').textContent='Hiding spot locked';
+$('waitingText').textContent='Waiting for the Seeker’s device to confirm the search view.';
+refreshAvatarUi(state);
+showStageMessage('Spot locked','The Seeker is receiving the final scene.');
 }
 if(sceneLoaded&&state.figure) reportPhaseReady(state);
 }else if(state.phase===PHASES.SEEK){
 if(state.seekerSeat===seat||solo){
-  if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-  if(state.timerStarted&&!state.paused){
-    $('wrongCount').textContent=String(state.wrong||0);
-    const penaltySeconds=state.config?.wrongPenaltyMode==='time'?Number(state.config.wrongPenaltySeconds)||0:0;
-    $('penaltyValue').textContent=penaltySeconds>0?'−'+penaltySeconds+' sec':'None';
-    $('penaltyLabel').textContent=penaltySeconds>0?'per wrong tap':'wrong-tap penalty';
-    $('seekHint').textContent=penaltySeconds>0
-      ? 'Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −'+penaltySeconds+' sec.'
-      : 'Quick tap = guess · drag = pan · pinch = zoom.';
-    $('seekerControls').hidden=false;
-  }else{
-    $('waitingControls').hidden=false;
-    $('waitingRole').textContent='SEEKER';
-    $('waitingTitle').textContent='Your search is ready';
-    $('waitingText').textContent='Synchronizing the turn start. The timer will begin after this screen is confirmed.';
-    showStageMessage('Ready to search','Synchronizing turn start…');
-  }
+if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+if(state.timerStarted&&!state.paused){
+$('wrongCount').textContent=String(state.wrong||0);
+const penaltySeconds=state.config?.wrongPenaltyMode==='time'?Number(state.config.wrongPenaltySeconds)||0:0;
+$('penaltyValue').textContent=penaltySeconds>0?'−'+penaltySeconds+' sec':'None';
+$('penaltyLabel').textContent=penaltySeconds>0?'per wrong tap':'wrong-tap penalty';
+$('seekHint').textContent=penaltySeconds>0
+? 'Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −'+penaltySeconds+' sec.'
+: 'Quick tap = guess · drag = pan · pinch = zoom.';
+$('seekerControls').hidden=false;
 }else{
-  if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-  $('waitingControls').hidden=false;
-  $('waitingRole').textContent='HIDER';
-  $('waitingTitle').textContent=state.timerStarted?'Stay hidden…':'Seeker is ready…';
-  $('waitingText').textContent=state.timerStarted
-    ? 'The Seeker is searching. You can keep customizing your icon while you wait.'
-    : 'The search timer is waiting for the Seeker’s screen confirmation.';
-  refreshAvatarUi(state);
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='SEEKER';
+$('waitingTitle').textContent='Your search is ready';
+$('waitingText').textContent='Synchronizing the turn start. The timer will begin after this screen is confirmed.';
+showStageMessage('Ready to search','Synchronizing turn start…');
+}
+}else{
+if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+$('waitingControls').hidden=false;
+$('waitingRole').textContent='HIDER';
+$('waitingTitle').textContent=state.timerStarted?'Stay hidden…':'Seeker is ready…';
+$('waitingText').textContent=state.timerStarted
+? 'The Seeker is searching. You can keep customizing your icon while you wait.'
+: 'The search timer is waiting for the Seeker’s screen confirmation.';
+refreshAvatarUi(state);
 }
 }else if(state.phase===PHASES.REVEAL){
 if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
@@ -1092,18 +1089,18 @@ let img=null;
 let corsLoaded=false;
 for(const url of urls){
 try{
-  img=await loadImageDirect(url,true);
-  corsLoaded=true;
-  break;
+img=await loadImageDirect(url,true);
+corsLoaded=true;
+break;
 }catch(_){}
 }
 if(!img){
 for(const url of urls){
-  try{
-    img=await loadImageDirect(url,false);
-    corsLoaded=false;
-    break;
-  }catch(_){}
+try{
+img=await loadImageDirect(url,false);
+corsLoaded=false;
+break;
+}catch(_){}
 }
 }
 if(token!==sceneToken) return false;
@@ -1120,7 +1117,7 @@ sceneBufferCtx.clearRect(0,0,sceneBuffer.width,sceneBuffer.height);
 try{
 sceneBufferCtx.drawImage(img,0,0);
 if(corsLoaded){
-  sceneBufferCtx.getImageData(0,0,1,1);
+sceneBufferCtx.getImageData(0,0,1,1);
 }
 }catch(_){
 sceneSamplingAvailable=false;
@@ -1391,9 +1388,9 @@ return Promise.resolve();
 return new Promise(resolve=>{
 const img=new Image();
 img.onload=()=>{
-  paintCtx.clearRect(0,0,PAINT_W,PAINT_H);
-  paintCtx.drawImage(img,0,0,PAINT_W,PAINT_H);
-  markDirty();resolve();
+paintCtx.clearRect(0,0,PAINT_W,PAINT_H);
+paintCtx.drawImage(img,0,0,PAINT_W,PAINT_H);
+markDirty();resolve();
 };
 img.onerror=()=>{resetPaint();resolve();};
 img.src=data;
@@ -1422,10 +1419,10 @@ function sampleColor(norm,pointer=null,quiet=false){
 if(!sceneImage || !norm || !window.StreetblendSampler) return false;
 try{
 const sample=StreetblendSampler.aggregateColor(
-  sceneBufferCtx,
-  sceneBuffer,
-  norm,
-  currentSampleDiameter()
+sceneBufferCtx,
+sceneBuffer,
+norm,
+currentSampleDiameter()
 );
 paintColor=sample.hex;
 $('paintSwatch').style.background=paintColor;
@@ -1505,57 +1502,57 @@ const midpoint={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
 const d=distance(pts[0],pts[1]);
 const a=angleBetween(pts[0],pts[1]);
 if(
-  state?.phase==='hide' &&
-  state.hiderSeat===seat &&
-  activeTool==='place' &&
-  (draggingFigure || figureHandleDrag || pointHitsFigure(midpoint.x,midpoint.y))
+state?.phase==='hide' &&
+state.hiderSeat===seat &&
+activeTool==='place' &&
+(draggingFigure || figureHandleDrag || pointHitsFigure(midpoint.x,midpoint.y))
 ){
-  figureTransform={distance:d,angle:a,scale:figure.scale,rotation:figure.rotation};
-  draggingFigure=null;
-  figureHandleDrag=null;
-  pinchStart=null;
+figureTransform={distance:d,angle:a,scale:figure.scale,rotation:figure.rotation};
+draggingFigure=null;
+figureHandleDrag=null;
+pinchStart=null;
 }else{
-  pinchStart={distance:d,zoom:camera.zoom};
-  figureTransform=null;
-  figureHandleDrag=null;
+pinchStart={distance:d,zoom:camera.zoom};
+figureTransform=null;
+figureHandleDrag=null;
 }
 pointerStart=null;
 return;
 }
 if(state?.phase==='hide' && state.hiderSeat===seat){
 if(activeTool==='place'){
-  const handle=figureHandleAt(p.x,p.y);
-  if(handle){
-    const m=figureMetrics();
-    const center=m?.p;
-    if(center){
-      figureHandleDrag={
-        type:handle,
-        pointerId:e.pointerId,
-        scale:figure.scale,
-        rotation:figure.rotation,
-        center:{x:center.x,y:center.y},
-        startDistance:Math.max(1,Math.hypot(p.x-center.x,p.y-center.y)),
-        startAngle:Math.atan2(p.y-center.y,p.x-center.x)
-      };
-      if(pointerStart) pointerStart.moved=true;
-    }
-  }else if(pointHitsFigure(p.x,p.y)){
-    draggingFigure={pointerId:e.pointerId};
-  }
+const handle=figureHandleAt(p.x,p.y);
+if(handle){
+const m=figureMetrics();
+const center=m?.p;
+if(center){
+figureHandleDrag={
+type:handle,
+pointerId:e.pointerId,
+scale:figure.scale,
+rotation:figure.rotation,
+center:{x:center.x,y:center.y},
+startDistance:Math.max(1,Math.hypot(p.x-center.x,p.y-center.y)),
+startAngle:Math.atan2(p.y-center.y,p.x-center.x)
+};
+if(pointerStart) pointerStart.moved=true;
+}
+}else if(pointHitsFigure(p.x,p.y)){
+draggingFigure={pointerId:e.pointerId};
+}
 }else if(activeTool==='paint' && pointHitsFigure(p.x,p.y)){
-  paintingPointer=e.pointerId;
-  paintAt(p.x,p.y);
+paintingPointer=e.pointerId;
+paintAt(p.x,p.y);
 }else if(activeTool==='sample'){
-  sampleHold={pointerId:e.pointerId,latest:p,active:false};
-  clearTimeout(sampleHoldTimer);
-  sampleHoldTimer=setTimeout(()=>{
-    if(!sampleHold || sampleHold.pointerId!==e.pointerId || !pointers.has(e.pointerId)) return;
-    sampleHold.active=true;
-    if(pointerStart?.id===e.pointerId) pointerStart.moved=true;
-    const latest=sampleHold.latest;
-    sampleColor(screenToImage(latest.x,latest.y),latest,true);
-  },180);
+sampleHold={pointerId:e.pointerId,latest:p,active:false};
+clearTimeout(sampleHoldTimer);
+sampleHoldTimer=setTimeout(()=>{
+if(!sampleHold || sampleHold.pointerId!==e.pointerId || !pointers.has(e.pointerId)) return;
+sampleHold.active=true;
+if(pointerStart?.id===e.pointerId) pointerStart.moved=true;
+const latest=sampleHold.latest;
+sampleColor(screenToImage(latest.x,latest.y),latest,true);
+},180);
 }
 }
 }
@@ -1566,17 +1563,17 @@ pointers.set(e.pointerId,p);
 if(pointers.size>=2){
 const pts=[...pointers.values()];
 if(figureTransform){
-  const ratio=distance(pts[0],pts[1])/Math.max(1,figureTransform.distance);
-  const angleDelta=(angleBetween(pts[0],pts[1])-figureTransform.angle)*180/Math.PI;
-  figure.scale=clamp(figureTransform.scale*ratio,.10,.24);
-  figure.rotation=clamp(figureTransform.rotation+normalizeAngle(angleDelta),-70,70);
-  clampFigureToArtwork();
-  markDirty();
+const ratio=distance(pts[0],pts[1])/Math.max(1,figureTransform.distance);
+const angleDelta=(angleBetween(pts[0],pts[1])-figureTransform.angle)*180/Math.PI;
+figure.scale=clamp(figureTransform.scale*ratio,.10,.24);
+figure.rotation=clamp(figureTransform.rotation+normalizeAngle(angleDelta),-70,70);
+clampFigureToArtwork();
+markDirty();
 }else if(pinchStart){
-  const ratio=distance(pts[0],pts[1])/Math.max(1,pinchStart.distance);
-  camera.zoom=clamp(pinchStart.zoom*ratio,1,5);
-  clampCamera();
-  markDirty();
+const ratio=distance(pts[0],pts[1])/Math.max(1,pinchStart.distance);
+camera.zoom=clamp(pinchStart.zoom*ratio,1,5);
+clampCamera();
+markDirty();
 }
 return;
 }
@@ -1584,27 +1581,27 @@ const state=getState();
 if(sampleHold?.pointerId===e.pointerId){
 sampleHold.latest=p;
 if(sampleHold.active){
-  sampleColor(screenToImage(p.x,p.y),p,true);
-  if(pointerStart) pointerStart.moved=true;
-  return;
+sampleColor(screenToImage(p.x,p.y),p,true);
+if(pointerStart) pointerStart.moved=true;
+return;
 }
 if(pointerStart && Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8){
-  clearTimeout(sampleHoldTimer);
-  sampleHoldTimer=null;
-  sampleHold=null;
-  hideSampleLoupe();
+clearTimeout(sampleHoldTimer);
+sampleHoldTimer=null;
+sampleHold=null;
+hideSampleLoupe();
 }
 }
 if(state?.phase==='hide' && state.hiderSeat===seat && figureHandleDrag?.pointerId===e.pointerId){
 const h=figureHandleDrag;
 if(h.type==='resize'){
-  const dist=Math.max(1,Math.hypot(p.x-h.center.x,p.y-h.center.y));
-  figure.scale=clamp(h.scale*(dist/h.startDistance),.10,.24);
-  clampFigureToArtwork();
+const dist=Math.max(1,Math.hypot(p.x-h.center.x,p.y-h.center.y));
+figure.scale=clamp(h.scale*(dist/h.startDistance),.10,.24);
+clampFigureToArtwork();
 }else if(h.type==='rotate'){
-  const angle=Math.atan2(p.y-h.center.y,p.x-h.center.x);
-  const delta=normalizeAngle((angle-h.startAngle)*180/Math.PI);
-  figure.rotation=clamp(h.rotation+delta,-70,70);
+const angle=Math.atan2(p.y-h.center.y,p.x-h.center.x);
+const delta=normalizeAngle((angle-h.startAngle)*180/Math.PI);
+figure.rotation=clamp(h.rotation+delta,-70,70);
 }
 if(pointerStart) pointerStart.moved=true;
 markDirty();
@@ -1613,10 +1610,10 @@ return;
 if(state?.phase==='hide' && state.hiderSeat===seat && draggingFigure?.pointerId===e.pointerId){
 const n=screenToImage(p.x,p.y);
 if(n){
-  figure.x=n.x;
-  figure.y=n.y;
-  clampFigureToArtwork();
-  markDirty();
+figure.x=n.x;
+figure.y=n.y;
+clampFigureToArtwork();
+markDirty();
 }
 if(pointerStart) pointerStart.moved=true;
 return;
@@ -1634,13 +1631,13 @@ if(canPan && pointerStart){
 const dx=p.x-pointerStart.lastX,dy=p.y-pointerStart.lastY;
 if(Math.hypot(p.cx-pointerStart.cx,p.cy-pointerStart.cy)>8) pointerStart.moved=true;
 if(pointerStart.moved){
-  const t=getTransform();
-  if(t){
-    camera.cx-=dx/(t.iw*t.scale);
-    camera.cy-=dy/(t.ih*t.scale);
-    clampCamera();
-    markDirty();
-  }
+const t=getTransform();
+if(t){
+camera.cx-=dx/(t.iw*t.scale);
+camera.cy-=dy/(t.ih*t.scale);
+clampCamera();
+markDirty();
+}
 }
 pointerStart.lastX=p.x;
 pointerStart.lastY=p.y;
@@ -1655,9 +1652,9 @@ if(sampleHold?.pointerId===e.pointerId){
 clearTimeout(sampleHoldTimer);
 sampleHoldTimer=null;
 if(activeSample){
-  const sampled=sampleColor(screenToImage(p.x,p.y),p,true);
-  hideSampleLoupe();
-  if(sampled) enterPaintAfterSample();
+const sampled=sampleColor(screenToImage(p.x,p.y),p,true);
+hideSampleLoupe();
+if(sampled) enterPaintAfterSample();
 }
 sampleHold=null;
 }
@@ -1666,29 +1663,29 @@ figureTransform=null;
 sendDraft();
 }else if(state?.phase==='hide' && state.hiderSeat===seat){
 if(figureHandleDrag?.pointerId===e.pointerId){
-  figureHandleDrag=null;
-  sendDraft();
+figureHandleDrag=null;
+sendDraft();
 }else if(draggingFigure?.pointerId===e.pointerId){
-  draggingFigure=null;
-  sendDraft();
+draggingFigure=null;
+sendDraft();
 }else if(activeTool==='paint' && paintingPointer===e.pointerId){
-  paintingPointer=null;
-  sendDraft();
+paintingPointer=null;
+sendDraft();
 }else if(wasTap && activeTool==='place'){
-  if(!pointHitsFigure(p.x,p.y) && !figureHandleAt(p.x,p.y)){
-    const n=screenToImage(p.x,p.y);
-    if(n){
-      figure.x=n.x;
-      figure.y=n.y;
-      clampFigureToArtwork();
-      sendDraft();
-      markDirty();
-    }
-  }
+if(!pointHitsFigure(p.x,p.y) && !figureHandleAt(p.x,p.y)){
+const n=screenToImage(p.x,p.y);
+if(n){
+figure.x=n.x;
+figure.y=n.y;
+clampFigureToArtwork();
+sendDraft();
+markDirty();
+}
+}
 }else if(wasTap && activeTool==='sample' && !activeSample){
-  const sampled=sampleColor(screenToImage(p.x,p.y),p,false);
-  hideSampleLoupe();
-  if(sampled) enterPaintAfterSample();
+const sampled=sampleColor(screenToImage(p.x,p.y),p,false);
+hideSampleLoupe();
+if(sampled) enterPaintAfterSample();
 }
 }else if(state?.phase==='seek' && (state.seekerSeat===seat || solo) && wasTap){
 const n=screenToImage(p.x,p.y);
@@ -1720,73 +1717,73 @@ const now=Date.now();
 if(role==='host'&&hostState){
 const timed=[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase);
 const remaining=hostState.paused
-  ? Math.max(0,hostState.pauseRemaining||0)
-  : hostState.timerStarted
-    ? Math.max(0,hostState.deadline-now)
-    : null;
+? Math.max(0,hostState.pauseRemaining||0)
+: hostState.timerStarted
+? Math.max(0,hostState.deadline-now)
+: null;
 if(!solo&&session?.connections?.size){
-  const staleSeat=(hostState.activeSeats||[])
-    .filter(s=>s!==0&&session.connections.has(s))
-    .find(s=>now-Number(lastSeenBySeat[s]||0)>6000);
-  if(staleSeat!==undefined){
-    const age=now-Number(lastSeenBySeat[staleSeat]||0);
-    if(!hostState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)&&hostState.timerStarted){
-      pauseMatch('Player '+(staleSeat+1)+' stopped responding.','heartbeat');
-      showConnectionBanner('Player not responding','Game time is paused while the connection recovers.');
-    }
-    if(age>12000){
-      try{session.connections.get(staleSeat)?.close();}catch(_){}
-    }
-  }
+const staleSeat=(hostState.activeSeats||[])
+.filter(s=>s!==0&&session.connections.has(s))
+.find(s=>now-Number(lastSeenBySeat[s]||0)>6000);
+if(staleSeat!==undefined){
+const age=now-Number(lastSeenBySeat[staleSeat]||0);
+if(!hostState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)&&hostState.timerStarted){
+pauseMatch('Player '+(staleSeat+1)+' stopped responding.','heartbeat');
+showConnectionBanner('Player not responding','Game time is paused while the connection recovers.');
+}
+if(age>12000){
+try{session.connections.get(staleSeat)?.close();}catch(_){}
+}
+}
 }
 if(!solo&&session?.connections?.size&&hostState.phase!==PHASES.LOBBY&&now-lastPulseAt>=1000){
-  lastPulseAt=now;
-  session.broadcast({
-    type:'sb:pulse',
-    syncSeq,
-    round:hostState.round,
-    phase:hostState.phase,
-    phaseToken:hostState.phaseToken,
-    timerStarted:!!hostState.timerStarted,
-    paused:!!hostState.paused,
-    remaining
-  });
+lastPulseAt=now;
+session.broadcast({
+type:'sb:pulse',
+syncSeq,
+round:hostState.round,
+phase:hostState.phase,
+phaseToken:hostState.phaseToken,
+timerStarted:!!hostState.timerStarted,
+paused:!!hostState.paused,
+remaining
+});
 }
 if(timed&&hostState.timerStarted&&!hostState.paused){
-  updateClock(remaining);
-  if(remaining<=0){
-    if(hostState.phase===PHASES.HIDE){
-      const candidate=hostState.hiderSeat===0?exportFigure():hostState.lastDraft;
-      lockFigure(candidate||defaultFigure());
-      toast('Hide time expired. Spot locked.');
-    }else finishRound(false);
-  }
+updateClock(remaining);
+if(remaining<=0){
+if(hostState.phase===PHASES.HIDE){
+const candidate=hostState.hiderSeat===0?exportFigure():hostState.lastDraft;
+lockFigure(candidate||defaultFigure());
+toast('Hide time expired. Spot locked.');
+}else finishRound(false);
+}
 }
 return;
 }
 if(role==='guest'&&remoteState){
 if(pendingCriticalAction){
-  const sameContext=Number(pendingCriticalAction.round)===Number(remoteState.round)&&
-    String(pendingCriticalAction.phaseToken)===String(remoteState.phaseToken);
-  if(!sameContext) pendingCriticalAction=null;
-  else if(connected&&now-lastCriticalSendAt>1200){
-    session?.send(pendingCriticalAction);
-    lastCriticalSendAt=now;
-  }
+const sameContext=Number(pendingCriticalAction.round)===Number(remoteState.round)&&
+String(pendingCriticalAction.phaseToken)===String(remoteState.phaseToken);
+if(!sameContext) pendingCriticalAction=null;
+else if(connected&&now-lastCriticalSendAt>1200){
+session?.send(pendingCriticalAction);
+lastCriticalSendAt=now;
+}
 }
 if(connected&&lastHostPulseAt&&now-lastHostPulseAt>5000){
-  showConnectionBanner('Synchronizing…','The host heartbeat is late. Requesting the authoritative game state.');
-  requestResync();
+showConnectionBanner('Synchronizing…','The host heartbeat is late. Requesting the authoritative game state.');
+requestResync();
 }
 if(connected&&lastHostPulseAt&&now-lastHostPulseAt>10000&&now-lastForcedReconnectAt>10000){
-  lastForcedReconnectAt=now;
-  showConnectionBanner('Reconnecting…','The shared channel stopped responding. Opening a fresh connection.');
-  session?.reconnect?.();
+lastForcedReconnectAt=now;
+showConnectionBanner('Reconnecting…','The shared channel stopped responding. Opening a fresh connection.');
+session?.reconnect?.();
 }
 if(remoteState.timerStarted&&!remoteState.paused&&[PHASES.HIDE,PHASES.SEEK].includes(remoteState.phase)){
-  if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
-  updateClock(remoteState.remaining||0);
-  if(remoteState.remaining<=0) requestResync();
+if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
+updateClock(remoteState.remaining||0);
+if(remoteState.remaining<=0) requestResync();
 }
 }
 }
@@ -1820,9 +1817,9 @@ cancelSampleHold();
 activeTool=b.dataset.tool;
 setToolButtons();
 const copy={
-  place:'Drag the player. Use ↻ to rotate, ⤢ to resize, or pinch/twist the player with two fingers.',
-  sample:'Tap once to sample. Hold and slide for a live magnified preview. Brush size controls the sampled area.',
-  paint:'Drag over the player to paint. Drag or pinch outside the player to navigate the artwork.'
+place:'Drag the player. Use ↻ to rotate, ⤢ to resize, or pinch/twist the player with two fingers.',
+sample:'Tap once to sample. Hold and slide for a live magnified preview. Brush size controls the sampled area.',
+paint:'Drag over the player to paint. Drag or pinch outside the player to navigate the artwork.'
 };
 $('hiderHint').textContent=copy[activeTool]||'';
 }));
