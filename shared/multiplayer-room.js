@@ -80,9 +80,11 @@
             const playerId=String(message.playerId||'').slice(0,80);
             const remembered=playerId?seatByPlayerId.get(playerId):null;
             let reconnected=false;
-            if(remembered && !usedSeats.has(remembered)){
+            if(remembered){
               assignedSeat=remembered;
               reconnected=true;
+              const previous=session.connections.get(remembered);
+              if(previous&&previous!==conn){try{previous.close();}catch(_){}}
             }else{
               for(let i=1;i<session.maxPlayers;i++){if(!usedSeats.has(i)){assignedSeat=i;break;}}
             }
@@ -105,7 +107,7 @@
         if(assignedSeat!==null) opts.onMessage?.(message,{seat:assignedSeat,connection:conn});
       });
       conn.on('close',()=>{
-        if(assignedSeat!==null){
+        if(assignedSeat!==null&&session.connections.get(assignedSeat)===conn){
           session.connections.delete(assignedSeat);
           usedSeats.delete(assignedSeat);
           opts.onPlayerLeave?.({seat:assignedSeat});
