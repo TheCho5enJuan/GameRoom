@@ -10,9 +10,9 @@
       artist:'Gustave Caillebotte',
       date:'1877',
       imageId:'f8fd76e9-c396-5678-36ed-6a348c904d27',
-      imageUrl:'https://www.artic.edu/iiif/2/f8fd76e9-c396-5678-36ed-6a348c904d27/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/f8fd76e9-c396-5678-36ed-6a348c904d27/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/20684',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg/1280px-Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg/1280px-Gustave_Caillebotte_-_Paris_Street%3B_Rainy_Day_-_Google_Art_Project.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Gustave_Caillebotte_-_Paris_Street;_Rainy_Day_-_Google_Art_Project.jpg',
       publicDomain:true
     },
     {
@@ -21,9 +21,9 @@
       artist:'Georges Seurat',
       date:'1884–86, border added 1888–89',
       imageId:'2d484387-2509-5e8e-2c43-22f9981972eb',
-      imageUrl:'https://www.artic.edu/iiif/2/2d484387-2509-5e8e-2c43-22f9981972eb/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/2d484387-2509-5e8e-2c43-22f9981972eb/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/27992',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/1280px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/1280px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg',
       publicDomain:true
     },
     {
@@ -32,9 +32,9 @@
       artist:'Claude Monet',
       date:'1906',
       imageId:'3c27b499-af56-f0d5-93b5-a7f2f1ad5813',
-      imageUrl:'https://www.artic.edu/iiif/2/3c27b499-af56-f0d5-93b5-a7f2f1ad5813/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/3c27b499-af56-f0d5-93b5-a7f2f1ad5813/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/16568',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/1280px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/1280px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_1906,_Ryerson.jpg',
       publicDomain:true
     },
     {
@@ -43,9 +43,9 @@
       artist:'Pierre-Auguste Renoir',
       date:'1881',
       imageId:'3a608f55-d76e-fa96-d0b1-0789fbc48f1e',
-      imageUrl:'https://www.artic.edu/iiif/2/3a608f55-d76e-fa96-d0b1-0789fbc48f1e/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/3a608f55-d76e-fa96-d0b1-0789fbc48f1e/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/14655',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Two_Sisters_%28On_the_Terrace%29.jpg/1920px-Two_Sisters_%28On_the_Terrace%29.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Two_Sisters_%28On_the_Terrace%29.jpg/1920px-Two_Sisters_%28On_the_Terrace%29.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Two_Sisters_(On_the_Terrace).jpg',
       publicDomain:true
     },
     {
@@ -54,9 +54,9 @@
       artist:'Mary Cassatt',
       date:'1893',
       imageId:'3b885ae0-4d46-5fe4-d70a-00474827f02c',
-      imageUrl:'https://www.artic.edu/iiif/2/3b885ae0-4d46-5fe4-d70a-00474827f02c/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/3b885ae0-4d46-5fe4-d70a-00474827f02c/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/111442',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Mary_Cassatt_-_The_Child%27s_Bath_-_1910.2_-_Art_Institute_of_Chicago.jpg/960px-Mary_Cassatt_-_The_Child%27s_Bath_-_1910.2_-_Art_Institute_of_Chicago.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Mary_Cassatt_-_The_Child%27s_Bath_-_1910.2_-_Art_Institute_of_Chicago.jpg/960px-Mary_Cassatt_-_The_Child%27s_Bath_-_1910.2_-_Art_Institute_of_Chicago.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Mary_Cassatt_-_The_Child%27s_Bath_-_1910.2_-_Art_Institute_of_Chicago.jpg',
       publicDomain:true
     },
     {
@@ -65,9 +65,9 @@
       artist:'Claude Monet',
       date:'1877',
       imageId:'0f1cc0e0-e42e-be16-3f71-2022da38cb93',
-      imageUrl:'https://www.artic.edu/iiif/2/0f1cc0e0-e42e-be16-3f71-2022da38cb93/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/0f1cc0e0-e42e-be16-3f71-2022da38cb93/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/16571',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg/1280px-Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg/1280px-Claude_Monet_-_Arrival_of_the_Normandy_Train%2C_Gare_Saint-Lazare_-_Google_Art_Project.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Arrival_of_the_Normandy_Train,_Gare_Saint-Lazare_-_Google_Art_Project.jpg',
       publicDomain:true
     },
     {
@@ -76,9 +76,9 @@
       artist:'Vincent van Gogh',
       date:'1889',
       imageId:'6644829f-f292-c5c4-a73c-0356a6fdbf0d',
-      imageUrl:'https://www.artic.edu/iiif/2/6644829f-f292-c5c4-a73c-0356a6fdbf0d/full/843,/0/default.jpg',
-      imageLarge:'https://www.artic.edu/iiif/2/6644829f-f292-c5c4-a73c-0356a6fdbf0d/full/1686,/0/default.jpg',
-      sourceUrl:'https://www.artic.edu/artworks/28560',
+      imageUrl:'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Vincent_van_Gogh_-_The_Bedroom_-_1926.417_-_Art_Institute_of_Chicago.jpg/1280px-Vincent_van_Gogh_-_The_Bedroom_-_1926.417_-_Art_Institute_of_Chicago.jpg',
+      imageLarge:'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/Vincent_van_Gogh_-_The_Bedroom_-_1926.417_-_Art_Institute_of_Chicago.jpg/1280px-Vincent_van_Gogh_-_The_Bedroom_-_1926.417_-_Art_Institute_of_Chicago.jpg',
+      sourceUrl:'https://commons.wikimedia.org/wiki/File:Vincent_van_Gogh_-_The_Bedroom_-_1926.417_-_Art_Institute_of_Chicago.jpg',
       publicDomain:true
     }
   ];
