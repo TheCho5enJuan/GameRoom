@@ -30,27 +30,40 @@
     return (state?.players||[]).map((_,i)=>i);
   }
 
+  function roleSeats(state,role){
+    const plural=state?.[role+'Seats'];
+    if(Array.isArray(plural)&&plural.length) return plural.map(Number);
+    const single=state?.[role+'Seat'];
+    return Number.isFinite(Number(single))?[Number(single)]:[];
+  }
+
   function requiredReadySeats(state){
     if(!state) return [];
     if(state.phase===PHASES.HIDE_PREPARE) return activeSeats(state);
     if(state.phase===PHASES.SEEK_PREPARE){
-      const seats=activeSeats(state);
-      return [seats.includes(state.seekerSeat)?state.seekerSeat:seats[0]];
+      const active=activeSeats(state);
+      const seekers=roleSeats(state,'seeker').filter(seat=>active.includes(seat));
+      return seekers.length?seekers:[active[0]];
+    }
+    return [];
+  }
+
+  function timedActorSeats(state){
+    if(!state) return [];
+    const active=activeSeats(state);
+    if(state.phase===PHASES.HIDE){
+      const seats=roleSeats(state,'hider').filter(seat=>active.includes(seat));
+      return seats.length?seats:[active[0]];
+    }
+    if(state.phase===PHASES.SEEK){
+      const seats=roleSeats(state,'seeker').filter(seat=>active.includes(seat));
+      return seats.length?seats:[active[0]];
     }
     return [];
   }
 
   function timedActorSeat(state){
-    if(!state) return null;
-    if(state.phase===PHASES.HIDE){
-      const seats=activeSeats(state);
-      return seats.includes(state.hiderSeat)?state.hiderSeat:seats[0];
-    }
-    if(state.phase===PHASES.SEEK){
-      const seats=activeSeats(state);
-      return seats.includes(state.seekerSeat)?state.seekerSeat:seats[0];
-    }
-    return null;
+    return timedActorSeats(state)[0]??null;
   }
 
   function matchesContext(state,message){
@@ -65,10 +78,10 @@
       return requiredReadySeats(state).includes(Number(seat));
     }
     if(action==='draft'||action==='lock'){
-      return state.phase===PHASES.HIDE && Number(seat)===Number(state.hiderSeat);
+      return state.phase===PHASES.HIDE && roleSeats(state,'hider').includes(Number(seat));
     }
     if(action==='guess'){
-      return state.phase===PHASES.SEEK && state.timerStarted && Number(seat)===Number(state.seekerSeat);
+      return state.phase===PHASES.SEEK && state.timerStarted && roleSeats(state,'seeker').includes(Number(seat));
     }
     return false;
   }
@@ -88,7 +101,9 @@
     PHASES,
     canTransition,
     activeSeats,
+    roleSeats,
     requiredReadySeats,
+    timedActorSeats,
     timedActorSeat,
     matchesContext,
     actionAllowed,
