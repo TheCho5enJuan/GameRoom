@@ -9,6 +9,7 @@ const PAINT_W = 96;
 const PAINT_H = 180;
 
 const settingsApi=window.StreetblendSettings;
+const settingsPanel=window.StreetblendSettingsPanel;
 const sanitizeSettings=settingsApi.sanitize;
 const penaltyText=settingsApi.penaltyText;
 const artCategoryText=settingsApi.artCategoryText;
@@ -144,74 +145,14 @@ function escapeHtml(v){
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-function updateSettingsSummary(){
-  if($('settingsSummary')) $('settingsSummary').textContent=artCategoryText(appSettings)+' · '+appSettings.players+' players · '+appSettings.rounds+' rounds · '+penaltyText(appSettings);
-  if($('roomRules') && (!hostState || hostState.phase==='lobby')) $('roomRules').textContent=rulesText(appSettings);
-}
-
-function syncSettingsForm(){
-  $('settingMode').value=appSettings.mode;
-  $('settingPlayers').value=String(appSettings.players);
-  $('settingRounds').value=String(appSettings.rounds);
-  $('settingArtCategory').value=appSettings.artCategory;
-  $('settingHideSeconds').value=String(appSettings.hideSeconds);
-  $('settingSeekSeconds').value=String(appSettings.seekSeconds);
-  $('settingPenaltyMode').value=appSettings.wrongPenaltyMode;
-  $('settingPenaltySeconds').value=String(appSettings.wrongPenaltySeconds);
-  $('penaltySecondsField').hidden=appSettings.wrongPenaltyMode==='none';
-}
-
-function readSettingsForm(){
-  return sanitizeSettings({
-    mode:$('settingMode').value,
-    players:Number($('settingPlayers').value),
-    rounds:Number($('settingRounds').value),
-    artCategory:$('settingArtCategory').value,
-    hideSeconds:Number($('settingHideSeconds').value),
-    seekSeconds:Number($('settingSeekSeconds').value),
-    wrongPenaltyMode:$('settingPenaltyMode').value,
-    wrongPenaltySeconds:Number($('settingPenaltySeconds').value)
-  });
-}
-
-function openSettings(){
-  syncSettingsForm();
-  $('settingsOverlay').hidden=false;
-}
-
-function closeSettings(){
-  $('settingsOverlay').hidden=true;
-}
-
-function saveSettings(){
-  appSettings=settingsApi.save(readSettingsForm());
-  updateSettingsSummary();
-  closeSettings();
-  toast('Settings saved.');
-}
-
-function restoreDefaultSettings(){
-  appSettings=settingsApi.defaults();
-  syncSettingsForm();
-}
-
-function showStartMenu(){
-  $('startMenu').hidden=false;
-  $('joinPane').hidden=true;
-  $('roomBox').hidden=true;
-  $('connectedBox').hidden=true;
-  setNetStatus('Ready','Choose how you want to play.');
-  updateSettingsSummary();
-}
-
-function showJoinPane(){
-  $('startMenu').hidden=true;
-  $('joinPane').hidden=false;
-  $('roomBox').hidden=true;
-  $('connectedBox').hidden=true;
-  setNetStatus('Join a game','Enter a room code or open an invite link.');
-  setTimeout(()=>$('roomCode').focus(),50);
-}
+function updateSettingsSummary(){settingsPanel.updateSummary(appSettings,hostState)}
+function syncSettingsForm(){settingsPanel.sync(appSettings)}
+function openSettings(){settingsPanel.open(appSettings)}
+function closeSettings(){settingsPanel.close()}
+function saveSettings(){appSettings=settingsPanel.save();updateSettingsSummary();closeSettings();toast('Settings saved.')}
+function restoreDefaultSettings(){appSettings=settingsPanel.restore()}
+function showStartMenu(){settingsPanel.showStart(appSettings,hostState,setNetStatus)}
+function showJoinPane(){settingsPanel.showJoin(setNetStatus)}
 
 async function loadArtLibrary(category=appSettings.artCategory){
   category=category||'mixed';
