@@ -659,8 +659,8 @@ async function handleGuestMessage(message){
     const seq=Number(message.state?.syncSeq)||0;
     if(seq && Number(remoteState?.syncSeq||0)>seq) return;
     remoteState=message.state;
-    if(seq) session?.send({type:'sb:state-ack',seq});
     await applyRemoteView();
+    if(seq && Number(remoteState?.syncSeq||0)===seq) session?.send({type:'sb:state-ack',seq});
   }else if(message.type==='sb:tick'){
     if(!remoteState || message.round!==remoteState.round || message.phase!==remoteState.phase){
       requestResync();
