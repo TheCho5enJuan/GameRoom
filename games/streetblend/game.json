@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -77,6 +77,14 @@
   },
   "modules": [
     "art-library.js",
+    "avatar-studio.js",
     "game.js"
-  ]
+  ],
+  "waiting_activity": {
+    "type": "player icon drawing",
+    "seeker_during_hide": true,
+    "hider_during_seek": true,
+    "synchronized": true,
+    "displayed_in_match_header": true
+  }
 }
