@@ -11,6 +11,20 @@
     FINAL:'final'
   });
 
+  const TRANSITIONS={
+    [PHASES.LOBBY]:[PHASES.HIDE_PREPARE],
+    [PHASES.HIDE_PREPARE]:[PHASES.HIDE],
+    [PHASES.HIDE]:[PHASES.SEEK_PREPARE],
+    [PHASES.SEEK_PREPARE]:[PHASES.SEEK],
+    [PHASES.SEEK]:[PHASES.REVEAL],
+    [PHASES.REVEAL]:[PHASES.HIDE_PREPARE,PHASES.FINAL],
+    [PHASES.FINAL]:[PHASES.HIDE_PREPARE]
+  };
+
+  function canTransition(from,to){
+    return !!TRANSITIONS[from]?.includes(to);
+  }
+
   function activeSeats(state){
     if(Array.isArray(state?.activeSeats) && state.activeSeats.length) return state.activeSeats.slice();
     return (state?.players||[]).map((_,i)=>i);
@@ -72,6 +86,7 @@
 
   window.StreetblendFlow={
     PHASES,
+    canTransition,
     activeSeats,
     requiredReadySeats,
     timedActorSeat,
