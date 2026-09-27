@@ -156,3 +156,16 @@ Streetblend v1.6 received a full control/visual pass.
 - The former Reset White / Clear Paint control was removed.
 - Host Settings now include an Artwork category. Available categories are Mixed Collection, Impressionism, Landscapes, City & Street, Interiors, People & Markets, Water & Coast, and Gardens & Parks.
 - Each category builds and caches its own randomized public-domain Wikimedia Commons pool. Mixed Collection continues to use the curated seed paintings as fallbacks.
+
+## v1.8 multiplayer synchronization, avatar painting, and longer timers
+
+- Multiplayer round state is host-authoritative and every full state snapshot carries a sequence number.
+- Older state snapshots are ignored, and asynchronous artwork/figure renders are cancelled if a newer round or phase arrives while they are still loading.
+- Timer packets include their round and phase. A guest that reaches 0:00 without receiving a transition requests an immediate full-state resync from the host.
+- The host's Next Round button stays blocked until the guest has received and rendered the Reveal state, preventing one device from advancing while the other is still on the previous search.
+- A reconnecting guest resumes the existing match instead of causing the host to create a new lobby state.
+- Waiting-room avatar paint is clipped to the white player silhouette. The canvas is larger and paint outside the player is discarded.
+- The hidden opponent-icon block is now truly hidden when it is not supposed to be shown.
+- Default Hide time is now 3 minutes and default Seek time is 4 minutes.
+- Hide time choices extend from 1 to 10 minutes; Seek choices extend from 1:30 to 10 minutes.
+- Existing v1.7 settings are migrated so rounds, penalties, and artwork category are preserved while the timer defaults are upgraded.
