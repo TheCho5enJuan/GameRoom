@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -74,5 +74,9 @@
     ],
     "default_build": "regular",
     "manipulation": "Drag to place; pinch to resize and rotate."
-  }
+  },
+  "modules": [
+    "art-library.js",
+    "game.js"
+  ]
 }
