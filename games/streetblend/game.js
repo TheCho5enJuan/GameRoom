@@ -103,6 +103,7 @@
   let timerLoop = null;
   let lastTickSent = -1;
   let toastTimer = null;
+  let localReadyKey = '';
 
   const stage = $('stage');
   const ctx = stage.getContext('2d');
@@ -396,7 +397,10 @@
     hostState.guessMarks = [];
     hostState.result = null;
     hostState.paused = false;
-    hostState.deadline = Date.now()+hostState.config.hideSeconds*1000;
+    hostState.deadline = 0;
+    hostState.timerStarted = false;
+    hostState.sceneReady = [false,false];
+    localReadyKey = '';
     lastTickSent = -1;
 
     if(solo && hostState.hiderSeat === 1){
@@ -421,7 +425,8 @@
       wrong:hostState.wrong,
       guessMarks:hostState.guessMarks,
       result:hostState.result,
-      remaining:Math.max(0,hostState.deadline-Date.now())
+      timerStarted:!!hostState.timerStarted,
+      remaining:hostState.timerStarted ? Math.max(0,hostState.deadline-Date.now()) : null
     };
   }
 
@@ -436,6 +441,14 @@
 
   function handleHostMessage(message,meta){
     if(!message?.type || meta.seat !== 1 || !hostState) return;
+    if(message.type === 'sb:scene-ready'){
+      const key=String(hostState.round)+':'+String(hostState.scene?.id||'');
+      if(message.key===key && hostState.phase==='hide' && !hostState.timerStarted){
+        hostState.sceneReady[1]=true;
+        startHideTimerIfReady();
+      }
+      return;
+    }
     if(message.type === 'sb:draft'){
       if(hostState.phase === 'hide' && hostState.hiderSeat === 1){
         hostState.lastDraft = sanitizeFigure(message.figure);
@@ -471,6 +484,38 @@
     }
   }
 
+  function sceneReadyKey(state){
+    return String(state?.round ?? '')+':'+String(state?.scene?.id ?? '');
+  }
+
+  function reportSceneReady(state){
+    if(!state || state.phase!=='hide' || state.timerStarted) return;
+    const key=sceneReadyKey(state);
+    if(!key || localReadyKey===key) return;
+    localReadyKey=key;
+
+    if(role==='host'){
+      if(hostState && sceneReadyKey(hostState)===key){
+        hostState.sceneReady[0]=true;
+        startHideTimerIfReady();
+      }
+    }else if(role==='guest' && session && connected){
+      session.send({type:'sb:scene-ready',key});
+    }
+  }
+
+  function startHideTimerIfReady(){
+    if(role!=='host' || !hostState || hostState.phase!=='hide' || hostState.timerStarted) return;
+    const ready = solo ? hostState.sceneReady[0] : (hostState.sceneReady[0] && hostState.sceneReady[1]);
+    if(!ready) return;
+    hostState.timerStarted=true;
+    hostState.deadline=Date.now()+hostState.config.hideSeconds*1000;
+    lastTickSent=-1;
+    updateClock(hostState.config.hideSeconds*1000);
+    sendGuestPhase();
+    toast('Painting ready. Hide timer started.');
+  }
+
   function sanitizeFigure(f){
     if(!f) return defaultFigure();
     return {
@@ -501,6 +546,10 @@
   function lockCurrentHide(){
     const state = getState();
     if(!state || state.phase !== 'hide' || state.hiderSeat !== seat) return;
+    if(!state.timerStarted){
+      toast('Waiting for the painting to finish loading.');
+      return;
+    }
     const f = exportFigure();
     if(role === 'host') lockFigure(f);
     else session.send({type:'sb:lock',figure:f});
@@ -516,6 +565,7 @@
     if(!hostState || hostState.phase !== 'hide') return;
     hostState.figure = sanitizeFigure(f || hostState.lastDraft || defaultFigure());
     hostState.phase = 'seek';
+    hostState.timerStarted = true;
     hostState.deadline = Date.now()+hostState.config.seekSeconds*1000;
     hostState.wrong = 0;
     hostState.guessMarks = [];
@@ -625,15 +675,23 @@
     $('lobbyPanel').hidden=true;
     $('gameShell').hidden=false;
     updateScoreboard(state);
-    updateClock(state.remaining ?? Math.max(0,(state.deadline||0)-Date.now()));
+    if(state.timerStarted) updateClock(state.remaining ?? Math.max(0,(state.deadline||0)-Date.now()));
+    else {
+      $('clock').textContent='--:--';
+      $('clock').style.color='';
+    }
 
     if(state.phase === 'final'){
       showFinal(state,isHost);
       return;
     }
 
-    if(scene?.id !== state.scene?.id){
-      await loadScene(state.scene);
+    let sceneLoaded = !!sceneImage && scene?.id === state.scene?.id;
+    if(scene?.id !== state.scene?.id || !sceneImage){
+      sceneLoaded = await loadScene(state.scene);
+    }
+    if(sceneLoaded && state.phase==='hide' && !state.timerStarted){
+      reportSceneReady(state);
     }
 
     reveal = state.phase === 'reveal';
@@ -661,7 +719,10 @@
         activeTool='place';
         setToolButtons();
         $('hiderControls').hidden=false;
-        $('hiderHint').textContent='Tap the painting to position your figure. Use Sample, then Paint to camouflage it.';
+        $('lockHide').disabled=!state.timerStarted;
+        $('hiderHint').textContent=state.timerStarted
+          ? 'Tap the painting to position your figure. Use Sample, then Paint to camouflage it.'
+          : 'Painting loaded. Waiting for the round timer to start…';
       }else{
         camera={cx:.5,cy:.5,zoom:1};
         $('zoom').value='1';
@@ -762,8 +823,12 @@
     $('stageMessageTitle').textContent=title;
     $('stageMessageText').textContent=text;
     $('stageMessage').hidden=false;
+    $('stageMessage').style.display='grid';
   }
-  function hideStageMessage(){ $('stageMessage').hidden=true; }
+  function hideStageMessage(){
+    $('stageMessage').hidden=true;
+    $('stageMessage').style.display='none';
+  }
 
   function flashGuess(text,good){
     $('guessFlash').textContent=text;
@@ -783,7 +848,7 @@
   }
 
   async function loadScene(nextScene){
-    if(!nextScene) return;
+    if(!nextScene) return false;
     scene=nextScene;
     const token=++sceneToken;
     sceneImage=null;
@@ -791,7 +856,7 @@
     $('artTitle').textContent=scene.title || 'Loading artwork…';
     $('artArtist').textContent=[scene.artist,scene.date].filter(Boolean).join(' · ');
     $('artSource').href=scene.sourceUrl || 'https://www.artic.edu/';
-    showStageMessage('Loading painting','Loading the direct museum image…');
+    showStageMessage('Loading painting','Loading artwork…');
 
     const urls=Array.from(new Set([scene.imageUrl,scene.imageLarge].filter(Boolean)));
     let img=null;
@@ -818,12 +883,12 @@
       }
     }
 
-    if(token!==sceneToken) return;
+    if(token!==sceneToken) return false;
 
     if(!img){
       showStageMessage('Painting unavailable','This direct museum image could not be loaded. Try another round or reload.');
       toast('Could not load painting image.');
-      return;
+      return false;
     }
 
     sceneImage=img;
@@ -847,6 +912,7 @@
       : 'Tap to position your figure. Direct image loaded; choose paint colors manually if sampling is blocked.';
     hideStageMessage();
     markDirty();
+    return true;
   }
 
   function resizeStage(){
@@ -1187,7 +1253,7 @@
   function tick(){
     const state=getState();
     if(!state) return;
-    if(role==='host' && hostState && ['hide','seek'].includes(hostState.phase) && !hostState.paused){
+    if(role==='host' && hostState && ['hide','seek'].includes(hostState.phase) && !hostState.paused && hostState.timerStarted){
       const remaining=Math.max(0,hostState.deadline-Date.now());
       updateClock(remaining);
       const sec=Math.ceil(remaining/1000);
@@ -1204,7 +1270,7 @@
           finishRound(false);
         }
       }
-    }else if(role==='guest' && remoteState && ['hide','seek'].includes(remoteState.phase)){
+    }else if(role==='guest' && remoteState && ['hide','seek'].includes(remoteState.phase) && remoteState.timerStarted){
       if(typeof remoteState.remaining==='number') remoteState.remaining=Math.max(0,remoteState.remaining-250);
       updateClock(remoteState.remaining||0);
     }
