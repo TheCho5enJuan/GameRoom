@@ -29,6 +29,10 @@ button{color:inherit}
 .version{font-size:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:5px 7px;border-radius:999px;border:1px solid var(--line);color:#cfd7e4;background:rgba(255,255,255,.03)}
 main{max-width:1080px;margin:auto}
 .panel,.controls,.art-card,.matchbar{border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.022));box-shadow:var(--shadow)}
+.connection-banner{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 11px;border:1px solid rgba(255,209,102,.38);border-radius:12px;background:rgba(255,209,102,.09);color:#ffe5a3;font-size:9px}
+.connection-banner[hidden]{display:none!important}
+.connection-banner strong{font-size:9px}.connection-banner span{color:#d8c795}
+
 .lobby-panel{width:min(620px,100%);margin:5vh auto 0;border-radius:26px;padding:22px}
 .start-hero{padding-bottom:13px;margin-bottom:13px}
 .start-hero h1{margin-bottom:7px}
