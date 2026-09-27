@@ -866,6 +866,7 @@
     $('waitingControls').hidden=true;
     $('revealControls').hidden=true;
     $('finalControls').hidden=true;
+    $('viewControls').hidden=true;
     window.StreetblendAvatar?.setStudioVisible(false);
     window.StreetblendAvatar?.setOpponent(null);
     hideStageMessage();
@@ -879,6 +880,7 @@
           setToolButtons();
         }
         $('hiderControls').hidden=false;
+        $('viewControls').hidden=false;
         $('lockHide').disabled=!state.timerStarted;
         $('hiderHint').textContent=state.timerStarted
           ? 'Drag the figure. Pinch the figure to resize or rotate. Drag the background to pan; pinch the background to zoom.'
@@ -924,8 +926,8 @@
     resetPaint();
     paintColor='#ffffff';
     $('paintSwatch').style.background=paintColor;
-    document.querySelectorAll('.pose').forEach(b=>b.classList.toggle('active',b.dataset.pose==='stand'));
-    document.querySelectorAll('.build').forEach(b=>b.classList.toggle('active',b.dataset.build==='regular'));
+    $('poseSelect').value='stand';
+    $('buildSelect').value='regular';
     if(role==='host') hostState.lastDraft=exportFigure();
   }
 
@@ -968,6 +970,7 @@
     $('waitingControls').hidden=true;
     $('revealControls').hidden=true;
     $('finalControls').hidden=false;
+    $('viewControls').hidden=true;
     const [a,b]=state.players;
     const winner=a.score===b.score?'Tie game':(a.score>b.score?a.name:b.name)+' wins!';
     $('finalTitle').textContent=winner;
@@ -1751,18 +1754,17 @@
       };
       $('hiderHint').textContent=copy[activeTool]||'';
     }));
-    document.querySelectorAll('.pose').forEach(b=>b.addEventListener('click',()=>{
-      figure.pose=b.dataset.pose;
-      document.querySelectorAll('.pose').forEach(x=>x.classList.toggle('active',x===b));
-      markDirty();sendDraft();
-    }));
-
-    document.querySelectorAll('.build').forEach(b=>b.addEventListener('click',()=>{
-      figure.build=b.dataset.build;
-      document.querySelectorAll('.build').forEach(x=>x.classList.toggle('active',x===b));
+    $('poseSelect').addEventListener('change',()=>{
+      figure.pose=$('poseSelect').value;
       markDirty();
       sendDraft();
-    }));
+    });
+
+    $('buildSelect').addEventListener('change',()=>{
+      figure.build=$('buildSelect').value;
+      markDirty();
+      sendDraft();
+    });
 
     $('focusPlayer').addEventListener('click',focusPlayer);
     $('fitArtwork').addEventListener('click',fitArtwork);
