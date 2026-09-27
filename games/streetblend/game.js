@@ -1795,6 +1795,10 @@
 
     $('focusPlayer').addEventListener('click',focusPlayer);
     $('fitArtwork').addEventListener('click',fitArtwork);
+    $('brushSize').addEventListener('input',()=>{
+      $('brushValue').textContent=String(currentSampleDiameter())+'px';
+    });
+    $('brushValue').textContent=String(currentSampleDiameter())+'px';
     $('resetPaint').addEventListener('click',()=>{resetPaint();sendDraft();toast('Figure reset to white.');});
     const colorPicker=document.createElement('input');
     colorPicker.type='color';
