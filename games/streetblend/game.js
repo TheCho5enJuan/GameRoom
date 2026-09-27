@@ -626,8 +626,8 @@ function sendGuestPhase(repeat=false){
 function publishHostState(){
   const snapshot=sendGuestPhase(false)||publicState();
   if(!snapshot) return 0;
-  applyStateToUI(snapshot,true).then(()=>{
-    if(Number(snapshot.syncSeq)===syncSeq){
+  applyStateToUI(snapshot,true).then(applied=>{
+    if(applied&&Number(snapshot.syncSeq)===syncSeq){
       hostAppliedSeq=Math.max(hostAppliedSeq,Number(snapshot.syncSeq)||0);
       maybeStartTimedPhase();
     }
@@ -763,7 +763,8 @@ async function drainRemoteStates(){
       pendingRemoteState=null;
       const seq=Number(state.syncSeq)||0;
       remoteState=state;
-      await applyStateToUI(state,false);
+      const applied=await applyStateToUI(state,false);
+      if(!applied) continue;
       if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) continue;
       if(Number(remoteState?.syncSeq||0)!==seq) continue;
       guestAppliedSeq=Math.max(guestAppliedSeq,seq);
@@ -973,41 +974,48 @@ async function applyRemoteView(){
 
 async function applyStateToUI(state,isHost){
   const epoch=++uiEpoch;
-  const phaseKey=String(state.round)+':'+String(state.phase)+':'+String(state.scene?.id||'');
+  const phaseKey=String(state.phaseToken||state.round+':'+state.phase+':'+(state.scene?.id||''));
   const enteringPhase=phaseKey!==lastUiPhaseKey;
   $('lobbyPanel').hidden=true;
   $('gameShell').hidden=false;
   updateScoreboard(state);
-  if(state.timerStarted) updateClock(state.remaining ?? Math.max(0,(state.deadline||0)-Date.now()));
+
+  if(state.timerStarted) updateClock(state.remaining||0);
   else {
     $('clock').textContent='--:--';
     $('clock').style.color='';
   }
 
-  if(state.phase === 'final'){
+  if(state.paused){
+    showConnectionBanner('Game paused','Waiting for the shared session to reconnect and synchronize.');
+  }else if(connected){
+    hideConnectionBanner();
+  }
+
+  if(state.phase===PHASES.FINAL){
     showFinal(state,isHost);
-    return;
+    lastUiPhaseKey=phaseKey;
+    return true;
   }
 
-  let sceneLoaded = !!sceneImage && scene?.id === state.scene?.id;
-  if(scene?.id !== state.scene?.id || !sceneImage) sceneLoaded=await loadScene(state.scene);
-  if(epoch!==uiEpoch) return;
-  if(sceneLoaded && state.phase==='hide' && !state.timerStarted){
-    reportPhaseReady(state);
-  }
+  let sceneLoaded=!!sceneImage&&scene?.id===state.scene?.id;
+  if(scene?.id!==state.scene?.id||!sceneImage) sceneLoaded=await loadScene(state.scene);
+  if(epoch!==uiEpoch) return false;
 
-  reveal = state.phase === 'reveal';
-  guessMarks = (state.guessMarks||[]).slice();
+  reveal=state.phase===PHASES.REVEAL;
+  guessMarks=(state.guessMarks||[]).slice();
 
-  if((state.phase === 'seek' || state.phase === 'reveal') && state.figure){
+  if([PHASES.SEEK_PREPARE,PHASES.SEEK,PHASES.REVEAL].includes(state.phase)&&state.figure){
     figure=sanitizeFigure(state.figure);
     clampFigureToArtwork();
     await importPaintData(figure.paintData);
-    if(epoch!==uiEpoch) return;
+    if(epoch!==uiEpoch) return false;
   }
 
   $('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.config.rounds;
-  $('phaseLabel').textContent=(state.phase==='hide' && !state.timerStarted) ? 'LOADING' : state.phase.toUpperCase();
+  $('phaseLabel').textContent=(!state.timerStarted&&[PHASES.HIDE,PHASES.SEEK].includes(state.phase))
+    ? 'SYNCING'
+    : flow.phaseText(state);
   $('hiderControls').hidden=true;
   $('seekerControls').hidden=true;
   $('waitingControls').hidden=true;
@@ -1018,20 +1026,43 @@ async function applyStateToUI(state,isHost){
   window.StreetblendAvatar?.setOpponent(null);
   hideStageMessage();
 
-  if(state.phase === 'hide'){
-    if(state.hiderSeat === seat){
+  if(state.phase===PHASES.HIDE_PREPARE){
+    if(state.hiderSeat===seat||solo){
       if(enteringPhase){
         resetFigureForHide();
         camera={cx:.5,cy:.5,zoom:2.1};
         activeTool='place';
         setToolButtons();
       }
+      $('waitingControls').hidden=false;
+      $('waitingRole').textContent='HIDER';
+      $('waitingTitle').textContent='Preparing your canvas…';
+      $('waitingText').textContent='The round begins after both devices finish loading the same artwork.';
+      showStageMessage('Preparing round','Synchronizing the painting on both devices.');
+    }else{
+      if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+      $('waitingControls').hidden=false;
+      $('waitingRole').textContent='SEEKER';
+      $('waitingTitle').textContent='Preparing the round…';
+      $('waitingText').textContent='Customize your icon while both devices load the artwork.';
+      refreshAvatarUi(state);
+      showStageMessage('No peeking','The artwork is loading for the shared round.');
+    }
+    if(sceneLoaded) reportPhaseReady(state);
+  }else if(state.phase===PHASES.HIDE){
+    if(state.hiderSeat===seat||solo){
+      if(enteringPhase){
+        camera={cx:.5,cy:.5,zoom:2.1};
+        activeTool='place';
+        setToolButtons();
+      }
       $('hiderControls').hidden=false;
       $('viewControls').hidden=false;
-      $('lockHide').disabled=!state.timerStarted;
+      $('lockHide').disabled=!state.timerStarted||state.paused;
       $('hiderHint').textContent=state.timerStarted
-        ? 'Drag the figure. Pinch the figure to resize or rotate. Drag the background to pan; pinch the background to zoom.'
-        : 'Painting loaded. Your figure is ready; waiting for the round timer to start…';
+        ? 'Your turn: camouflage the player, then lock the hiding spot.'
+        : 'Your Hider screen is ready. Synchronizing the turn start…';
+      if(!state.timerStarted) showStageMessage('Starting Hider turn','Waiting for the Hider screen to be confirmed.');
     }else{
       if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
       $('waitingControls').hidden=false;
@@ -1041,31 +1072,60 @@ async function applyStateToUI(state,isHost){
       refreshAvatarUi(state);
       showStageMessage('No peeking','The Hider is painting camouflage.');
     }
-  }else if(state.phase === 'seek'){
-    if(state.seekerSeat === seat || solo){
+  }else if(state.phase===PHASES.SEEK_PREPARE){
+    if(state.seekerSeat===seat||solo){
       if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
-      $('wrongCount').textContent=String(state.wrong||0);
-      const penaltySeconds=state.config?.wrongPenaltyMode==='time' ? Number(state.config.wrongPenaltySeconds)||0 : 0;
-      $('penaltyValue').textContent=penaltySeconds>0 ? '−'+penaltySeconds+' sec' : 'None';
-      $('penaltyLabel').textContent=penaltySeconds>0 ? 'per wrong tap' : 'wrong-tap penalty';
-      $('seekHint').textContent=penaltySeconds>0
-        ? 'Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −'+penaltySeconds+' sec.'
-        : 'Quick tap = guess · drag = pan · pinch = zoom.';
-      $('seekerControls').hidden=false;
+      $('waitingControls').hidden=false;
+      $('waitingRole').textContent='SEEKER';
+      $('waitingTitle').textContent='Preparing your search…';
+      $('waitingText').textContent='Loading the final hidden figure. Your timer has not started.';
+      showStageMessage('Preparing search','Loading the Hider’s final camouflage.');
+    }else{
+      $('waitingControls').hidden=false;
+      $('waitingRole').textContent='HIDER';
+      $('waitingTitle').textContent='Hiding spot locked';
+      $('waitingText').textContent='Waiting for the Seeker’s device to confirm the search view.';
+      refreshAvatarUi(state);
+      showStageMessage('Spot locked','The Seeker is receiving the final scene.');
+    }
+    if(sceneLoaded&&state.figure) reportPhaseReady(state);
+  }else if(state.phase===PHASES.SEEK){
+    if(state.seekerSeat===seat||solo){
+      if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
+      if(state.timerStarted&&!state.paused){
+        $('wrongCount').textContent=String(state.wrong||0);
+        const penaltySeconds=state.config?.wrongPenaltyMode==='time'?Number(state.config.wrongPenaltySeconds)||0:0;
+        $('penaltyValue').textContent=penaltySeconds>0?'−'+penaltySeconds+' sec':'None';
+        $('penaltyLabel').textContent=penaltySeconds>0?'per wrong tap':'wrong-tap penalty';
+        $('seekHint').textContent=penaltySeconds>0
+          ? 'Quick tap = guess · drag = pan · pinch = zoom · wrong tap = −'+penaltySeconds+' sec.'
+          : 'Quick tap = guess · drag = pan · pinch = zoom.';
+        $('seekerControls').hidden=false;
+      }else{
+        $('waitingControls').hidden=false;
+        $('waitingRole').textContent='SEEKER';
+        $('waitingTitle').textContent='Your search is ready';
+        $('waitingText').textContent='Synchronizing the turn start. The timer will begin after this screen is confirmed.';
+        showStageMessage('Ready to search','Synchronizing turn start…');
+      }
     }else{
       if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
       $('waitingControls').hidden=false;
       $('waitingRole').textContent='HIDER';
-      $('waitingTitle').textContent='Stay hidden…';
-      $('waitingText').textContent='The Seeker is searching. Their icon is below, and you can keep customizing yours while you wait.';
+      $('waitingTitle').textContent=state.timerStarted?'Stay hidden…':'Seeker is ready…';
+      $('waitingText').textContent=state.timerStarted
+        ? 'The Seeker is searching. You can keep customizing your icon while you wait.'
+        : 'The search timer is waiting for the Seeker’s screen confirmation.';
       refreshAvatarUi(state);
     }
-  }else if(state.phase === 'reveal'){
+  }else if(state.phase===PHASES.REVEAL){
     if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
     showReveal(state,isHost);
   }
+
   lastUiPhaseKey=phaseKey;
   markDirty();
+  return true;
 }
 
 function resetFigureForHide(){
