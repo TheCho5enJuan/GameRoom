@@ -1,0 +1,38 @@
+{
+  "id": "streetblend",
+  "title": "Streetblend",
+  "version": "1.0",
+  "status": "playable",
+  "category": "Visual Hunt",
+  "players": {
+    "min": 2,
+    "max": 2,
+    "remote": true,
+    "soloPractice": true
+  },
+  "description": "Two-player camouflage hide-and-seek using public-domain paintings from the Art Institute of Chicago Open Access collection.",
+  "entry": "index.html",
+  "artwork": {
+    "provider": "Art Institute of Chicago",
+    "api": "https://api.artic.edu/api/v1/artworks/search",
+    "iiif": "https://www.artic.edu/iiif/2",
+    "selection_rule": "Runtime search is filtered to is_public_domain=true and requires an image_id; non-public-domain results are rejected.",
+    "curated_queries": [
+      "Paris Street; Rainy Day",
+      "A Sunday on La Grande Jatte",
+      "Arrival of the Normandy Train, Gare Saint-Lazare",
+      "The Child's Bath",
+      "The Bedroom",
+      "Cliff Walk at Pourville",
+      "Water Lilies",
+      "At the Moulin Rouge"
+    ]
+  },
+  "multiplayer": {
+    "transport": "PeerJS/WebRTC",
+    "signaling": "PeerJS Cloud",
+    "room_codes": true,
+    "invite_links": true,
+    "host_authoritative": true
+  }
+}
