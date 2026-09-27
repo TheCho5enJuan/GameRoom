@@ -25,32 +25,24 @@ The host is authoritative for:
 
 ## Artwork source and rights filter
 
-Artwork metadata is loaded at runtime from the **Art Institute of Chicago Open Access API**. Streetblend requests curated artwork searches and only accepts records where:
+Streetblend builds its runtime catalog from **Wikimedia Commons**. Search results are filtered to public-domain/CC0-compatible metadata, require a usable image file and minimum dimensions, and are deduplicated before entering the randomized deck.
 
-- `is_public_domain === true`
-- an `image_id` exists
-- the artwork is not marked non-zoomable
+Artwork categories currently include Mixed Collection, Impressionism, Landscapes, City & Street, Interiors, People & Markets, Water & Coast, and Gardens & Parks. A successful category catalog is cached locally for seven days.
 
-Images are displayed from the Art Institute IIIF image service. Each active scene links back to its Art Institute artwork record.
-
-Curated search targets currently include:
-
-- Paris Street; Rainy Day
-- A Sunday on La Grande Jatte
-- Arrival of the Normandy Train, Gare Saint-Lazare
-- The Child's Bath
-- The Bedroom
-- Cliff Walk at Pourville
-- Water Lilies
-- At the Moulin Rouge
-
-The runtime rights check is deliberate: a title being present in a museum collection is not treated as sufficient permission by itself.
+The game attempts a CORS-enabled image load first so the eyedropper can read source pixels. If pixel access is unavailable, it falls back to normal image display so the round can still render.
 
 ## Files
 
 - `index.html` — UI shell
 - `styles.css` — responsive layout
-- `game.js` — artwork loading, canvas rendering, painting tools, multiplayer and scoring
+- `art-library.js` — public-domain catalog discovery, caching, and secure deck shuffle
+- `settings.js` / `settings-ui.js` — persisted rules and settings interface
+- `flow.js` — legal phases, role seats, readiness barriers, and action validation
+- `view-ui.js` — scoreboard, clocks, reveal/final displays, and stage messages
+- `avatar-studio.js` — masked waiting-room player-icon painter
+- `sample-utils.js` — brush-aware color aggregation and eyedropper loupe
+- `game.js` — gameplay orchestration, canvas interaction, scoring, and authoritative session coordination
+- `MULTIPLAYER.md` — Streetblend multiplayer protocol and failure/recovery contract
 - `game.json` — machine-readable game metadata
 
 ## Image delivery
@@ -169,3 +161,44 @@ Streetblend v1.6 received a full control/visual pass.
 - Default Hide time is now 3 minutes and default Seek time is 4 minutes.
 - Hide time choices extend from 1 to 10 minutes; Seek choices extend from 1:30 to 10 minutes.
 - Existing v1.7 settings are migrated so rounds, penalties, and artwork category are preserved while the timer defaults are upgraded.
+
+## v2.0 authoritative multiplayer revamp
+
+Streetblend 2.0 replaces the earlier optimistic two-phone synchronization with an explicit host-authoritative session protocol.
+
+### Round barriers
+
+The legal flow is:
+
+`LOBBY → HIDE_PREPARE → HIDE → SEEK_PREPARE → SEEK → REVEAL → next round / FINAL`
+
+- **HIDE_PREPARE:** every required seat must load and render the same painting before hiding begins.
+- **HIDE:** the timer starts only after the active Hider screen has applied the phase.
+- **SEEK_PREPARE:** locking the Hider does not start the search. The Seeker must first load the final painted figure and render the search view.
+- **SEEK:** the timer begins only after every active Seeker screen acknowledges the Seek state.
+- **REVEAL:** the host cannot advance until all active remote seats have rendered the result.
+
+### Self-healing session messages
+
+- Every state uses a monotonically increasing revision plus round and phase token.
+- Late/stale actions are rejected and receive a targeted authoritative resync.
+- Lock and Guess actions carry IDs, are acknowledged after host processing, retried if necessary, and deduplicated by the host.
+- Heartbeat replies repeat each seat's latest fully applied state and readiness token, so a single lost ACK or ready message cannot permanently freeze a turn.
+
+### Connection recovery
+
+- A guest keeps a stable identity for the room and reclaims the same seat after reconnect.
+- Stale WebRTC channels are replaced without letting the old channel later remove the new seat.
+- Timed play pauses when a player disconnects or stops responding.
+- Guests detect a stale host heartbeat, request a resync, and eventually force a fresh WebRTC connection if required.
+- Mobile background/offline events use the same pause-and-resynchronize path.
+
+### Future player counts
+
+Readiness and acknowledgement tracking are seat-based, not hard-coded to Player 2. The flow module already accepts multiple Hider and Seeker seat arrays, although Classic mode still exposes exactly two players until multiplayer role/scoring rules are designed.
+
+### Remaining P2P limitation
+
+The host remains the authoritative session owner. Transient host/guest network failures are recoverable, but **true host migration is not implemented**. If the host page/device permanently exits, the match cannot continue on another peer without either a host-election protocol or a small authoritative backend.
+
+See [MULTIPLAYER.md](./MULTIPLAYER.md) for the protocol contract.
