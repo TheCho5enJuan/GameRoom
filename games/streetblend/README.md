@@ -112,3 +112,13 @@ Streetblend now provides explicit player-focused manipulation controls:
 - Sample mode supports a quick tap or long-press-and-slide continuous sampling.
 - Continuous sampling displays a magnified color loupe with a crosshair and the current hex color.
 - Sampling no longer automatically switches into Paint mode, allowing several colors to be inspected before painting.
+
+## v1.5 waiting-room player icons
+
+Streetblend now gives the inactive player a lightweight drawing activity instead of a passive waiting screen.
+
+- While the Hider prepares the scene, the Seeker can color and draw their personal icon.
+- Once the hunt begins, the Hider sees the Seeker's completed icon while waiting for the search.
+- During that same search period, the Hider can customize their own icon.
+- Player icons synchronize over the room connection and appear beside player names in the match header.
+- The studio provides freehand color drawing, brush size, eraser, and reset controls.
