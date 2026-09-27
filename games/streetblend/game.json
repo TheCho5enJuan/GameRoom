@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.0",
+  "version": "1.0.1",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -26,7 +26,8 @@
       "Cliff Walk at Pourville",
       "Water Lilies",
       "At the Moulin Rouge"
-    ]
+    ],
+    "image_delivery": "Uses API-provided config.iiif_url with 1686px public-domain image requests and 843px fallback."
   },
   "multiplayer": {
     "transport": "PeerJS/WebRTC",
