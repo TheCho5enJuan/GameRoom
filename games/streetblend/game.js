@@ -63,6 +63,7 @@
   let lastTickSent = -1;
   let toastTimer = null;
   let localReadyKey = '';
+  let localAvatar = null;
 
   const stage = $('stage');
   const ctx = stage.getContext('2d');
@@ -268,6 +269,39 @@
     if(reload) location.reload();
   }
 
+
+  function refreshAvatarUi(state=getState()){
+    if(!window.StreetblendAvatar) return;
+    if(state?.players) StreetblendAvatar.setMatchAvatars(state.players);
+    const waiting = state && (
+      (state.phase==='hide' && state.hiderSeat!==seat) ||
+      (state.phase==='seek' && state.seekerSeat!==seat && !solo)
+    );
+    StreetblendAvatar.setStudioVisible(!!waiting);
+    if(waiting && state.phase==='seek'){
+      const opponent=state.players?.[state.seekerSeat];
+      StreetblendAvatar.setOpponent(opponent?.avatar,opponent?.name||'Seeker');
+    }else{
+      StreetblendAvatar.setOpponent(null);
+    }
+  }
+
+  function onAvatarChanged(data){
+    if(typeof data!=='string' || data.length>160000) return;
+    localAvatar=data;
+    const state=getState();
+    if(state?.players?.[seat]){
+      state.players[seat].avatar=data;
+      refreshAvatarUi(state);
+    }
+    if(role==='host' && hostState){
+      hostState.players[0].avatar=data;
+      if(connected && !solo) session?.sendTo(1,{type:'sb:avatar',seat:0,data});
+    }else if(role==='guest' && connected){
+      session?.send({type:'sb:avatar',seat:1,data});
+    }
+  }
+
   function createRoom(){
     loadArtLibrary().catch(()=>{});
     leaveRoom(false);
@@ -390,7 +424,7 @@
 
   function makeHostState(name0,name1){
     return {
-      players:[{name:name0,score:0},{name:name1,score:0}],
+      players:[{name:name0,score:0,avatar:localAvatar},{name:name1,score:0,avatar:null}],
       config:{...appSettings},
       round:0,
       phase:'lobby',
@@ -535,6 +569,13 @@
       }
       return;
     }
+    if(message.type==='sb:avatar'){
+      if(typeof message.data==='string' && message.data.length<=160000){
+        hostState.players[1].avatar=message.data;
+        refreshAvatarUi(hostState);
+      }
+      return;
+    }
     if(message.type === 'sb:draft'){
       if(hostState.phase === 'hide' && hostState.hiderSeat === 1){
         hostState.lastDraft = sanitizeFigure(message.figure);
@@ -562,6 +603,14 @@
       if(Array.isArray(message.players) && message.players.length>=2){
         $('p0Lobby').textContent=message.players[0]?.name||'Host';
         $('p1Lobby').textContent=message.players[1]?.name||playerName();
+      }
+      if(localAvatar) session?.send({type:'sb:avatar',seat:1,data:localAvatar});
+      return;
+    }
+    if(message.type==='sb:avatar'){
+      if(remoteState?.players?.[0] && typeof message.data==='string' && message.data.length<=160000){
+        remoteState.players[0].avatar=message.data;
+        refreshAvatarUi(remoteState);
       }
       return;
     }
@@ -817,6 +866,8 @@
     $('waitingControls').hidden=true;
     $('revealControls').hidden=true;
     $('finalControls').hidden=true;
+    window.StreetblendAvatar?.setStudioVisible(false);
+    window.StreetblendAvatar?.setOpponent(null);
     hideStageMessage();
 
     if(state.phase === 'hide'){
@@ -837,7 +888,8 @@
         $('waitingControls').hidden=false;
         $('waitingRole').textContent='SEEKER';
         $('waitingTitle').textContent='The Hider is blending in…';
-        $('waitingText').textContent='You’ll receive the full painting after the hiding spot is locked.';
+        $('waitingText').textContent='Customize your icon while the Hider prepares the scene.';
+        refreshAvatarUi(state);
         showStageMessage('No peeking','The Hider is painting camouflage.');
       }
     }else if(state.phase === 'seek'){
@@ -856,7 +908,8 @@
         $('waitingControls').hidden=false;
         $('waitingRole').textContent='HIDER';
         $('waitingTitle').textContent='Stay hidden…';
-        $('waitingText').textContent='The Seeker is searching the painting.';
+        $('waitingText').textContent='The Seeker is searching. Their icon is below, and you can keep customizing yours while you wait.';
+        refreshAvatarUi(state);
       }
     }else if(state.phase === 'reveal'){
       if(enteringPhase) camera={cx:.5,cy:.5,zoom:1};
@@ -882,6 +935,7 @@
     $('p0Match').querySelector('b').textContent=players[0].score;
     $('p1Match').querySelector('span').textContent=players[1].name;
     $('p1Match').querySelector('b').textContent=players[1].score;
+    window.StreetblendAvatar?.setMatchAvatars(players);
     $('p0Match').classList.toggle('active',state.hiderSeat===0 && state.phase==='hide' || state.seekerSeat===0 && state.phase==='seek');
     $('p1Match').classList.toggle('active',state.hiderSeat===1 && state.phase==='hide' || state.seekerSeat===1 && state.phase==='seek');
   }
@@ -1686,6 +1740,8 @@
   }
 
   function bind(){
+    window.StreetblendAvatar?.init({onChange:onAvatarChanged});
+    localAvatar=window.StreetblendAvatar?.getAvatar()||null;
     $('roomCode').addEventListener('input',cleanCode);
     $('createRoom').addEventListener('click',createRoom);
     $('showJoin').addEventListener('click',showJoinPane);
