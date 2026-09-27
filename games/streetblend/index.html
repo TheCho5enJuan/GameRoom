@@ -21,45 +21,48 @@
 
     <main>
       <section class="panel lobby-panel" id="lobbyPanel">
-        <div class="hero">
-          <span class="eyebrow">2-player remote camouflage</span>
-          <h1>Disappear inside a painting.</h1>
-          <p>One player paints a figure into a public-domain artwork. The other hunts through the full scene before time runs out.</p>
+        <div class="hero start-hero">
+          <span class="eyebrow">Remote camouflage hide-and-seek</span>
+          <h1>Streetblend</h1>
+          <p>Disappear inside a painting. Then trade roles and hunt for the hidden figure.</p>
         </div>
 
-        <div class="status" id="netStatus"><strong>Ready</strong><span>Create a room or open an invite link.</span></div>
-
-        <label class="field">
+        <label class="field player-field">
           <span>Your name</span>
           <input id="playerName" maxlength="18" autocomplete="nickname" value="Player">
         </label>
 
-        <div class="host-options" id="hostOptions">
-          <label class="field">
-            <span>Match length</span>
-            <select id="roundCount">
-              <option value="2">2 rounds · one hide each</option>
-              <option value="4" selected>4 rounds · two hides each</option>
-              <option value="6">6 rounds · three hides each</option>
-            </select>
-          </label>
-          <div class="timers">
-            <label class="field"><span>Hide time</span><select id="hideSeconds"><option>45</option><option selected>60</option><option>75</option></select></label>
-            <label class="field"><span>Seek time</span><select id="seekSeconds"><option>60</option><option selected>90</option><option>120</option></select></label>
+        <div class="status" id="netStatus"><strong>Ready</strong><span>Choose how you want to play.</span></div>
+
+        <div class="start-menu" id="startMenu">
+          <button class="menu-action primary" id="createRoom" type="button">
+            <span class="menu-icon">＋</span>
+            <span><strong>Create Game</strong><small>Host a remote room and share an invite</small></span>
+          </button>
+          <button class="menu-action" id="showJoin" type="button">
+            <span class="menu-icon">↗</span>
+            <span><strong>Join Game</strong><small>Enter a room code or open an invite</small></span>
+          </button>
+          <button class="menu-action" id="localDemo" type="button">
+            <span class="menu-icon">◎</span>
+            <span><strong>Practice</strong><small>Test hiding, painting and seeking solo</small></span>
+          </button>
+          <button class="menu-action" id="openSettings" type="button">
+            <span class="menu-icon">⚙</span>
+            <span><strong>Settings</strong><small id="settingsSummary">Classic · 2 players · 4 rounds</small></span>
+          </button>
+        </div>
+
+        <div class="join-pane" id="joinPane" hidden>
+          <div class="subhead">
+            <button class="mini-back" id="joinBack" type="button" aria-label="Back">‹</button>
+            <div><strong>Join a game</strong><span>Enter the six-character room code.</span></div>
           </div>
-        </div>
-
-        <div class="actions two" id="lobbyActions">
-          <button class="primary" id="createRoom" type="button">Create Remote Room</button>
-          <button id="localDemo" type="button">Practice Solo</button>
-        </div>
-
-        <div class="join-box" id="joinBox">
           <label class="field">
-            <span>Join room</span>
+            <span>Room code</span>
             <input class="code-input" id="roomCode" maxlength="6" autocomplete="off" placeholder="ABC123">
           </label>
-          <button class="secondary" id="joinRoom" type="button">Join Remote Room</button>
+          <button class="primary wide" id="joinRoom" type="button">Join Remote Room</button>
         </div>
 
         <div class="room-box" id="roomBox" hidden>
@@ -76,19 +79,91 @@
             <i>VS</i>
             <div><span id="p1Lobby">Player 2</span><b id="p1Ready">CONNECTED</b></div>
           </div>
+          <div class="room-rules" id="roomRules">Classic · 4 rounds · 60s hide · 90s seek · −5s miss</div>
           <button class="primary" id="startMatch" type="button">Start Match</button>
           <p class="guest-wait" id="guestWait" hidden>Waiting for the host to start the match…</p>
         </div>
 
         <details class="how">
-          <summary>How it works</summary>
+          <summary>How to play</summary>
           <ol>
-            <li>The Hider gets a close-up view, positions a figure, samples colors from the artwork, and paints camouflage.</li>
-            <li>The Seeker starts zoomed out and pans or zooms through the full painting.</li>
-            <li>Wrong guesses cost 5 seconds. Roles alternate every round.</li>
+            <li>Hider: drag the figure, pinch it to resize/rotate, sample colors and paint camouflage.</li>
+            <li>Seeker: drag to pan, pinch to zoom and quick-tap the painting to guess.</li>
+            <li>Roles alternate each round. The host's Settings determine timers and penalties.</li>
           </ol>
         </details>
       </section>
+
+      <div class="settings-overlay" id="settingsOverlay" hidden>
+        <section class="settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+          <header class="settings-head">
+            <div><span class="eyebrow">Host rules</span><h2 id="settingsTitle">Game Settings</h2></div>
+            <button class="settings-close" id="closeSettings" type="button" aria-label="Close settings">×</button>
+          </header>
+
+          <div class="settings-section">
+            <h3>Game</h3>
+            <label class="field">
+              <span>Game mode</span>
+              <select id="settingMode">
+                <option value="classic">Classic Hide & Seek</option>
+                <option disabled>Multiple Hiders · coming soon</option>
+                <option disabled>Team Hunt · coming soon</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Players</span>
+              <select id="settingPlayers">
+                <option value="2">2 players</option>
+                <option disabled>3 players · coming soon</option>
+                <option disabled>4 players · coming soon</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Match length</span>
+              <select id="settingRounds">
+                <option value="2">2 rounds · one hide each</option>
+                <option value="4">4 rounds · two hides each</option>
+                <option value="6">6 rounds · three hides each</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="settings-section">
+            <h3>Timers</h3>
+            <div class="settings-grid">
+              <label class="field"><span>Hide time</span><select id="settingHideSeconds"><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="75">75 sec</option><option value="90">90 sec</option></select></label>
+              <label class="field"><span>Seek time</span><select id="settingSeekSeconds"><option value="45">45 sec</option><option value="60">60 sec</option><option value="90">90 sec</option><option value="120">120 sec</option><option value="150">150 sec</option></select></label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Wrong Guess Penalty</h3>
+            <label class="field">
+              <span>Penalty type</span>
+              <select id="settingPenaltyMode">
+                <option value="time">Remove time</option>
+                <option value="none">No penalty</option>
+              </select>
+            </label>
+            <label class="field" id="penaltySecondsField">
+              <span>Time removed</span>
+              <select id="settingPenaltySeconds">
+                <option value="3">3 seconds</option>
+                <option value="5">5 seconds</option>
+                <option value="10">10 seconds</option>
+                <option value="15">15 seconds</option>
+              </select>
+            </label>
+            <p class="settings-note">Wrong guesses do not directly subtract score points. A time penalty reduces the Seeker's remaining search time.</p>
+          </div>
+
+          <div class="settings-actions">
+            <button id="resetSettings" type="button">Restore Defaults</button>
+            <button class="primary" id="saveSettings" type="button">Save Settings</button>
+          </div>
+        </section>
+      </div>
 
       <section class="game-shell" id="gameShell" hidden>
         <div class="matchbar">
