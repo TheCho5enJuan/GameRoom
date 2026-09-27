@@ -87,6 +87,8 @@ let actionSeq=0;
 let seenActionIds=new Set();
 let lastSeenBySeat={};
 let lastForcedReconnectAt=0;
+let pendingCriticalAction=null;
+let lastCriticalSendAt=0;
 
 function defaultFigure(){
   return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -661,17 +663,23 @@ function requestResync(){
   session.send({type:'sb:resync',haveSeq:Number(remoteState?.syncSeq)||0});
 }
 
-function actionMessage(type,payload={}){
+function actionMessage(type,payload={},critical=false){
   const state=getState();
-  if(role!=='guest'||!session||!connected||!state) return;
-  session.send({
+  if(role!=='guest'||!session||!connected||!state) return null;
+  const message={
     type,
     round:state.round,
     phaseToken:state.phaseToken,
     syncSeq:state.syncSeq,
     actionId:++actionSeq,
     ...payload
-  });
+  };
+  session.send(message);
+  if(critical){
+    pendingCriticalAction=message;
+    lastCriticalSendAt=Date.now();
+  }
+  return message;
 }
 
 function markPhaseReady(readySeat,token){
@@ -735,6 +743,13 @@ function handleHostMessage(message,meta){
   const sender=Number(meta?.seat);
   if(Number.isFinite(sender)) lastSeenBySeat[sender]=Date.now();
   if(message.type==='sb:pong'){
+    ackBySeat[sender]=Math.max(Number(ackBySeat[sender]||0),Number(message.appliedSeq)||0);
+    if(message.readyToken&&message.readyToken===hostState.phaseToken){
+      markPhaseReady(sender,message.readyToken);
+    }
+    refreshNextRoundGate();
+    maybeStartTimedPhase();
+    maybeResumeAfterReconnect();
     if(hostState.paused&&hostState.pauseReason==='heartbeat'){
       const stale=(hostState.activeSeats||[]).filter(s=>s!==0).some(s=>Date.now()-Number(lastSeenBySeat[s]||0)>3500);
       if(!stale) resumeMatch();
@@ -765,11 +780,18 @@ function handleHostMessage(message,meta){
     message.type==='sb:guess'?'guess':null;
   if(!action) return;
   const actionKey=sender+':'+String(message.phaseToken||'')+':'+String(message.actionId||'');
-  if(message.actionId&&seenActionIds.has(actionKey)) return;
-  if(message.actionId) seenActionIds.add(actionKey);
+  if(message.actionId&&seenActionIds.has(actionKey)){
+    session?.sendTo(sender,{type:'sb:action-ack',actionId:message.actionId});
+    return;
+  }
   if(!flow.actionAllowed(hostState,sender,action,message)){
+    session?.sendTo(sender,{type:'sb:action-reject',actionId:message.actionId||null});
     resendHostState(sender);
     return;
+  }
+  if(message.actionId){
+    seenActionIds.add(actionKey);
+    session?.sendTo(sender,{type:'sb:action-ack',actionId:message.actionId});
   }
   if(action==='phase-ready'){
     markPhaseReady(sender,message.phaseToken);
@@ -837,6 +859,15 @@ async function handleGuestMessage(message){
     }
     return;
   }
+  if(message.type==='sb:action-ack'){
+    if(pendingCriticalAction&&Number(message.actionId)===Number(pendingCriticalAction.actionId)) pendingCriticalAction=null;
+    return;
+  }
+  if(message.type==='sb:action-reject'){
+    if(pendingCriticalAction&&Number(message.actionId)===Number(pendingCriticalAction.actionId)) pendingCriticalAction=null;
+    requestResync();
+    return;
+  }
   if(message.type==='sb:state'){
     lastHostPulseAt=Date.now();
     queueRemoteState(message.state);
@@ -854,7 +885,13 @@ async function handleGuestMessage(message){
     }
     remoteState.remaining=message.remaining;
     remoteState.paused=!!message.paused;
-    session?.send({type:'sb:pong',syncSeq:message.syncSeq,phaseToken:message.phaseToken});
+    session?.send({
+      type:'sb:pong',
+      syncSeq:message.syncSeq,
+      phaseToken:message.phaseToken,
+      appliedSeq:guestAppliedSeq,
+      readyToken:localReadyToken
+    });
     if(remoteState.timerStarted&&!remoteState.paused) updateClock(message.remaining);
     return;
   }
@@ -899,7 +936,7 @@ function lockCurrentHide(){
   }
   const f=exportFigure();
   if(role==='host') lockFigure(f);
-  else actionMessage('sb:lock',{figure:f});
+  else actionMessage('sb:lock',{figure:f},true);
   showStageMessage('Hiding spot locked','Preparing the Seeker’s view…');
   $('hiderControls').hidden=true;
 }
@@ -1708,8 +1745,9 @@ function setToolButtons(){
 function sendGuess(norm){
   const state=getState();
   if(!state||state.phase!==PHASES.SEEK||!state.timerStarted||state.paused||(state.seekerSeat!==seat&&!solo)) return;
+  if(role==='guest'&&pendingCriticalAction?.type==='sb:guess') return;
   if(role==='host') processGuess(norm.x,norm.y);
-  else actionMessage('sb:guess',{x:norm.x,y:norm.y});
+  else actionMessage('sb:guess',{x:norm.x,y:norm.y},true);
 }
 
 function pointerXY(event){
@@ -2026,6 +2064,15 @@ function tick(){
   }
 
   if(role==='guest'&&remoteState){
+    if(pendingCriticalAction){
+      const sameContext=Number(pendingCriticalAction.round)===Number(remoteState.round)&&
+        String(pendingCriticalAction.phaseToken)===String(remoteState.phaseToken);
+      if(!sameContext) pendingCriticalAction=null;
+      else if(connected&&now-lastCriticalSendAt>1200){
+        session?.send(pendingCriticalAction);
+        lastCriticalSendAt=now;
+      }
+    }
     if(connected&&lastHostPulseAt&&now-lastHostPulseAt>5000){
       showConnectionBanner('Synchronizing…','The host heartbeat is late. Requesting the authoritative game state.');
       requestResync();
