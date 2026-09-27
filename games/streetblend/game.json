@@ -1,7 +1,7 @@
 {
   "id": "streetblend",
   "title": "Streetblend",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "status": "playable",
   "category": "Visual Hunt",
   "players": {
@@ -26,5 +26,6 @@
     "room_codes": true,
     "invite_links": true,
     "host_authoritative": true
-  }
+  },
+  "loading_behavior": "Round timer starts only after the scene image has loaded; remote matches wait for both players to report scene readiness."
 }
