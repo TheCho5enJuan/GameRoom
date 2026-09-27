@@ -101,6 +101,11 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .stage-message{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:25px;background:rgba(5,9,14,.82);backdrop-filter:blur(6px);z-index:5}\n.stage-message[hidden]{display:none!important}
 .stage-message strong{font-size:24px}.stage-message span{font-size:11px;color:var(--muted);margin-top:5px}
 .guess-flash{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;padding:10px 14px;border-radius:999px;background:#0b111bdd;border:1px solid var(--line2);font-size:12px;font-weight:900;pointer-events:none}
+.sample-loupe{position:absolute;z-index:9;width:96px;padding:6px;border-radius:16px;background:rgba(8,12,18,.94);border:1px solid rgba(255,255,255,.28);box-shadow:0 12px 36px rgba(0,0,0,.45);pointer-events:none;transform:translate(-50%,-118%)}
+.sample-loupe[hidden]{display:none!important}
+.sample-loupe canvas{display:block;width:84px;height:84px;border-radius:10px;image-rendering:pixelated;background:#111}
+.sample-loupe strong{display:block;margin-top:5px;text-align:center;font-size:10px;letter-spacing:.08em}
+
 
 .controls{border-radius:18px;padding:11px}
 .role-head{display:flex;gap:9px;align-items:center;margin-bottom:10px}.role-head p{margin:0;color:var(--muted);font-size:10px;line-height:1.4}
@@ -109,6 +114,10 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .role-badge.seeker{color:#b8d3ff;border-color:rgba(139,167,255,.32);background:rgba(139,167,255,.08)}
 .role-badge.reveal{color:#b8f1df;border-color:rgba(127,214,194,.28);background:rgba(127,214,194,.08)}
 .tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.view-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.view-row button{min-height:38px;padding:6px 9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:9px}
+.view-row b{font-size:14px}
+
 .tool{display:grid;place-items:center;gap:2px;min-height:48px;padding:5px}.tool b{font-size:15px}.tool span{font-size:8px}.tool.active{background:#f4f7fb;color:#0b1018;border-color:#fff}
 .paint-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:end;margin-top:8px}
 .swatch{width:44px;height:44px;border-radius:12px;background:#fff;border:2px solid rgba(255,255,255,.48);box-shadow:inset 0 0 0 1px #0004}
