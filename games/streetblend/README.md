@@ -52,3 +52,7 @@ The runtime rights check is deliberate: a title being present in a museum collec
 - `styles.css` — responsive layout
 - `game.js` — artwork loading, canvas rendering, painting tools, multiplayer and scoring
 - `game.json` — machine-readable game metadata
+
+## Image delivery
+
+Streetblend uses the `config.iiif_url` returned by the Art Institute API rather than assuming a fixed image host. Public-domain images are requested at 1686px wide first and automatically retried at the museum-recommended 843px size if the larger request fails.
