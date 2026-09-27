@@ -85,6 +85,8 @@ let lastHostPulseAt=0;
 let draftTimer=null;
 let actionSeq=0;
 let seenActionIds=new Set();
+let lastSeenBySeat={};
+let lastForcedReconnectAt=0;
 
 function defaultFigure(){
   return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -367,7 +369,7 @@ function createRoom(){
     onPlayerLeave(info){
       connected=false;
       if(hostState&&hostState.phase!==PHASES.LOBBY){
-        pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.');
+        pauseMatch('Player '+((info?.seat??1)+1)+' disconnected.','disconnect');
         showConnectionBanner('Connection lost','Game time is paused. Waiting for the other player to reconnect…');
         $('gameShell').hidden=false;
         return;
@@ -481,6 +483,7 @@ function makeHostState(name0,name1){
     timerStarted:false,
     result:null,
     paused:false,
+    pauseReason:null,
     pauseRemaining:0
   };
 }
@@ -723,6 +726,14 @@ function refreshNextRoundGate(){
 function handleHostMessage(message,meta){
   if(!message?.type||!hostState) return;
   const sender=Number(meta?.seat);
+  if(Number.isFinite(sender)) lastSeenBySeat[sender]=Date.now();
+  if(message.type==='sb:pong'){
+    if(hostState.paused&&hostState.pauseReason==='heartbeat'){
+      const stale=(hostState.activeSeats||[]).filter(s=>s!==0).some(s=>Date.now()-Number(lastSeenBySeat[s]||0)>3500);
+      if(!stale) resumeMatch();
+    }
+    return;
+  }
   if(message.type==='sb:state-ack'){
     ackBySeat[sender]=Math.max(Number(ackBySeat[sender]||0),Number(message.seq)||0);
     refreshNextRoundGate();
@@ -836,6 +847,7 @@ async function handleGuestMessage(message){
     }
     remoteState.remaining=message.remaining;
     remoteState.paused=!!message.paused;
+    session?.send({type:'sb:pong',syncSeq:message.syncSeq,phaseToken:message.phaseToken});
     if(remoteState.timerStarted&&!remoteState.paused) updateClock(message.remaining);
     return;
   }
@@ -968,9 +980,10 @@ function rematch(){
   beginRound(0);
 }
 
-function pauseMatch(message){
+function pauseMatch(message,reason='disconnect'){
   if(!hostState||![PHASES.HIDE,PHASES.SEEK].includes(hostState.phase)||!hostState.timerStarted||hostState.paused) return;
   hostState.paused=true;
+  hostState.pauseReason=reason;
   hostState.pauseRemaining=Math.max(0,hostState.deadline-Date.now());
   hostState.deadline=0;
   publishHostState();
@@ -980,6 +993,7 @@ function pauseMatch(message){
 function resumeMatch(){
   if(!hostState?.paused) return;
   hostState.paused=false;
+  hostState.pauseReason=null;
   hostState.deadline=Date.now()+Math.max(1000,hostState.pauseRemaining||30000);
   hostState.pauseRemaining=0;
   publishHostState();
