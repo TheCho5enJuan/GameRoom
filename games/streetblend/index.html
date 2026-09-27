@@ -130,6 +130,24 @@
           </div>
 
           <div class="settings-section">
+            <h3>Artwork</h3>
+            <label class="field">
+              <span>Painting category</span>
+              <select id="settingArtCategory">
+                <option value="mixed">Mixed Collection</option>
+                <option value="impressionism">Impressionism</option>
+                <option value="landscapes">Landscapes</option>
+                <option value="city">City &amp; Street</option>
+                <option value="interiors">Interiors</option>
+                <option value="people">People &amp; Markets</option>
+                <option value="water">Water &amp; Coast</option>
+                <option value="gardens">Gardens &amp; Parks</option>
+              </select>
+            </label>
+            <p class="settings-note">The host's category builds the randomized public-domain painting deck for the match.</p>
+          </div>
+
+          <div class="settings-section">
             <h3>Timers</h3>
             <div class="settings-grid">
               <label class="field"><span>Hide time</span><select id="settingHideSeconds"><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="75">75 sec</option><option value="90">90 sec</option></select></label>
@@ -215,7 +233,7 @@
           <div class="paint-row">
             <button class="swatch" id="paintSwatch" type="button" aria-label="Choose paint color" title="Choose paint color"></button>
             <label><span>Brush <output id="brushValue">14px</output></span><input id="brushSize" type="range" min="1" max="28" value="14"></label>
-            <button id="resetPaint" type="button">Clear Paint</button>
+            <label><span>Opacity <output id="opacityValue">100%</output></span><input id="paintOpacity" type="range" min="10" max="100" step="5" value="100"></label>
           </div>
 
           <div class="figure-options">
