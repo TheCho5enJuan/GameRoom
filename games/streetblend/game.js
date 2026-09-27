@@ -129,11 +129,6 @@
     return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
 
-  function normalizeTitle(s){
-    return String(s||'').toLowerCase().replace(/[—–]/g,'-').replace(/[^a-z0-9]+/g,' ').trim();
-  }
-
-
   function penaltyText(config=appSettings){
     return config.wrongPenaltyMode==='none' ? 'No miss penalty' : '−'+Number(config.wrongPenaltySeconds||0)+'s miss';
   }
