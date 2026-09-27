@@ -82,6 +82,9 @@ let pendingRemoteState=null;
 let remoteRenderRunning=false;
 let reconnectResumeBySeat={};
 let lastHostPulseAt=0;
+let draftTimer=null;
+let actionSeq=0;
+let seenActionIds=new Set();
 
 function defaultFigure(){
   return {x:.5,y:.58,scale:.14,rotation:0,pose:'stand',build:'regular',paintData:null};
@@ -573,6 +576,7 @@ function beginRound(roundIndex){
   hostState.lastDraft=null;
   hostState.guessMarks=[];
   hostState.result=null;
+  seenActionIds.clear();
   if(solo && hostState.hiderSeat===1){
     hostState.hiderSeat=0;
     hostState.seekerSeat=1;
@@ -581,7 +585,7 @@ function beginRound(roundIndex){
   publishHostState();
 }
 
-function publicState(){
+function publicState(includeFigure=false){
   if(!hostState) return null;
   const remaining=hostState.paused
     ? Math.max(0,hostState.pauseRemaining||0)
@@ -606,9 +610,7 @@ function publicState(){
     timerStarted:!!hostState.timerStarted,
     remaining
   };
-  if([PHASES.SEEK_PREPARE,PHASES.SEEK,PHASES.REVEAL,PHASES.FINAL].includes(hostState.phase)){
-    state.figure=hostState.figure;
-  }
+  if(includeFigure||hostState.phase===PHASES.SEEK_PREPARE) state.figure=hostState.figure;
   return state;
 }
 
@@ -616,7 +618,7 @@ function sendGuestPhase(repeat=false){
   if(!hostState) return null;
   if(!repeat) syncSeq++;
   hostState.syncSeq=syncSeq;
-  const state=publicState();
+  const state=publicState(repeat);
   if(role==='host'&&!solo&&session?.connections?.size) session.broadcast({type:'sb:state',state});
   return state;
 }
@@ -652,6 +654,7 @@ function actionMessage(type,payload={}){
     round:state.round,
     phaseToken:state.phaseToken,
     syncSeq:state.syncSeq,
+    actionId:++actionSeq,
     ...payload
   });
 }
@@ -738,6 +741,9 @@ function handleHostMessage(message,meta){
     message.type==='sb:lock'?'lock':
     message.type==='sb:guess'?'guess':null;
   if(!action) return;
+  const actionKey=sender+':'+String(message.phaseToken||'')+':'+String(message.actionId||'');
+  if(message.actionId&&seenActionIds.has(actionKey)) return;
+  if(message.actionId) seenActionIds.add(actionKey);
   if(!flow.actionAllowed(hostState,sender,action,message)){
     resendHostState();
     return;
@@ -754,6 +760,9 @@ function handleHostMessage(message,meta){
 }
 
 function queueRemoteState(state){
+  if(!state?.figure&&remoteState?.figure&&Number(state?.round)===Number(remoteState?.round)){
+    state={...state,figure:remoteState.figure};
+  }
   const seq=Number(state?.syncSeq)||0;
   if(!seq||seq<guestAppliedSeq) return;
   if(pendingRemoteState && Number(pendingRemoteState.syncSeq||0)>seq) return;
@@ -850,7 +859,8 @@ function exportFigure(){
 
 function sendDraft(){
   if(role==='guest'&&connected&&remoteState?.phase===PHASES.HIDE&&remoteState.hiderSeat===seat){
-    actionMessage('sb:draft',{figure:exportFigure()});
+    clearTimeout(draftTimer);
+    draftTimer=setTimeout(()=>actionMessage('sb:draft',{figure:exportFigure()}),140);
   }else if(role==='host'&&hostState?.phase===PHASES.HIDE&&hostState.hiderSeat===seat){
     hostState.lastDraft=exportFigure();
   }
