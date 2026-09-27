@@ -84,6 +84,40 @@
   ];
   const PAINT_W = 96;
   const PAINT_H = 180;
+
+  const SETTINGS_KEY='streetblend.settings.v2';
+  const DEFAULT_SETTINGS=Object.freeze({
+    mode:'classic',
+    players:2,
+    rounds:4,
+    hideSeconds:60,
+    seekSeconds:90,
+    wrongPenaltyMode:'time',
+    wrongPenaltySeconds:5
+  });
+
+  function sanitizeSettings(raw={}){
+    const rounds=[2,4,6], hide=[30,45,60,75,90], seek=[45,60,90,120,150], penalty=[3,5,10,15];
+    return {
+      mode:'classic',
+      players:2,
+      rounds:rounds.includes(Number(raw.rounds))?Number(raw.rounds):DEFAULT_SETTINGS.rounds,
+      hideSeconds:hide.includes(Number(raw.hideSeconds))?Number(raw.hideSeconds):DEFAULT_SETTINGS.hideSeconds,
+      seekSeconds:seek.includes(Number(raw.seekSeconds))?Number(raw.seekSeconds):DEFAULT_SETTINGS.seekSeconds,
+      wrongPenaltyMode:raw.wrongPenaltyMode==='none'?'none':'time',
+      wrongPenaltySeconds:penalty.includes(Number(raw.wrongPenaltySeconds))?Number(raw.wrongPenaltySeconds):DEFAULT_SETTINGS.wrongPenaltySeconds
+    };
+  }
+
+  function loadSavedSettings(){
+    try{
+      return sanitizeSettings(JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null')||DEFAULT_SETTINGS);
+    }catch(_){
+      return {...DEFAULT_SETTINGS};
+    }
+  }
+
+  let appSettings=loadSavedSettings();
   let artLibrary = [];
   let session = null;
   let role = 'local';
@@ -162,6 +196,83 @@
 
   function normalizeTitle(s){
     return String(s||'').toLowerCase().replace(/[—–]/g,'-').replace(/[^a-z0-9]+/g,' ').trim();
+  }
+
+
+  function penaltyText(config=appSettings){
+    return config.wrongPenaltyMode==='none' ? 'No miss penalty' : '−'+Number(config.wrongPenaltySeconds||0)+'s miss';
+  }
+
+  function rulesText(config=appSettings){
+    return 'Classic · '+config.players+' players · '+config.rounds+' rounds · '+config.hideSeconds+'s hide · '+config.seekSeconds+'s seek · '+penaltyText(config);
+  }
+
+  function updateSettingsSummary(){
+    if($('settingsSummary')) $('settingsSummary').textContent='Classic · '+appSettings.players+' players · '+appSettings.rounds+' rounds · '+penaltyText(appSettings);
+    if($('roomRules') && (!hostState || hostState.phase==='lobby')) $('roomRules').textContent=rulesText(appSettings);
+  }
+
+  function syncSettingsForm(){
+    $('settingMode').value=appSettings.mode;
+    $('settingPlayers').value=String(appSettings.players);
+    $('settingRounds').value=String(appSettings.rounds);
+    $('settingHideSeconds').value=String(appSettings.hideSeconds);
+    $('settingSeekSeconds').value=String(appSettings.seekSeconds);
+    $('settingPenaltyMode').value=appSettings.wrongPenaltyMode;
+    $('settingPenaltySeconds').value=String(appSettings.wrongPenaltySeconds);
+    $('penaltySecondsField').hidden=appSettings.wrongPenaltyMode==='none';
+  }
+
+  function readSettingsForm(){
+    return sanitizeSettings({
+      mode:$('settingMode').value,
+      players:Number($('settingPlayers').value),
+      rounds:Number($('settingRounds').value),
+      hideSeconds:Number($('settingHideSeconds').value),
+      seekSeconds:Number($('settingSeekSeconds').value),
+      wrongPenaltyMode:$('settingPenaltyMode').value,
+      wrongPenaltySeconds:Number($('settingPenaltySeconds').value)
+    });
+  }
+
+  function openSettings(){
+    syncSettingsForm();
+    $('settingsOverlay').hidden=false;
+  }
+
+  function closeSettings(){
+    $('settingsOverlay').hidden=true;
+  }
+
+  function saveSettings(){
+    appSettings=readSettingsForm();
+    try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));}catch(_){}
+    updateSettingsSummary();
+    closeSettings();
+    toast('Settings saved.');
+  }
+
+  function restoreDefaultSettings(){
+    appSettings={...DEFAULT_SETTINGS};
+    syncSettingsForm();
+  }
+
+  function showStartMenu(){
+    $('startMenu').hidden=false;
+    $('joinPane').hidden=true;
+    $('roomBox').hidden=true;
+    $('connectedBox').hidden=true;
+    setNetStatus('Ready','Choose how you want to play.');
+    updateSettingsSummary();
+  }
+
+  function showJoinPane(){
+    $('startMenu').hidden=true;
+    $('joinPane').hidden=false;
+    $('roomBox').hidden=true;
+    $('connectedBox').hidden=true;
+    setNetStatus('Join a game','Enter a room code or open an invite link.');
+    setTimeout(()=>$('roomCode').focus(),50);
   }
 
   async function loadArtLibrary(){
