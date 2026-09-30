@@ -1,9 +1,10 @@
 # GameRoom
 
-A static GitHub Pages arcade containing ten browser games. Each game is an independent project under `games/<slug>/`.
+A static GitHub Pages arcade containing twelve browser games. Each game is an independent project under `games/<slug>/`.
 
 ## Games
 
+- Prizebound
 - Lonecraft
 - Perfect Split
 - Time Blind
