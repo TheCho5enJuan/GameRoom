@@ -1,1 +1,104 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#0a1024"><title>Prizebound · GameRoom</title><link rel="stylesheet" href="./style.css"></head><body><main id="app"><header><a href="../../">‹ GameRoom</a><div><b>PRIZEBOUND</b><small>Race to the Grand Prize</small></div><button id="rulesBtn">?</button></header><section id="setup" class="panel"><div class="logo">🏆</div><h1>Prizebound</h1><p>Race through a living fantasy world.</p><label>Player 1<input id="p1" maxlength="12" value="Player 1"></label><label>Player 2<input id="p2" maxlength="12" value="Player 2"></label><div class="tokens"><button class="token active" data-p="0" data-token="🦊">🦊</button><button class="token" data-p="0" data-token="🦄">🦄</button><button class="token" data-p="0" data-token="🐲">🐲</button><span></span><button class="token active" data-p="1" data-token="🐼">🐼</button><button class="token" data-p="1" data-token="🐙">🐙</button><button class="token" data-p="1" data-token="🦁">🦁</button></div><button id="startBtn" class="primary">START ADVENTURE</button></section><section id="game" hidden><div class="hud"><div id="p0hud" class="player active"></div><div id="turn"><strong id="turnText"></strong><small id="message">Roll the die!</small></div><div id="p1hud" class="player"></div></div><div id="viewport"><div id="world"><svg id="board" viewBox="0 0 1000 1600"><defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#58b8ef"/><stop offset=".34" stop-color="#bcecff"/><stop offset=".35" stop-color="#72b95c"/><stop offset="1" stop-color="#245b42"/></linearGradient><linearGradient id="water" x2="0" y2="1"><stop stop-color="#4de3ff"/><stop offset="1" stop-color="#087bbd"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff5a1"/><stop offset=".5" stop-color="#ffc72e"/><stop offset="1" stop-color="#c86b00"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="7" flood-opacity=".42"/></filter><filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="1000" height="1600" fill="url(#sky)"/><g id="terrain"></g><g id="tiles"></g><g id="decor"></g><g id="pieces"></g></svg></div><div id="fx"></div><div class="mapControls"><button id="minus">−</button><button id="camera">MAP</button><button id="plus">+</button></div></div><div class="controls"><button id="odd" class="choice" hidden>ODD</button><button id="roll" class="die"><span id="dieFace">⚄</span><small>ROLL</small></button><button id="even" class="choice" hidden>EVEN</button></div></section><dialog id="rules"><button id="closeRules">×</button><h2>How to play</h2><p>Roll, move, and reach the Grand Prize first. MAP stays zoomed out; FOLLOW tracks the active piece; manual pan or zoom enters EXPLORE.</p><p>⏪ <b>Send Back:</b> roll again and push your rival back.</p><p>🛡️ <b>Block:</b> your rival loses their next turn.</p><p>🔄 <b>Odd/Even:</b> predict the second roll to attempt a position swap.</p></dialog><div id="celebrate" hidden><div>🏆</div><h1 id="winner"></h1><p>GRAND PRIZE CLAIMED!</p><button id="again" class="primary">PLAY AGAIN</button></div></main><script src="./game.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#09132a">
+  <title>Prizebound · GameRoom</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main id="app">
+  <header class="topbar">
+    <a class="back" href="../../">‹ GameRoom</a>
+    <div class="brand"><b>PRIZEBOUND</b><small>Race to the Grand Prize</small></div>
+    <button id="rulesBtn" class="round" aria-label="Rules">?</button>
+  </header>
+
+  <section id="setup" class="setup-card">
+    <div class="setup-crown">🏆</div>
+    <h1>Prizebound</h1>
+    <p>Race through a living fantasy world.</p>
+    <label>Player 1<input id="p1" maxlength="12" value="Player 1"></label>
+    <label>Player 2<input id="p2" maxlength="12" value="Player 2"></label>
+    <div class="tokens">
+      <button class="token active" data-p="0" data-token="🦊">🦊</button>
+      <button class="token" data-p="0" data-token="🦄">🦄</button>
+      <button class="token" data-p="0" data-token="🐲">🐲</button>
+      <span></span>
+      <button class="token active" data-p="1" data-token="🐼">🐼</button>
+      <button class="token" data-p="1" data-token="🐙">🐙</button>
+      <button class="token" data-p="1" data-token="🦁">🦁</button>
+    </div>
+    <button id="startBtn" class="primary">START ADVENTURE</button>
+  </section>
+
+  <section id="game" hidden>
+    <div class="hud">
+      <div id="p0hud" class="player active"></div>
+      <div id="turn"><strong id="turnText"></strong><small id="message">Roll the die!</small></div>
+      <div id="p1hud" class="player"></div>
+    </div>
+
+    <div id="viewport">
+      <div id="world">
+        <svg id="board" viewBox="0 0 1000 1350" preserveAspectRatio="xMidYMid meet" aria-label="Prizebound fantasy board">
+          <defs>
+            <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#57c3f3"/><stop offset="1" stop-color="#d8f4ff"/></linearGradient>
+            <linearGradient id="grass" x2="0" y2="1"><stop stop-color="#8fd05c"/><stop offset="1" stop-color="#39794b"/></linearGradient>
+            <linearGradient id="river" x2="0" y2="1"><stop stop-color="#73efff"/><stop offset="1" stop-color="#0789c7"/></linearGradient>
+            <linearGradient id="haunt" x2="0" y2="1"><stop stop-color="#493b70"/><stop offset="1" stop-color="#17192f"/></linearGradient>
+            <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff49a"/><stop offset=".45" stop-color="#ffbf25"/><stop offset="1" stop-color="#bf6500"/></linearGradient>
+            <linearGradient id="stone" x2="0" y2="1"><stop stop-color="#9cacc0"/><stop offset="1" stop-color="#4a5666"/></linearGradient>
+            <filter id="tileShadow"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-opacity=".42"/></filter>
+            <filter id="softShadow"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".36"/></filter>
+            <filter id="glow"><feGaussianBlur stdDeviation="9" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <g id="worldArt"></g>
+          <g id="pathLayer"></g>
+          <g id="interactiveLayer"></g>
+          <g id="pieceLayer"></g>
+        </svg>
+      </div>
+      <div id="fxLayer"></div>
+      <div class="camera-panel" aria-label="Camera controls">
+        <button id="zoomOut" aria-label="Zoom out">−</button>
+        <div class="camera-modes">
+          <button class="cam" data-mode="follow">FOLLOW</button>
+          <button class="cam active" data-mode="map">MAP</button>
+          <button class="cam" data-mode="explore">EXPLORE</button>
+        </div>
+        <button id="zoomIn" aria-label="Zoom in">+</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="odd" class="choice" hidden>ODD</button>
+      <button id="roll" class="die" aria-label="Roll the die">
+        <span class="die-face" id="dieFace" data-roll="5">
+          <i class="p1"></i><i class="p2"></i><i class="p3"></i><i class="p4"></i><i class="p5"></i><i class="p6"></i><i class="p7"></i><i class="p8"></i><i class="p9"></i>
+        </span>
+        <small>ROLL</small>
+      </button>
+      <button id="even" class="choice" hidden>EVEN</button>
+    </div>
+  </section>
+
+  <dialog id="rules">
+    <button id="closeRules" aria-label="Close">×</button>
+    <h2>How to play</h2>
+    <p>Take turns rolling. First to reach the Grand Prize wins.</p>
+    <p><b>MAP</b> stays zoomed out. <b>FOLLOW</b> tracks the active piece. Dragging or zooming switches to <b>EXPLORE</b>.</p>
+    <p>⏪ <b>Send Back:</b> roll again and push your rival back.</p>
+    <p>🛡️ <b>Block:</b> your rival loses the next turn.</p>
+    <p>🔄 <b>Odd/Even:</b> predict the second roll to attempt a position swap.</p>
+  </dialog>
+
+  <div id="celebrate" hidden>
+    <div class="win-crown">🏆</div><h1 id="winner"></h1><p>GRAND PRIZE CLAIMED!</p>
+    <button id="again" class="primary">PLAY AGAIN</button>
+  </div>
+</main>
+<script src="./game.js"></script>
+</body>
+</html>
