@@ -1,8 +1,10 @@
 # GameRoom
 
-A static GitHub Pages arcade containing twelve browser games. Each game is an independent project under `games/<slug>/`.
+A static GitHub Pages arcade containing thirteen browser games. Each game is an independent project under `games/<slug>/`.
 
 ## Games
+
+- Pig (manual scorekeeper or digital die; two local players)
 
 - Prizebound
 - Lonecraft

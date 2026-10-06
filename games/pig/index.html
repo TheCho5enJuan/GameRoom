@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pig Scorekeeper</title>
+<meta name="description" content="A simple two-player Pig dice scorekeeper. First to 100 wins.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d735c'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Arial' font-size='23' fill='white'%3EP%3C/text%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#102b25;color:#f5faf7;font:16px system-ui,sans-serif;min-height:100vh;padding:28px 18px}main{max-width:680px;margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}h1{font-size:2rem;margin:0;letter-spacing:-1px}.goal{font-weight:600;color:#bfe1d3;font-size:.9rem}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:15px 20px;font-weight:700;min-height:50px}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f9cc70;outline-offset:3px}.players{display:grid;grid-template-columns:1fr 1fr;gap:14px}.player{background:#1c3931;border:2px solid #38584d;border-radius:20px;padding:20px;position:relative}.player.active{border-color:#f9cc70;background:#24483b}.player label{display:block;color:#c1dacf;font-size:.875rem;margin-bottom:7px}.name{width:100%;background:transparent;border:0;border-bottom:1px solid #668476;color:white;padding:5px 0 9px;font-size:1.15rem;font-weight:650;border-radius:0}.score{display:block;width:100%;color:white;background:transparent;border:0;font-size:4rem;font-weight:800;line-height:1.2;padding:12px 0 0;appearance:textfield}.score::-webkit-inner-spin-button,.score::-webkit-outer-spin-button{appearance:none}progress{display:block;width:100%;height:7px;border:0;margin:8px 0 14px;border-radius:10px;overflow:hidden;accent-color:#f9cc70}progress::-webkit-progress-bar{background:#102b25}progress::-webkit-progress-value{background:#f9cc70}progress::-moz-progress-bar{background:#f9cc70}.tag{min-height:22px;font-size:.875rem;color:#d9eadf;font-weight:600}.turn{margin-top:18px;background:#f5faf7;color:#102b25;border-radius:20px;padding:24px}.status{font-size:1.25rem;font-weight:750;overflow-wrap:anywhere;margin:0 0 22px}.turn label{display:block;font-weight:600;margin-bottom:8px}.turn input{border:2px solid #c2d4cb;width:100%;border-radius:12px;font-size:2rem;padding:12px 16px;color:#102b25;background:white}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.bank{background:#1d735c;color:white}.bust{background:#e4ece7;color:#293e34}.footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.footer button{background:transparent;color:#d8e8df;border:1px solid #527368;padding:12px 18px}.hint{font-size:.875rem;color:#a9c9ba;line-height:1.5;text-align:center;margin:18px 0 0}.message{font-size:.9rem;color:#52685d;margin:14px 0 0;min-height:22px}.error{color:#a32626}@media(max-width:430px){body{padding:20px 12px}.player{padding:15px}.score{font-size:3.4rem}.turn{padding:20px}.actions{grid-template-columns:1fr}h1{font-size:1.75rem}}
+.mode{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.mode label{margin:0}.mode select{border:1px solid #b3c9bd;border-radius:10px;padding:10px;color:#102b25;background:white;max-width:65%}.digital{display:flex;align-items:center;gap:18px;margin:0 0 18px}.digital[hidden]{display:none}.die{font-size:5rem;line-height:1;color:#1d735c;min-width:70px;text-align:center}.roll{background:#f9cc70;color:#102b25;flex:1}.roll:active{transform:scale(.97)}.turn input:read-only{background:#eaf2ed}.return{display:block;color:#bfe1d3;font-size:.875rem;margin-bottom:16px;text-decoration:none}.return:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<main>
+<a class="return" href="../../">GameRoom</a>
+<header><h1>Pig scorekeeper</h1><span class="goal">First to 100</span></header>
+<section class="players" aria-label="Players">
+<div class="player" id="card0"><label for="name0">Player 1</label><input class="name" id="name0" placeholder="Enter name" maxlength="40" autocomplete="off"><label for="score0" style="margin-top:14px">Total score</label><input class="score" id="score0" type="number" min="0" max="9999" step="1" aria-label="Player 1 total score"><progress id="progress0" max="100" value="0" aria-label="Player 1 progress to 100"></progress><div class="tag" id="tag0"></div></div>
+<div class="player" id="card1"><label for="name1">Player 2</label><input class="name" id="name1" placeholder="Enter name" maxlength="40" autocomplete="off"><label for="score1" style="margin-top:14px">Total score</label><input class="score" id="score1" type="number" min="0" max="9999" step="1" aria-label="Player 2 total score"><progress id="progress1" max="100" value="0" aria-label="Player 2 progress to 100"></progress><div class="tag" id="tag1"></div></div>
+</section>
+<form class="turn" id="turnForm">
+<div class="mode"><label for="mode">Dice</label><select id="mode"><option value="manual">Real dice · enter totals</option><option value="digital">Digital die · tap to roll</option></select></div>
+<div class="digital" id="digital" hidden><span class="die" id="die" role="img" aria-label="No roll yet">⚄</span><button class="roll" id="roll" type="button">Roll die</button></div>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+<label for="points">This turn’s total</label><input id="points" type="number" min="1" max="9999" step="1" inputmode="numeric" placeholder="0" autocomplete="off">
+<div class="actions"><button class="bank" id="bank" type="submit">Bank points</button><button class="bust" id="bust" type="button">Rolled a 1 · no points</button></div>
+<p class="message" id="message" aria-live="polite">Add up the dice for this turn, then bank your points.</p>
+</form>
+<div class="footer"><button id="undo" type="button">Undo</button><button id="reset" type="button">New game</button></div>
+<p class="hint">Tap a total score to correct it. Names and scores save on this device when browser storage is available.</p>
+</main>
+<script>
+
+'use strict';
+const KEY='pig-scorekeeper-v1';
+const $=id=>document.getElementById(id);
+const validScore=n=>Number.isSafeInteger(n)&&n>=0&&n<=9999;
+const validTurn=h=>h&&Array.isArray(h.scores)&&h.scores.length===2&&h.scores.every(validScore)&&[0,1].includes(h.active);
+let state={names:['',''],scores:[0,0],active:0,history:[],mode:'manual',turnTotal:0,lastDie:0};
+try{const saved=JSON.parse(localStorage.getItem(KEY));if(validTurn(saved)&&Array.isArray(saved.names)&&saved.names.length===2&&saved.names.every(n=>typeof n==='string')){state={...state,...saved,names:saved.names.map(n=>n.slice(0,40)),history:Array.isArray(saved.history)?saved.history.filter(validTurn).slice(-100):[],mode:saved.mode==='digital'?'digital':'manual',turnTotal:validScore(saved.turnTotal)?saved.turnTotal:0,lastDie:Number.isInteger(saved.lastDie)&&saved.lastDie>=0&&saved.lastDie<=6?saved.lastDie:0};}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function name(i){return state.names[i].trim()||'Player '+(i+1);}
+function winner(){if(state.scores[state.active]>=100)return state.active;return state.scores.findIndex(n=>n>=100);}
+function snapshot(){state.history.push({scores:[...state.scores],active:state.active,turnTotal:state.turnTotal,lastDie:state.lastDie,mode:state.mode});state.history=state.history.slice(-100);}
+function render(){const w=winner(),digital=state.mode==='digital';for(let i=0;i<2;i++){$('name'+i).value=state.names[i];$('score'+i).value=state.scores[i];$('progress'+i).value=Math.min(state.scores[i],100);$('card'+i).classList.toggle('active',w>=0?w===i:state.active===i);$('tag'+i).textContent=w===i?'🏆 Winner':w<0&&state.active===i?'Your turn':w<0?Math.max(0,100-state.scores[i])+' to go':'Game over';}$('status').textContent=w>=0?name(w)+' wins!':name(state.active)+'’s turn';$('mode').value=state.mode;$('digital').hidden=!digital;$('points').value=state.turnTotal||'';$('points').readOnly=digital;$('points').disabled=w>=0;$('bank').disabled=w>=0||(digital&&state.turnTotal===0);$('bank').textContent=digital?'Bank '+state.turnTotal+' points':'Bank points';$('bust').disabled=w>=0;$('bust').hidden=digital;$('roll').disabled=w>=0;$('undo').disabled=!state.history.length;$('die').textContent=state.lastDie?['','⚀','⚁','⚂','⚃','⚄','⚅'][state.lastDie]:'⚄';$('die').setAttribute('aria-label',state.lastDie?'Rolled '+state.lastDie:'No roll yet');}
+function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error);}
+function instructions(){message(state.mode==='digital'?'Roll to add points. Bank to keep them. A 1 loses this turn’s points.':'Add up the dice for this turn, then bank your points.');}
+function finishTurn(points,record=true){if(winner()>=0)return;if(record)snapshot();const i=state.active;state.scores[i]+=points;if(state.scores[i]<100)state.active=1-i;state.turnTotal=0;save();render();message(points?name(i)+' banked '+points+' points.':name(i)+' rolled a 1. No points this turn.');}
+$('turnForm').addEventListener('submit',e=>{e.preventDefault();const n=state.mode==='digital'?state.turnTotal:Number($('points').value);if(!Number.isSafeInteger(n)||n<1||n>9999||state.scores[state.active]+n>9999){message('Enter a valid whole-number turn total.',true);$('points').focus();return;}state.turnTotal=n;finishTurn(n);});
+$('points').addEventListener('input',()=>{if(state.mode!=='manual')return;const n=Number($('points').value);if(validScore(n)){state.turnTotal=n;save();}});
+$('bust').addEventListener('click',()=>{if(state.mode==='manual')finishTurn(0);});
+function rollDie(){if(globalThis.crypto&&crypto.getRandomValues){const data=new Uint32Array(1);do{crypto.getRandomValues(data);}while(data[0]>=4294967292);return data[0]%6+1;}return Math.floor(Math.random()*6)+1;}
+$('roll').addEventListener('click',()=>{if(state.mode!=='digital'||winner()>=0)return;if(state.turnTotal+6+state.scores[state.active]>9999){message('Bank your current points before rolling again.',true);return;}snapshot();const n=rollDie();state.lastDie=n;if(n===1){finishTurn(0,false);return;}state.turnTotal+=n;save();render();message('Rolled '+n+'. '+state.turnTotal+' points this turn.'+(state.scores[state.active]+state.turnTotal>=100?' Bank now to win!':''));});
+$('mode').addEventListener('change',e=>{if(!['manual','digital'].includes(e.target.value))return;state.mode=e.target.value;state.lastDie=0;save();render();instructions();});
+for(let i=0;i<2;i++){$('name'+i).addEventListener('input',e=>{state.names[i]=e.target.value;save();const w=winner();$('status').textContent=w>=0?name(w)+' wins!':name(state.active)+'’s turn';});$('score'+i).addEventListener('change',e=>{const n=Number(e.target.value);if(e.target.value===''||!validScore(n)){render();message('Scores must be whole numbers from 0 to 9,999.',true);return;}if(n!==state.scores[i]){snapshot();state.scores[i]=n;state.turnTotal=0;state.lastDie=0;save();render();message(name(i)+'’s score corrected.');}});}
+$('undo').addEventListener('click',()=>{const old=state.history.pop();if(!old)return;state.scores=old.scores;state.active=old.active;state.turnTotal=validScore(old.turnTotal)?old.turnTotal:0;state.lastDie=old.lastDie||0;state.mode=old.mode==='digital'?'digital':'manual';save();render();message('Last action undone.');});
+$('reset').addEventListener('click',()=>{if((state.scores.some(n=>n>0)||state.history.length||state.turnTotal)&&!confirm('Start a new game? Current scores will be cleared.'))return;state.scores=[0,0];state.active=0;state.history=[];state.turnTotal=0;state.lastDie=0;save();render();message('New game. '+name(0)+' goes first.');});
+render();instructions();
+</script>
+</body>
+</html>
